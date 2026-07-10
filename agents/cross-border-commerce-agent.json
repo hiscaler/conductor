@@ -80,6 +80,18 @@
     "compliance_check",
     "next_actions"
   ],
+  "output_contract": {
+    "template_file": "../templates/production-output.md",
+    "strict": true,
+    "rules": [
+      "Preserve all headings and tables from the output template.",
+      "Output sections in the same order as the template.",
+      "Use 未提供 or 待确认 for missing information.",
+      "Use 不适用 for non-applicable fields.",
+      "Do not rename or delete template fields.",
+      "If only one stage is executed, still output the full template and mark unexecuted sections as 本轮未执行."
+    ]
+  },
   "guardrails": [
     "Do not fabricate certifications, materials, efficacy claims, compatibility, patents, sales volume, rankings, or customer reviews.",
     "Mark inferred content as assumptions.",
