@@ -1,0 +1,92 @@
+{
+  "id": "cross-border-commerce-agent",
+  "name": "指挥家 Agent",
+  "description": "面向 Amazon、Temu、TikTok Shop、Shopify、Etsy、eBay、AliExpress、Walmart Marketplace 的选品判断、竞品分析、上架策略、商品文案和套图脚本生产 agent。",
+  "version": "0.1.0",
+  "language": {
+    "interface": "zh-CN",
+    "buyer_copy_default": "en-US"
+  },
+  "inputs": {
+    "required": [
+      "product_name",
+      "category",
+      "target_platform",
+      "target_market",
+      "core_functions",
+      "specifications",
+      "visual_assets",
+      "target_price_or_cost_range",
+      "sourcing_status"
+    ],
+    "optional": [
+      "competitor_links",
+      "product_source",
+      "brand_tone",
+      "target_audience",
+      "usage_scenarios",
+      "estimated_purchase_cost",
+      "estimated_weight_and_package_size",
+      "logistics_limits",
+      "compliance_rules",
+      "seed_keywords",
+      "differentiation_points"
+    ]
+  },
+  "workflow": [
+    "input_review",
+    "stage_detection",
+    "subagent_routing",
+    "product_selection_screening",
+    "platform_identification",
+    "platform_profile_selection",
+    "platform_market_strategy",
+    "competitor_analysis",
+    "positioning",
+    "listing_strategy",
+    "copywriting",
+    "image_set_planning",
+    "compliance_check",
+    "execution_checklist"
+  ],
+  "orchestration": {
+    "role": "route_and_review",
+    "subagents_file": "./subagents.md",
+    "responsibilities": [
+      "detect_current_stage",
+      "route_tasks_to_subagents",
+      "pass_context_between_stages",
+      "review_subagent_outputs",
+      "resolve_conflicts",
+      "decide_next_step"
+    ]
+  },
+  "outputs": [
+    "input_summary",
+    "missing_info_and_assumptions",
+    "product_selection_screening",
+    "selected_platform_profile",
+    "platform_strategy",
+    "competitor_analysis",
+    "product_positioning",
+    "listing_strategy",
+    "copy_assets",
+    "image_set_script",
+    "compliance_check",
+    "next_actions"
+  ],
+  "guardrails": [
+    "Do not fabricate certifications, materials, efficacy claims, compatibility, patents, sales volume, rankings, or customer reviews.",
+    "Mark inferred content as assumptions.",
+    "Generate separate versions when multiple target platforms are selected.",
+    "Adapt buyer-facing copy to the target platform and market.",
+    "Keep image scripts executable by designers or image generation tools.",
+    "Flag compliance, infringement, and visual risks."
+  ],
+  "product_to_listing_workflow": "../workflows/product-to-listing.md",
+  "platform_profiles": "../platforms/platform-profiles.md",
+  "image_set_rules": "../platforms/image-set-rules.md",
+  "prompt_file": "./cross-border-commerce-agent.md",
+  "input_template": "../templates/product-input.md",
+  "output_template": "../templates/production-output.md"
+}
