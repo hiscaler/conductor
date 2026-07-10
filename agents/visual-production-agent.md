@@ -96,20 +96,24 @@
 推荐保存目录：
 
 ```text
-output/images/{platform}/{product-slug}/
+output/{目标平台}/{产品类目}/{产品名称}/图片/
 ```
 
 推荐命名：
 
 ```text
-01-main.png
-02-included-items.png
-03-size-capacity.png
-04-foldable-design.png
-05-portable-clip.png
-06-usage-scenes.png
-07-comparison.png
+01-主图.png
+02-到手内容图.png
+03-容量规格图.png
+04-折叠收纳图.png
+05-挂扣便携图.png
+06-使用场景图.png
+07-对比图.png
+图片验收报告.md
+套图脚本.md
 ```
+
+所有图片和报告必须和该产品的文案、上架包、合规报告放在同一个产品目录下。目录规范见 [输出目录和文件命名规范](../workflows/output-structure.md)。
 
 ### 5. 图片验收
 
