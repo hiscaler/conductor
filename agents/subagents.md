@@ -19,7 +19,7 @@
 | `positioning-agent` | 定位卖点 | 形成目标人群、场景、差异化和核心卖点 | 一句话定位、卖点矩阵 |
 | `listing-strategy-agent` | 上架策略 | 设计 SKU、价格、offer、物流和字段结构 | 上架策略、字段 checklist |
 | `copywriting-agent` | 文案生产 | 按平台生成标题、要点、描述、关键词、广告文案 | 平台适配文案包 |
-| `visual-production-agent` | 图片套图 | 按平台套图规则规划主图、卖点图、场景图、尺寸图、对比图等 | 平台化套图脚本、图片生成提示词、图片验收标准 |
+| `visual-production-agent` | 图片套图和图片生成 | 按平台套图规则规划图片，并在工具可用时生成图片 | 平台化套图脚本、图片生成提示词、图片文件路径、图片验收报告 |
 | `listing-qa-agent` | 上架验收 | 检查 listing 完整度、一致性和可发布状态 | 上架 QA 报告、阻塞项 |
 | `growth-review-agent` | 测试复盘 | 设计上架后测试指标和优化节奏 | 测试计划、复盘模板 |
 

@@ -65,11 +65,12 @@ Conductor 采用“指挥家 + 阶段子 agent”的结构。
 - 定位卖点
 - 上架策略
 - 文案生产
-- 图片套图
+- 图片套图和图片生成
 - 上架验收
 - 测试复盘
 
 完整子 agent 列表见 [指挥家子 Agent 体系](./agents/subagents.md)。
+图片生成能力见 [Visual Production Agent](./agents/visual-production-agent.md)。
 
 ## 支持的平台
 
@@ -96,6 +97,7 @@ Conductor 采用“指挥家 + 阶段子 agent”的结构。
 
 完整平台规则见 [平台画像](./platforms/platform-profiles.md)。
 平台套图规则见 [平台套图适配规则](./platforms/image-set-rules.md)。
+图片尺寸、比例和质量标准见 [平台图片技术规格](./platforms/image-technical-specs.md)。
 
 ## 如何使用
 
@@ -222,9 +224,12 @@ agents/
   cross-border-commerce-agent.md     指挥家 Agent 角色、流程和提示词
   cross-border-commerce-agent.json   指挥家 Agent 结构化配置
   subagents.md                       阶段子 agent 和调度规则
+  visual-production-agent.md         图片套图和图片生成 agent
 
 platforms/
   platform-profiles.md               不同电商平台的内容和上架规则
+  image-set-rules.md                 不同平台的套图结构和图片内容规则
+  image-technical-specs.md           不同平台的图片尺寸、比例、格式和质量建议
 
 templates/
   product-input.md                   产品输入模板
@@ -232,6 +237,9 @@ templates/
 
 workflows/
   product-to-listing.md              从选品到上架的完整流程
+
+output/
+  images/                            生成后的商品图片建议保存目录
 ```
 
 ## 使用原则

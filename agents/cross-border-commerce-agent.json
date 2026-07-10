@@ -61,6 +61,9 @@
       "decide_next_step"
     ]
   },
+  "subagents": {
+    "visual_production_agent": "./visual-production-agent.md"
+  },
   "outputs": [
     "input_summary",
     "missing_info_and_assumptions",
@@ -72,6 +75,8 @@
     "listing_strategy",
     "copy_assets",
     "image_set_script",
+    "generated_image_paths",
+    "image_quality_report",
     "compliance_check",
     "next_actions"
   ],
@@ -86,6 +91,7 @@
   "product_to_listing_workflow": "../workflows/product-to-listing.md",
   "platform_profiles": "../platforms/platform-profiles.md",
   "image_set_rules": "../platforms/image-set-rules.md",
+  "image_technical_specs": "../platforms/image-technical-specs.md",
   "prompt_file": "./cross-border-commerce-agent.md",
   "input_template": "../templates/product-input.md",
   "output_template": "../templates/production-output.md"
