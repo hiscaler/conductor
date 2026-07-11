@@ -1,0 +1,66 @@
+name: Build Conductor Desktop
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "Conductor.exe"
+      - "**.md"
+      - ".gitignore"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Generate app icons from logo
+        run: |
+          npm install
+          npm run gen-icon
+
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.10.2
+
+      - name: Build desktop exe
+        run: wails build
+
+      - name: Copy exe to repository root
+        shell: pwsh
+        run: |
+          Copy-Item -Force "build/bin/Conductor.exe" "Conductor.exe"
+          Get-Item "Conductor.exe" | Format-List FullName, Length, LastWriteTime
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Conductor
+          path: Conductor.exe
+
+      - name: Commit Conductor.exe to root
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Conductor.exe build/appicon.png build/windows/icon.ico
+          if (git diff --staged --quiet) {
+            Write-Host "No changes to commit"
+            exit 0
+          }
+          git commit -m "Chg: 更新 Conductor 桌面端"
+          git push

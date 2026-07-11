@@ -1,0 +1,20 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "Conductor",
+  "outputfilename": "Conductor",
+  "frontend:dir": "frontend",
+  "frontend:install": "",
+  "frontend:build": "",
+  "frontend:dev:watcher": "",
+  "author": {
+    "name": "hiscaler",
+    "email": ""
+  },
+  "info": {
+    "companyName": "Coor",
+    "productName": "Conductor",
+    "productVersion": "0.1.0",
+    "copyright": "Copyright Coor",
+    "comments": "AI 成果浏览器"
+  }
+}

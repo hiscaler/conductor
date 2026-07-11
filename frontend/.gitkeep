@@ -1,0 +1,1 @@
+# Keep this directory so Wails config validates; UI is served by Go AssetServer.Handler.
