@@ -13,3 +13,6 @@ $RECYCLE.BIN/
 
 # Editor
 .idea
+
+# Go
+.gocache/

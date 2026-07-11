@@ -518,6 +518,43 @@ output/Temu/宠物用品/可折叠宠物饮水杯/
 
 这样同一个产品的文案、图片、QA、合规和测试材料都会放在一起。
 
+## 本地输出浏览器
+
+项目内置一个 Go 写的本地文件浏览器，用来查看 `output` 目录下生成的内容。
+
+启动命令：
+
+```bash
+go run ./cmd/output-browser
+```
+
+默认访问地址：
+
+```text
+http://127.0.0.1:8080
+```
+
+功能：
+
+- 左侧显示 `output` 目录树。
+- 点击左侧目录，右侧显示目录内容。
+- 点击 Markdown 文件，右侧直接预览文案、QA 报告、合规报告等内容。
+- 点击图片文件，右侧直接预览图片。
+- 点击视频文件，右侧使用浏览器播放器预览视频。
+- 访问范围限制在 `output` 目录内，避免读取项目其他文件。
+
+如果需要修改端口：
+
+```bash
+go run ./cmd/output-browser -addr 127.0.0.1:8090
+```
+
+如果需要指定其他输出目录：
+
+```bash
+go run ./cmd/output-browser -root output
+```
+
 ## 示例输入
 
 ```text
@@ -563,6 +600,9 @@ agents/
   cross-border-commerce-agent.json   Conductor Agent 结构化配置
   subagents.md                       阶段子 agent 和调度规则
   visual-production-agent.md         图片套图和图片生成 agent
+
+cmd/
+  output-browser/                    本地 output 文件浏览器
 
 platforms/
   platform-profiles.md               不同电商平台的内容和上架规则
