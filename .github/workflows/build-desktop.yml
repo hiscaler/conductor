@@ -3,10 +3,21 @@ name: Build Conductor Desktop
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - "Conductor.exe"
-      - "**.md"
-      - ".gitignore"
+    # 仅程序相关路径变更时构建；纯 Markdown / 文档 / Agent 配置变更不触发
+    paths:
+      - "main.go"
+      - "go.mod"
+      - "go.sum"
+      - "wails.json"
+      - "internal/**"
+      - "assets/**"
+      - "frontend/**"
+      - "build/appicon.png"
+      - "build/windows/**"
+      - "scripts/gen-icon.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/build-desktop.yml"
   workflow_dispatch:
 
 permissions:
