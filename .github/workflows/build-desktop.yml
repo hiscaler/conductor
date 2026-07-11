@@ -72,6 +72,5 @@ jobs:
             Write-Host "No changes to commit"
             exit 0
           }
-          # [skip ci] 防止回写 exe 再次触发工作流
-          git commit -m "Chg: 更新 Conductor.exe [skip ci]"
+          git commit -m "Chg: 更新 Conductor.exe"
           git push
