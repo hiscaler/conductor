@@ -530,43 +530,9 @@ output/Temu/宠物用品/可折叠宠物饮水杯/
 
 需要 Windows 10/11，并已安装 WebView2（多数系统已自带）。
 
-推送到 `main` 后，GitHub Actions 会自动构建并把最新 `Conductor.exe` 提交到仓库根目录。
+程序相关代码推送到 `main` 后，GitHub Actions 会自动构建并把最新 `Conductor.exe` 提交到仓库根目录（纯 Markdown 变更不会触发）。
 
-### 开发者
-
-桌面窗口（默认）：
-
-```bash
-wails dev
-# 或
-go run -tags desktop,dev .
-```
-
-纯 HTTP 模式（用系统浏览器访问）：
-
-```bash
-go run . -web
-```
-
-默认地址：`http://127.0.0.1:8080`
-
-指定目录或端口：
-
-```bash
-go run . -web -addr 127.0.0.1:8090
-go run . -web -root output
-```
-
-构建可双击的便携程序：
-
-```bash
-npm install
-npm run gen-icon   # 用 assets/favicon.svg 生成 exe 图标
-wails build
-Copy-Item build/bin/Conductor.exe .\Conductor.exe
-```
-
-产物在仓库根目录 `Conductor.exe`（同时也会生成在 `build/bin/Conductor.exe`）。
+开发、调试与本地构建说明见 [桌面端开发说明](./docs/desktop-development.md)。
 
 功能：
 
@@ -651,6 +617,9 @@ workflows/
 
 output/
   {目标平台}/{产品类目}/{产品名称}/     同一产品的所有交付物统一保存目录
+
+docs/
+  desktop-development.md             桌面端开发、调试与构建说明
 ```
 
 ## 使用原则
