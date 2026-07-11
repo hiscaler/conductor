@@ -525,7 +525,7 @@ output/Temu/宠物用品/可折叠宠物饮水杯/
 启动命令：
 
 ```bash
-go run ./cmd/output-browser
+go run .
 ```
 
 默认访问地址：
@@ -547,13 +547,13 @@ http://127.0.0.1:8080
 如果需要修改端口：
 
 ```bash
-go run ./cmd/output-browser -addr 127.0.0.1:8090
+go run . -addr 127.0.0.1:8090
 ```
 
 如果需要指定其他输出目录：
 
 ```bash
-go run ./cmd/output-browser -root output
+go run . -root output
 ```
 
 ## 示例输入
@@ -602,8 +602,7 @@ agents/
   subagents.md                       阶段子 agent 和调度规则
   visual-production-agent.md         图片套图和图片生成 agent
 
-cmd/
-  output-browser/                    本地 output 文件浏览器
+main.go                              本地 output 文件浏览器
 
 assets/
   coor-logo.svg                      Coor 浏览器 logo
