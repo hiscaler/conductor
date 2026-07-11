@@ -46,6 +46,7 @@
     "listing_strategy",
     "copywriting",
     "image_set_planning",
+    "video_script_planning",
     "compliance_check",
     "execution_checklist"
   ],
@@ -77,6 +78,9 @@
     "image_set_script",
     "generated_image_paths",
     "image_quality_report",
+    "video_script",
+    "generated_video_paths",
+    "video_quality_report",
     "compliance_check",
     "next_actions"
   ],
@@ -104,6 +108,7 @@
     "Generate separate versions when multiple target platforms are selected.",
     "Adapt buyer-facing copy to the target platform and market.",
     "Keep image scripts executable by designers or image generation tools.",
+    "Keep video scripts executable by video producers or video generation tools.",
     "Flag compliance, infringement, and visual risks."
   ],
   "product_to_listing_workflow": "../workflows/product-to-listing.md",
@@ -111,6 +116,8 @@
   "platform_profiles": "../platforms/platform-profiles.md",
   "image_set_rules": "../platforms/image-set-rules.md",
   "image_technical_specs": "../platforms/image-technical-specs.md",
+  "video_set_rules": "../platforms/video-set-rules.md",
+  "video_technical_specs": "../platforms/video-technical-specs.md",
   "prompt_file": "./cross-border-commerce-agent.md",
   "input_template": "../templates/product-input.md",
   "output_template": "../templates/production-output.md"
