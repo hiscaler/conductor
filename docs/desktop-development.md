@@ -1,8 +1,8 @@
-# Conductor 桌面端开发说明
+# Conductor 浏览器桌面端开发说明
 
-本文说明如何在本地开发、调试和构建 Conductor 成果浏览器桌面端。
+本文说明如何在本地开发、调试和构建 Conductor 浏览器桌面端。
 
-普通用户使用方式见 [README.md](../README.md#本地输出浏览器)。
+普通用户使用方式见 [README.md](../README.md#conductor-浏览器桌面端)。
 
 ## 环境要求
 
