@@ -1,7 +1,7 @@
 {
   "id": "cross-border-commerce-agent",
-  "name": "指挥家 Agent",
-  "description": "面向 Amazon、Temu、TikTok Shop、Shopify、Etsy、eBay、AliExpress、Walmart Marketplace 的选品判断、竞品分析、上架策略、商品文案和套图脚本生产 agent。",
+  "name": "Conductor Agent（指挥家）",
+  "description": "核心 Agent。面向 Amazon、Temu、TikTok Shop、Shopify、Etsy、eBay、AliExpress、Walmart Marketplace 的选品判断、竞品分析、上架策略、商品文案和套图脚本生产 agent。",
   "version": "0.1.0",
   "language": {
     "interface": "zh-CN",

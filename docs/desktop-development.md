@@ -60,11 +60,11 @@ Copy-Item build/bin/Conductor.exe .\Conductor.exe
 
 ## 自动构建
 
-推送到 `main`，且变更命中程序相关路径（如 `main.go`、`internal/`、`assets/`、`wails.json` 等）时，GitHub Actions 会构建。纯 Markdown / Agent 文档变更不会触发。流水线会：
+推送到 `main`，且变更命中程序源码路径（如 `main.go`、`internal/`、`assets/`、`wails.json` 等）时，GitHub Actions 会构建。纯 Markdown / Agent 文档变更不会触发；构建完成后回写的 `Conductor.exe` 带 `[skip ci]`，也不会再次触发。流水线会：
 
 1. 根据 `assets/favicon.svg` 生成图标
 2. 执行 `wails build`
-3. 将 `Conductor.exe` 放到仓库根目录并提交
+3. 将 `Conductor.exe` 放到仓库根目录并提交（`[skip ci]`）
 4. 同时上传 Actions Artifact
 
 工作流文件：[`.github/workflows/build-desktop.yml`](../.github/workflows/build-desktop.yml)

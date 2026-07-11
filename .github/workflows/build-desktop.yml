@@ -3,7 +3,8 @@ name: Build Conductor Desktop
 on:
   push:
     branches: [main]
-    # 仅程序相关路径变更时构建；纯 Markdown / 文档 / Agent 配置变更不触发
+    # 仅程序源码变更时构建。不要把 build/**、Conductor.exe 列入 paths，
+    # 否则 bot 回写产物会再次触发，形成循环。
     paths:
       - "main.go"
       - "go.mod"
@@ -12,8 +13,6 @@ on:
       - "internal/**"
       - "assets/**"
       - "frontend/**"
-      - "build/appicon.png"
-      - "build/windows/**"
       - "scripts/gen-icon.mjs"
       - "package.json"
       - "package-lock.json"
@@ -68,10 +67,11 @@ jobs:
         run: |
           git config user.name "bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Conductor.exe build/appicon.png build/windows/icon.ico
+          git add Conductor.exe
           if (git diff --staged --quiet) {
             Write-Host "No changes to commit"
             exit 0
           }
-          git commit -m "Chg: 更新 Conductor 桌面端"
+          # [skip ci] 防止回写 exe 再次触发工作流
+          git commit -m "Chg: 更新 Conductor.exe [skip ci]"
           git push

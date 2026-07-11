@@ -1,28 +1,26 @@
 # Conductor
 
-Conductor 是一个面向跨境电商的 AI 商品增长编排框架。
+Conductor 是面向跨境电商的 AI 选品到上架工作流。
 
-它的目标不是只生成一段商品文案，而是把一个产品想法、产品资料或产品链接，拆解成从选品判断到平台上架、内容生产和测试复盘的一整套执行流程。
+它的目标不是只生成一段商品文案，而是把一个产品想法、产品资料或产品链接，拆解成从选品判断到平台上架、内容生产和测试复盘的一整套可执行流程。
 
-当前核心 agent：
+当前核心 Agent：**Conductor Agent（指挥家）**。后文简称**核心 Agent**。
 
-- **Conductor Agent**
-
-Conductor 负责流程处理和任务编排，不负责亲自完成所有专业工作。它会判断当前阶段，分派给对应子 agent，汇总结果，检查风险，并给出下一步动作。
+核心 Agent 负责流程处理和任务编排，不负责亲自完成所有专业工作。它会判断当前阶段，分派给对应子 Agent，汇总结果，检查风险，并给出下一步动作。
 
 ## 如何开始
 
 Conductor 分两块能力，运行方式不同：
 
 1. **Agent 编排（选品 → 上架内容生产）**  
-   需要在 **Codex** 中打开本仓库使用。按 [指挥家 Agent](./agents/cross-border-commerce-agent.md) 与相关工作流推进；产出默认写入 `output/`。  
+   需要在 **Codex** 中打开本仓库使用。按 [核心 Agent](./agents/cross-border-commerce-agent.md) 与相关工作流推进；产出默认写入 `output/`。  
    当前推荐与测试环境是 Codex；这不是独立安装的桌面 Agent，也不是双击 `Conductor.exe` 就会自动跑编排。
 
 2. **浏览器桌面端（可选，加速验收）**  
    使用仓库根目录的 `Conductor.exe`（免安装，双击即可）。该工具不依赖 Codex。  
    不是必需：你也可以直接用系统资源管理器打开 `output/` 查看文件；桌面端主要用来更方便地预览、复制文案和提升验收效率。
 
-建议流程：先在 Codex 里跑 Conductor Agent 生成交付物 → 再用系统文件夹或 `Conductor.exe` 查看和验收。
+建议流程：先在 Codex 里跑核心 Agent 生成交付物 → 再用系统文件夹或 `Conductor.exe` 查看和验收。
 
 ## 适合谁使用
 
@@ -56,14 +54,14 @@ Conductor 把跨境电商从选品到上架拆成 12 个节点：
 
 ## Agent 架构
 
-Conductor 采用“主 Agent + 阶段子 Agent”的结构。
+Conductor 采用“核心 Agent + 阶段子 Agent”的结构。
 
-主 Agent 负责：
+核心 Agent 负责：
 
 - 判断用户当前处于哪个阶段。
-- 决定应该调用哪些子 agent。
+- 决定应该调用哪些子 Agent。
 - 把上一个阶段的结论传给下一个阶段。
-- 检查子 agent 的输出是否可执行。
+- 检查子 Agent 的输出是否可执行。
 - 在信息不足或风险过高时暂停推进。
 - 汇总最终结果，给出下一步执行清单。
 
@@ -83,7 +81,7 @@ Conductor 采用“主 Agent + 阶段子 Agent”的结构。
 - 上架验收
 - 测试复盘
 
-完整子 agent 列表见 [Conductor 子 Agent 体系](./agents/subagents.md)。
+完整子 Agent 列表见 [核心 Agent 子 Agent 体系](./agents/subagents.md)。
 图片和视频生成能力见 [Visual Production Agent](./agents/visual-production-agent.md)。
 
 ## 支持的平台
@@ -119,9 +117,9 @@ Conductor 采用“主 Agent + 阶段子 Agent”的结构。
 
 ### 1. 先判断你处在哪个场景
 
-不是每次都需要从选品开始。你可以按当前业务状态直接发起任务，Conductor 会自动跳过不需要的阶段。
+不是每次都需要从选品开始。你可以按当前业务状态直接发起任务，核心 Agent 会自动跳过不需要的阶段。
 
-| 场景 | 你已经有什么 | 适合让 Conductor 做什么 | 会跳过什么 |
+| 场景 | 你已经有什么 | 适合让核心 Agent 做什么 | 会跳过什么 |
 | --- | --- |-------------------| --- |
 | 只有产品想法 | 一个品类或产品概念 | 判断是否值得做、适合哪个平台    | 文案和图片生成可以暂缓 |
 | 已经有产品 | 产品名称、规格、材质、供应商 | 直接输出平台文案、关键词和套图脚本 | 可跳过选品来源和部分需求验证 |
@@ -150,7 +148,7 @@ Conductor 采用“主 Agent + 阶段子 Agent”的结构。
 - 供货方式或采购状态
 - 产品图片、链接或外观描述
 
-如果资料不完整也可以开始，Conductor 会先整理缺失信息，并标注哪些内容只能作为假设。
+如果资料不完整也可以开始，核心 Agent 会先整理缺失信息，并标注哪些内容只能作为假设。
 
 ### 3. 按场景发起任务
 
@@ -164,7 +162,7 @@ Conductor 采用“主 Agent + 阶段子 Agent”的结构。
 请先判断这个产品是否值得做，适合哪些平台，并列出需要补充的信息。
 ```
 
-Conductor 通常会调度：
+核心 Agent 通常会调度：
 
 ```text
 intake-agent
@@ -200,7 +198,7 @@ intake-agent
 请直接输出 Temu 标题、描述、关键词和 7 张图脚本。
 ```
 
-Conductor 通常会调度：
+核心 Agent 通常会调度：
 
 ```text
 intake-agent
@@ -237,7 +235,7 @@ intake-agent
 ...
 ```
 
-Conductor 会只读取目标平台画像和图片规则，不再做平台优先级比较。
+核心 Agent 会只读取目标平台画像和图片规则，不再做平台优先级比较。
 
 常见产物：
 
@@ -263,7 +261,7 @@ Conductor 会只读取目标平台画像和图片规则，不再做平台优先�
 ...
 ```
 
-Conductor 通常会调度：
+核心 Agent 通常会调度：
 
 ```text
 intake-agent
@@ -275,7 +273,7 @@ intake-agent
 
 注意：
 
-- 如果没有联网或页面不可访问，Conductor 不能假装调研成功。
+- 如果没有联网或页面不可访问，核心 Agent 不能假装调研成功。
 - 没有真实竞品数据时，只输出竞品调研清单。
 
 #### 场景 E：只保存文案，不生成图片
@@ -386,7 +384,7 @@ output/{目标平台}/{产品类目}/{产品名称}/视频/视频验收报告.md
 ...
 ```
 
-Conductor 通常会调度：
+核心 Agent 通常会调度：
 
 ```text
 listing-qa-agent
@@ -416,7 +414,7 @@ listing-qa-agent
 广告花费：
 ```
 
-Conductor 通常会调度：
+核心 Agent 通常会调度：
 
 ```text
 growth-review-agent
@@ -431,9 +429,9 @@ growth-review-agent
 - 标题/价格/卖点 A/B 测试计划
 - 是否补货、降价、换图或下架建议
 
-### 4. Conductor 分派子 agent
+### 4. 核心 Agent 分派子 Agent
 
-Conductor 会根据阶段自动决定执行链路。
+核心 Agent 会根据阶段自动决定执行链路。
 
 推荐链路：
 
@@ -455,7 +453,7 @@ intake-agent
 
 `production-output.md` 是强制输出契约，不是参考模板。最终结果必须保留模板里的所有章节、表格和字段；缺失信息写“未提供”或“待确认”，不适用内容写“不适用”。
 
-最后一节“下一步执行清单”会同时给出文字说明和可执行动作。理想交互是弹出“选择下一步动作”的对话框，用户直接点选 `保存文案资产`、`生成主图`、`生成整套图片`、`保存视频脚本`、`生成主视频` 等动作，Conductor 再调度对应子 agent。只有运行环境不支持弹窗时，才退回输入数字序号的方式，例如输入 `1` 或 `1,2`。
+最后一节“下一步执行清单”会同时给出文字说明和可执行动作。理想交互是弹出“选择下一步动作”的对话框，用户直接点选 `保存文案资产`、`生成主图`、`生成整套图片`、`保存视频脚本`、`生成主视频` 等动作，核心 Agent 再调度对应子 Agent。只有运行环境不支持弹窗时，才退回输入数字序号的方式，例如输入 `1` 或 `1,2`。
 
 一次完整产出通常包含：
 
@@ -590,7 +588,7 @@ output/Temu/宠物用品/可折叠宠物饮水杯/
 
 ## 示例输出方向
 
-Conductor 会先判断：
+核心 Agent 会先判断：
 
 - 是否需要补充认证、材质证明、包装尺寸和采购价。
 - 这个产品在 Amazon 是否面临同质化和评价门槛。
@@ -612,9 +610,9 @@ Conductor 会先判断：
 
 ```text
 agents/
-  cross-border-commerce-agent.md     Conductor Agent 角色、流程和提示词
-  cross-border-commerce-agent.json   Conductor Agent 结构化配置
-  subagents.md                       阶段子 agent 和调度规则
+  cross-border-commerce-agent.md     核心 Agent（Conductor Agent / 指挥家）角色与提示词
+  cross-border-commerce-agent.json   核心 Agent 结构化配置
+  subagents.md                       阶段子 Agent 和调度规则
   visual-production-agent.md         图片套图和图片生成 agent
 
 main.go                              Conductor 桌面入口（Wails）
