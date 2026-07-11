@@ -5,15 +5,19 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log"
 	"mime"
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/hiscaler/conductor/assets"
 )
 
 type node struct {
@@ -37,6 +41,9 @@ type fileInfo struct {
 
 // main 启动本地 HTTP 服务，用于浏览生成的 output 产物。
 func main() {
+	// Windows 注册表常把 .svg 标成 image/svg，浏览器无法作为图片渲染。
+	_ = mime.AddExtensionType(".svg", "image/svg+xml")
+
 	addr := flag.String("addr", "127.0.0.1:8080", "listen address")
 	root := flag.String("root", "output", "directory to browse")
 	flag.Parse()
@@ -54,7 +61,9 @@ func main() {
 	mux.HandleFunc("/", app.index)
 	mux.HandleFunc("/api/tree", app.tree)
 	mux.HandleFunc("/api/file", app.file)
+	mux.HandleFunc("/api/readme", app.readme)
 	mux.HandleFunc("/raw", app.raw)
+	mux.HandleFunc("/assets/", app.asset)
 
 	log.Printf("Output browser serving %s", absRoot)
 	log.Printf("Open http://%s", *addr)
@@ -138,6 +147,33 @@ func (s *server) file(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, out)
 }
 
+// readme 返回项目 README.md，方便用户在浏览器内查看使用说明。
+func (s *server) readme(w http.ResponseWriter, r *http.Request) {
+	readmePath, err := findReadme(s.root)
+	if err != nil {
+		writeError(w, err, http.StatusNotFound)
+		return
+	}
+	info, err := os.Stat(readmePath)
+	if err != nil {
+		writeError(w, err, http.StatusNotFound)
+		return
+	}
+	data, err := os.ReadFile(readmePath)
+	if err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, fileInfo{
+		Name:    "README.md",
+		Path:    "README.md",
+		Type:    "markdown",
+		Size:    info.Size(),
+		ModTime: info.ModTime().Format(time.RFC3339),
+		Content: string(data),
+	})
+}
+
 // raw 从 output 根目录流式返回图片、视频等二进制文件。
 func (s *server) raw(w http.ResponseWriter, r *http.Request) {
 	rel := r.URL.Query().Get("path")
@@ -155,6 +191,31 @@ func (s *server) raw(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", ct)
 	}
 	http.ServeFile(w, r, full)
+}
+
+// asset 返回内嵌静态资源，并强制正确的 SVG MIME，避免浏览器把 logo 当作下载文件。
+func (s *server) asset(w http.ResponseWriter, r *http.Request) {
+	name := strings.TrimPrefix(r.URL.Path, "/assets/")
+	name = path.Clean("/" + name)
+	name = strings.TrimPrefix(name, "/")
+	if name == "" || name == "." {
+		http.NotFound(w, r)
+		return
+	}
+	data, err := fs.ReadFile(assets.FS, name)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	ext := strings.ToLower(path.Ext(name))
+	if ext == ".svg" {
+		w.Header().Set("Content-Type", "image/svg+xml; charset=utf-8")
+	} else if ct := mime.TypeByExtension(ext); ct != "" {
+		w.Header().Set("Content-Type", ct)
+	}
+	w.Header().Set("Content-Disposition", "inline")
+	w.Header().Set("Cache-Control", "public, max-age=3600")
+	_, _ = w.Write(data)
 }
 
 // readDir 递归读取相对目录，并生成目录树节点。
@@ -227,6 +288,24 @@ func (s *server) clean(rel string) (string, error) {
 	return abs, nil
 }
 
+// findReadme 从 output 根目录向上查找项目 README.md。
+func findReadme(start string) (string, error) {
+	dir := start
+	for {
+		candidate := filepath.Join(dir, "README.md")
+		info, err := os.Stat(candidate)
+		if err == nil && !info.IsDir() {
+			return candidate, nil
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+	return "", os.ErrNotExist
+}
+
 // kindFor 根据文件扩展名判断前端可用的预览类型。
 func kindFor(path string) string {
 	ext := strings.ToLower(filepath.Ext(path))
@@ -269,68 +348,123 @@ const indexHTML = `<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Conductor 输出浏览器</title>
+  <title>Conductor 浏览器</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    :root { color-scheme: light; --line:#e5e7eb; --muted:#6b7280; --bg:#f8fafc; --panel:#ffffff; --accent:#2563eb; }
-    * { box-sizing: border-box; }
-    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:#111827; }
-    header { height:52px; display:flex; align-items:center; gap:12px; padding:0 18px; border-bottom:1px solid var(--line); background:var(--panel); }
-    header strong { font-size:16px; }
-    header span { color:var(--muted); font-size:13px; }
-    main { display:grid; grid-template-columns: 330px 1fr; height:calc(100vh - 52px); }
-    aside { border-right:1px solid var(--line); background:var(--panel); overflow:auto; padding:12px; }
-    section { overflow:auto; padding:22px; }
-    .toolbar { display:flex; gap:8px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
-    .toolbar label { color:var(--muted); font-size:13px; display:flex; align-items:center; gap:5px; }
-    button { border:1px solid var(--line); background:#fff; padding:7px 10px; border-radius:6px; cursor:pointer; }
-    button:hover { border-color:#bfdbfe; color:var(--accent); }
+    html, body { overflow-x:hidden; }
     .tree, .tree ul { list-style:none; margin:0; padding-left:14px; }
     .tree { padding-left:0; }
-    .node { display:flex; align-items:center; gap:7px; width:100%; border:0; background:transparent; text-align:left; padding:5px 6px; border-radius:6px; font-size:14px; }
-    .node:hover, .node.active { background:#eff6ff; color:#1d4ed8; }
-    .twisty { width:16px; color:var(--muted); text-align:center; }
-    .icon { width:18px; text-align:center; color:var(--muted); }
     .collapsed > ul { display:none; }
-    .meta { color:var(--muted); font-size:12px; margin-left:auto; }
-    .empty { color:var(--muted); padding:24px; border:1px dashed var(--line); border-radius:8px; background:#fff; }
-    .card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:18px; max-width:1100px; }
-    .file-title { display:flex; align-items:baseline; gap:12px; margin:0 0 14px; }
-    .file-title h1 { font-size:20px; margin:0; }
-    .file-title small { color:var(--muted); }
-    .preview img { max-width:100%; height:auto; border:1px solid var(--line); border-radius:8px; background:#fff; }
-    .preview video { max-width:100%; border:1px solid var(--line); border-radius:8px; background:#000; }
-    pre { white-space:pre-wrap; word-break:break-word; background:#0f172a; color:#e5e7eb; padding:16px; border-radius:8px; overflow:auto; }
-    .markdown { line-height:1.7; }
+    .markdown { line-height:1.7; min-width:0; overflow-wrap:anywhere; word-break:break-word; }
+    .markdown-shell { display:grid; grid-template-columns:minmax(0, 1fr) 220px; gap:18px; align-items:start; min-width:0; }
     .copyable { position:relative; padding-right:42px; }
-    .copy-btn { position:absolute; right:0; top:0.15em; border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:5px; padding:2px 6px; font-size:12px; opacity:0; }
+    .copy-btn { position:absolute; right:0; top:0.15em; border:1px solid rgb(51 65 85); background:rgb(15 23 42); color:rgb(148 163 184); border-radius:5px; padding:2px 6px; font-size:12px; opacity:0; }
     .copyable:hover .copy-btn { opacity:1; }
-    .copy-btn:hover { color:var(--accent); border-color:#bfdbfe; }
-    .markdown h1, .markdown h2, .markdown h3 { line-height:1.25; margin-top:1.2em; }
-    .markdown h1 { font-size:24px; border-bottom:1px solid var(--line); padding-bottom:8px; }
-    .markdown h2 { font-size:20px; border-bottom:1px solid var(--line); padding-bottom:6px; }
+    .copy-btn:hover { color:rgb(37 99 235); border-color:rgb(191 219 254); }
+    .markdown h1, .markdown h2, .markdown h3 { line-height:1.25; margin-top:1.2em; scroll-margin-top:18px; }
+    .markdown h1 { font-size:24px; border-bottom:1px solid rgb(51 65 85); padding-bottom:8px; }
+    .markdown h2 { font-size:20px; border-bottom:1px solid rgb(51 65 85); padding-bottom:6px; }
     .markdown h3 { font-size:16px; }
-    .markdown code { background:#f1f5f9; padding:2px 4px; border-radius:4px; }
-    .markdown table { border-collapse:collapse; width:100%; margin:12px 0; }
-    .markdown th, .markdown td { border:1px solid var(--line); padding:8px; vertical-align:top; }
-    .markdown th { background:#f8fafc; }
-    @media (max-width: 800px) { main { grid-template-columns: 1fr; } aside { height:38vh; border-right:0; border-bottom:1px solid var(--line); } section { height:calc(62vh - 52px); } }
+    .markdown code { background:rgb(30 41 59); padding:2px 4px; border-radius:4px; }
+    .markdown pre { white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; }
+    .markdown table { border-collapse:collapse; width:100%; margin:12px 0; table-layout:fixed; }
+    .markdown th, .markdown td { border:1px solid rgb(51 65 85); padding:8px; vertical-align:top; }
+    .markdown th, .markdown td { overflow-wrap:anywhere; word-break:break-word; }
+    .markdown th { background:rgb(15 23 42); }
+    @media (max-width: 1050px) { .markdown-shell { grid-template-columns:1fr; } .toc { position:static; max-height:none; order:-1; } }
+    .header-actions {
+      display:flex; align-items:center; gap:2px;
+      font-size:13px; letter-spacing:0.01em;
+    }
+    .header-actions > * + * { margin-left:2px; }
+    .header-link {
+      display:inline-flex; align-items:center; gap:7px;
+      padding:6px 10px; border:0; background:transparent; cursor:pointer;
+      color:rgb(148 163 184); font:inherit; line-height:1;
+      border-radius:6px; transition:color .15s ease, background .15s ease;
+    }
+    .header-link:hover { color:rgb(224 242 254); background:rgb(148 163 184 / 0.08); }
+    .header-link:focus-visible { outline:1px solid rgb(56 189 248 / 0.5); outline-offset:2px; }
+    .header-link svg { width:15px; height:15px; stroke-width:1.6; opacity:.85; }
+    .header-link:hover svg { opacity:1; }
+    .header-sep {
+      width:1px; height:14px; margin:0 8px;
+      background:rgb(51 65 85 / 0.9);
+    }
+    .header-auto {
+      display:inline-flex; align-items:center; gap:9px;
+      padding:4px 4px 4px 10px; cursor:pointer;
+      color:rgb(100 116 139); font:inherit; line-height:1;
+      transition:color .15s ease;
+    }
+    .header-auto:hover { color:rgb(148 163 184); }
+    .header-auto:has(input:checked) { color:rgb(186 230 253); }
+    .header-auto input {
+      appearance:none; width:30px; height:16px; margin:0; flex-shrink:0;
+      border-radius:999px; background:rgb(51 65 85);
+      box-shadow:inset 0 0 0 1px rgb(71 85 105 / 0.6);
+      position:relative; cursor:pointer; transition:background .18s ease, box-shadow .18s ease;
+    }
+    .header-auto input::after {
+      content:""; position:absolute; top:2px; left:2px;
+      width:12px; height:12px; border-radius:50%;
+      background:rgb(226 232 240);
+      box-shadow:0 1px 2px rgb(0 0 0 / 0.35);
+      transition:transform .18s ease, background .18s ease;
+    }
+    .header-auto input:checked {
+      background:rgb(14 165 233);
+      box-shadow:inset 0 0 0 1px rgb(56 189 248 / 0.35);
+    }
+    .header-auto input:checked::after {
+      transform:translateX(14px); background:white;
+    }
+    .header-auto #refreshState {
+      min-width:2.75rem; color:inherit; opacity:.72;
+      font-variant-numeric:tabular-nums; font-size:12px;
+    }
+    .header-auto:not(:has(input:checked)) #refreshState { opacity:.45; }
+    @media (max-width: 640px) {
+      header { height:auto; min-height:3.5rem; padding-top:10px; padding-bottom:10px; flex-wrap:wrap; }
+      .header-link span, .header-auto > span:first-of-type { display:none; }
+      .header-sep { margin:0 4px; }
+      .header-link { padding:6px 8px; }
+    }
   </style>
 </head>
-<body>
-<header>
-  <strong>Conductor 浏览器</strong>
-</header>
-<main>
-  <aside>
-    <div class="toolbar">
-      <button onclick="loadTree()">刷新</button>
-      <label><input id="autoRefresh" type="checkbox" checked onchange="toggleAutoRefresh()"> 自动刷新</label>
-      <span id="refreshState">5 秒</span>
+<body class="bg-slate-950 text-slate-100">
+<header class="flex h-14 items-center justify-between gap-4 border-b border-slate-800 bg-slate-900 px-5">
+  <div class="flex min-w-0 items-center gap-3">
+    <img class="h-9 w-auto shrink-0" src="/assets/coor-logo.svg" alt="Coor">
+    <div class="min-w-0 leading-tight">
+      <strong class="block text-[15px] tracking-wide text-slate-100">浏览器</strong>
+      <span class="hidden text-xs text-slate-400 sm:block">AI 成果浏览</span>
     </div>
+  </div>
+  <nav class="header-actions" aria-label="工具">
+    <button class="header-link" type="button" onclick="openReadme()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8 4.5h6.2L17.5 7.8V19.5H8z"/><path stroke-linecap="round" d="M10.2 11h3.8M10.2 14.2h3.8"/></svg>
+      <span>使用说明</span>
+    </button>
+    <button class="header-link" type="button" onclick="loadTree()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.8 12a7.2 7.2 0 0 1 12.3-5.1M19.2 12a7.2 7.2 0 0 1-12.3 5.1"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.8 4.2V8h-3.8M7.2 19.8V16h3.8"/></svg>
+      <span>刷新</span>
+    </button>
+    <span class="header-sep" aria-hidden="true"></span>
+    <label class="header-auto" title="自动刷新目录树">
+      <span>自动刷新</span>
+      <span id="refreshState">5 秒</span>
+      <input id="autoRefresh" type="checkbox" checked onchange="toggleAutoRefresh()">
+    </label>
+  </nav>
+</header>
+<main class="grid h-[calc(100vh-3.5rem)] grid-cols-[330px_minmax(0,1fr)] overflow-hidden max-[800px]:grid-cols-1 max-[640px]:h-[calc(100vh-4.5rem)]">
+  <aside class="overflow-auto border-r border-slate-800 bg-slate-900 p-3 max-[800px]:h-[38vh] max-[800px]:border-b max-[800px]:border-r-0">
     <ul id="tree" class="tree"></ul>
   </aside>
-  <section>
-    <div id="content" class="empty">请选择左侧文件或目录。</div>
+  <section class="min-w-0 overflow-auto overflow-x-hidden p-6 max-[800px]:h-[calc(62vh-3.5rem)]">
+    <div id="content" class="rounded-lg border border-dashed border-slate-700 bg-slate-900 p-6 text-slate-400">请选择左侧文件或目录。</div>
   </section>
 </main>
 <script>
@@ -338,9 +472,23 @@ let activePath = "";
 let refreshTimer = null;
 let expandedPaths = new Set();
 
+// openReadme 加载项目 README，作为用户使用说明预览。
+async function openReadme() {
+  activePath = "__readme__";
+  markActive();
+  const res = await fetch("/api/readme");
+  if (!res.ok) {
+    document.getElementById("content").innerHTML = "<div class='rounded-lg border border-dashed border-slate-700 bg-slate-900 p-6 text-slate-400'>README.md 读取失败</div>";
+    return;
+  }
+  const data = await res.json();
+  renderContent(data);
+}
+
 // loadTree 刷新左侧目录树，并保留展开状态和当前选中项。
 async function loadTree() {
   const res = await fetch("/api/tree");
+  if (!res.ok) return;
   const data = await res.json();
   rememberExpanded();
   document.getElementById("tree").innerHTML = renderChildren(data.children || [], 1);
@@ -355,13 +503,13 @@ function renderChildren(children, depth) {
 // renderNode 渲染左侧树中的单个文件或目录节点。
 function renderNode(n, depth) {
   const icon = n.type === "dir" ? "📁" : iconFor(n.type);
-  const meta = n.type === "dir" ? "" : "<span class='meta'>" + formatSize(n.size || 0) + "</span>";
+  const meta = n.type === "dir" ? "" : "<span class='ml-auto text-xs text-slate-400'>" + formatSize(n.size || 0) + "</span>";
   const hasChildren = n.type === "dir" && n.children && n.children.length;
   const shouldCollapse = hasChildren && depth >= 2 && !expandedPaths.has(n.path);
   const liClass = shouldCollapse ? " class='collapsed'" : "";
-  const twisty = hasChildren ? "<span class='twisty'>" + (shouldCollapse ? "▶" : "▼") + "</span>" : "<span class='twisty'></span>";
+  const twisty = hasChildren ? "<span class='twisty w-4 text-center text-slate-400'>" + (shouldCollapse ? "▶" : "▼") + "</span>" : "<span class='w-4'></span>";
   const child = hasChildren ? "<ul>" + renderChildren(n.children, depth + 1) + "</ul>" : "";
-  return "<li" + liClass + "><button class='node' data-path='" + escAttr(n.path) + "' onclick='handleNodeClick(event,\"" + escJS(n.path) + "\"," + (hasChildren ? "true" : "false") + ")'>" + twisty + "<span class='icon'>" + icon + "</span><span>" + esc(n.name) + "</span>" + meta + "</button>" + child + "</li>";
+  return "<li" + liClass + "><button class='node flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-slate-200 hover:bg-slate-800 hover:text-blue-300' data-path='" + escAttr(n.path) + "' onclick='handleNodeClick(event,\"" + escJS(n.path) + "\"," + (hasChildren ? "true" : "false") + ")'>" + twisty + "<span class='w-5 text-center text-slate-400'>" + icon + "</span><span>" + esc(n.name) + "</span>" + meta + "</button>" + child + "</li>";
 }
 
 // iconFor 根据文件类型选择显示图标。
@@ -401,7 +549,11 @@ function rememberExpanded() {
 
 // markActive 高亮左侧当前选中的文件或目录。
 function markActive() {
-  document.querySelectorAll(".node").forEach(el => el.classList.toggle("active", el.dataset.path === activePath));
+  document.querySelectorAll(".node").forEach(el => {
+    const active = el.dataset.path === activePath;
+    el.classList.toggle("bg-slate-800", active);
+    el.classList.toggle("text-blue-300", active);
+  });
 }
 
 // openPath 加载选中路径的元信息和预览内容。
@@ -410,7 +562,7 @@ async function openPath(path) {
   markActive();
   const res = await fetch("/api/file?path=" + encodeURIComponent(path));
   if (!res.ok) {
-    document.getElementById("content").innerHTML = "<div class='empty'>读取失败</div>";
+    document.getElementById("content").innerHTML = "<div class='rounded-lg border border-dashed border-slate-700 bg-slate-900 p-6 text-slate-400'>读取失败</div>";
     return;
   }
   const data = await res.json();
@@ -420,23 +572,31 @@ async function openPath(path) {
 // renderContent 根据文件类型选择合适的预览方式。
 function renderContent(data) {
   if (data.type === "dir") {
-    const rows = (data.children || []).map(n => "<tr><td>" + iconFor(n.type) + " " + esc(n.name) + "</td><td>" + esc(n.type) + "</td><td>" + formatSize(n.size || 0) + "</td></tr>").join("");
-    document.getElementById("content").innerHTML = "<div class='card'><div class='file-title'><h1>" + esc(data.name || "output") + "</h1><small>" + esc(data.path || "") + "</small></div><table><thead><tr><th>名称</th><th>类型</th><th>大小</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
+    const cell = " class='border border-slate-700 p-2 align-top'";
+    const rows = (data.children || []).map(n => "<tr><td" + cell + ">" + iconFor(n.type) + " " + esc(n.name) + "</td><td" + cell + ">" + esc(n.type) + "</td><td" + cell + ">" + formatSize(n.size || 0) + "</td></tr>").join("");
+    document.getElementById("content").innerHTML = "<div class='max-w-6xl rounded-lg border border-slate-800 bg-slate-900 p-5'><div class='mb-4 flex items-baseline gap-3'><h1 class='m-0 text-xl font-semibold'>" + esc(data.name || "output") + "</h1><small class='text-slate-400'>" + esc(data.path || "") + "</small></div><table class='w-full table-fixed border-collapse'><thead><tr><th class='border border-slate-700 bg-slate-950 p-2 text-left'>名称</th><th class='border border-slate-700 bg-slate-950 p-2 text-left'>类型</th><th class='border border-slate-700 bg-slate-950 p-2 text-left'>大小</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
     return;
   }
   let body = "";
-  if (data.type === "markdown") body = "<div class='markdown'>" + renderMarkdown(data.content || "") + "</div>";
-  else if (data.type === "image") body = "<div class='preview'><img src='" + escAttr(data.rawUrl) + "' alt='" + escAttr(data.name) + "'></div>";
-  else if (data.type === "video") body = "<div class='preview'><video src='" + escAttr(data.rawUrl) + "' controls></video></div>";
-  else if (data.type === "text" || data.type === "json") body = "<pre>" + esc(data.content || "") + "</pre>";
+  if (data.type === "markdown") body = renderMarkdownPreview(data.content || "");
+  else if (data.type === "image") body = "<div><img class='max-w-full rounded-lg border border-slate-700 bg-slate-950' src='" + escAttr(data.rawUrl) + "' alt='" + escAttr(data.name) + "'></div>";
+  else if (data.type === "video") body = "<div><video class='max-w-full rounded-lg border border-slate-700 bg-black' src='" + escAttr(data.rawUrl) + "' controls></video></div>";
+  else if (data.type === "text" || data.type === "json") body = "<pre class='overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-950 p-4 text-slate-200'>" + esc(data.content || "") + "</pre>";
   else body = "<p><a href='" + escAttr(data.rawUrl) + "' target='_blank'>下载或打开文件</a></p>";
-  document.getElementById("content").innerHTML = "<div class='card'><div class='file-title'><h1>" + esc(data.name) + "</h1><small>" + esc(data.path) + " · " + formatSize(data.size || 0) + "</small></div>" + body + "</div>";
+  document.getElementById("content").innerHTML = "<div class='max-w-6xl rounded-lg border border-slate-800 bg-slate-900 p-5'><div class='mb-4 flex items-baseline gap-3'><h1 class='m-0 text-xl font-semibold'>" + esc(data.name) + "</h1><small class='text-slate-400'>" + esc(data.path) + " · " + formatSize(data.size || 0) + "</small></div>" + body + "</div>";
 }
 
-// renderMarkdown 将常用 Markdown 内容转换为预览 HTML。
+// renderMarkdownPreview 渲染 Markdown 正文和右侧悬浮目录。
+function renderMarkdownPreview(src) {
+  const rendered = renderMarkdown(src);
+  return "<div class='markdown-shell'><div class='markdown'>" + rendered.html + "</div>" + renderToc(rendered.headings) + "</div>";
+}
+
+// renderMarkdown 将常用 Markdown 内容转换为预览 HTML，并收集标题。
 function renderMarkdown(src) {
   const lines = esc(src).split(/\r?\n/);
   let out = [];
+  let headings = [];
   let inList = false;
   let inCode = false;
   let code = [];
@@ -449,16 +609,32 @@ function renderMarkdown(src) {
       continue;
     }
     if (inCode) { code.push(line); continue; }
-    if (line.startsWith("### ")) { if (inList) { out.push("</ul>"); inList = false; } out.push(copyBlock("h3", line.slice(4))); }
-    else if (line.startsWith("## ")) { if (inList) { out.push("</ul>"); inList = false; } out.push(copyBlock("h2", line.slice(3))); }
-    else if (line.startsWith("# ")) { if (inList) { out.push("</ul>"); inList = false; } out.push(copyBlock("h1", line.slice(2))); }
+    if (line.startsWith("### ")) { if (inList) { out.push("</ul>"); inList = false; } out.push(headingBlock("h3", 3, line.slice(4), headings)); }
+    else if (line.startsWith("## ")) { if (inList) { out.push("</ul>"); inList = false; } out.push(headingBlock("h2", 2, line.slice(3), headings)); }
+    else if (line.startsWith("# ")) { if (inList) { out.push("</ul>"); inList = false; } out.push(headingBlock("h1", 1, line.slice(2), headings)); }
     else if (line.startsWith("- ")) { if (!inList) { out.push("<ul>"); inList = true; } out.push(copyBlock("li", line.slice(2))); }
     else if (line.trim() === "") { if (inList) { out.push("</ul>"); inList = false; } }
     else if (line.includes("|")) { if (inList) { out.push("</ul>"); inList = false; } out.push(copyBlock("p", line)); }
     else { if (inList) { out.push("</ul>"); inList = false; } out.push(copyBlock("p", line)); }
   }
   if (inList) out.push("</ul>");
-  return out.join("");
+  return { html: out.join(""), headings };
+}
+
+// headingBlock 渲染标题块，并登记到目录导航。
+function headingBlock(tag, level, text, headings) {
+  const id = "heading-" + headings.length;
+  headings.push({ id, level, text: decodeEntities(text) });
+  const value = decodeEntities(text);
+  return "<" + tag + " id='" + id + "' class='copyable'>" + inline(text) + "<button class='copy-btn' onclick='copyText(event,\"" + escJS(value) + "\")'>复制</button></" + tag + ">";
+}
+
+// renderToc 生成 Markdown 右侧悬浮目录导航。
+function renderToc(headings) {
+  if (!headings.length) return "";
+  const levelClass = h => h.level === 1 ? "font-semibold text-slate-200" : h.level === 2 ? "pl-3" : "pl-6 text-xs";
+  const links = headings.map(h => "<a class='block rounded px-1 py-1 text-sm leading-snug text-slate-400 hover:bg-slate-800 hover:text-blue-300 " + levelClass(h) + "' href='#" + h.id + "'>" + esc(h.text) + "</a>").join("");
+  return "<nav class='toc sticky top-5 max-h-[calc(100vh-7rem)] overflow-auto rounded-lg border border-slate-800 bg-slate-900 p-3'><div class='mb-2 text-sm font-semibold text-slate-200'>目录</div>" + links + "</nav>";
 }
 
 // copyBlock 为 Markdown 块包裹复制按钮。
@@ -528,6 +704,7 @@ function escAttr(s) { return esc(s); }
 function escJS(s) { return String(s || "").replace(/\\/g, "\\\\").replace(/"/g, "\\\""); }
 
 loadTree();
+openReadme();
 startAutoRefresh();
 </script>
 </body>

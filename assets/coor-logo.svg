@@ -1,0 +1,26 @@
+<svg width="220" height="72" viewBox="0 0 220 72" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Coor logo">
+  <rect width="220" height="72" rx="18" fill="#0F172A"/>
+  <path d="M42 49C31.8 49 24 41.5 24 31.9C24 22.3 31.8 15 42 15C48.7 15 54.2 17.8 57.5 22.7L50.4 28.1C48.4 25.5 45.7 24.1 42.4 24.1C36.8 24.1 32.7 27.6 32.7 31.9C32.7 36.4 36.8 39.9 42.4 39.9C45.7 39.9 48.4 38.5 50.4 35.9L57.5 41.3C54.2 46.2 48.7 49 42 49Z" fill="white"/>
+  <g filter="url(#glow)">
+    <circle cx="83" cy="32" r="17" fill="#38BDF8"/>
+    <circle cx="122" cy="32" r="17" fill="#38BDF8"/>
+  </g>
+  <circle cx="87" cy="30" r="7" fill="#0F172A"/>
+  <circle cx="118" cy="30" r="7" fill="#0F172A"/>
+  <circle cx="90" cy="27" r="2.6" fill="white"/>
+  <circle cx="121" cy="27" r="2.6" fill="white"/>
+  <path d="M75 50C82 57 94 57 101 50" stroke="#E0F2FE" stroke-width="4" stroke-linecap="round"/>
+  <path d="M114 50C121 57 133 57 140 50" stroke="#E0F2FE" stroke-width="4" stroke-linecap="round"/>
+  <path d="M157 48V16H171.5C180.7 16 187 21.3 187 29.1C187 34.1 184.3 38.2 180 40.4L190 48H177.8L169.7 41.5H166V48H157ZM166 33.5H170.7C175.1 33.5 177.9 31.8 177.9 29.1C177.9 26.3 175.1 24.5 170.7 24.5H166V33.5Z" fill="white"/>
+  <path d="M68 19C74 10 91 9 99 18" stroke="#7DD3FC" stroke-width="4" stroke-linecap="round"/>
+  <path d="M106 18C114 9 131 10 137 19" stroke="#7DD3FC" stroke-width="4" stroke-linecap="round"/>
+  <defs>
+    <filter id="glow" x="52" y="1" width="101" height="62" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+</svg>

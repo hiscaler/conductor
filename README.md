@@ -536,6 +536,7 @@ http://127.0.0.1:8080
 
 功能：
 
+- 打开后默认预览项目 `README.md`，方便先查看使用说明。
 - 左侧显示 `output` 目录树。
 - 点击左侧目录，右侧显示目录内容。
 - 点击 Markdown 文件，右侧直接预览文案、QA 报告、合规报告等内容。
@@ -603,6 +604,10 @@ agents/
 
 cmd/
   output-browser/                    本地 output 文件浏览器
+
+assets/
+  coor-logo.svg                      Coor 浏览器 logo
+  favicon.svg                        浏览器标签页图标
 
 platforms/
   platform-profiles.md               不同电商平台的内容和上架规则
