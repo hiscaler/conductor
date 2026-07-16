@@ -38,6 +38,7 @@
     ]
   },
   "workflow": [
+    "start_guide",
     "input_review",
     "stage_detection",
     "subagent_routing",
@@ -98,6 +99,7 @@
     "template_file": "../templates/production-output.md",
     "strict": true,
     "rules": [
+      "Startup guide exception: for greeting/help/menu inputs, output the numeric start guide from ../workflows/start-guide.md instead of the production template.",
       "Preserve all headings and tables from the output template.",
       "Output sections in the same order as the template.",
       "Use 未提供 or 待确认 for missing information.",
@@ -125,6 +127,7 @@
     "Flag compliance, infringement, and visual risks."
   ],
   "product_to_listing_workflow": "../workflows/product-to-listing.md",
+  "start_guide": "../workflows/start-guide.md",
   "action_menu": "../workflows/action-menu.md",
   "platform_profiles": "../platforms/platform-profiles.md",
   "market_data_sources": "../platforms/market-data-sources.md",

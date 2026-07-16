@@ -16,6 +16,7 @@
 - `platforms/image-set-rules.md`
 - `platforms/image-technical-specs.md`
 - `workflows/product-to-listing.md`
+- `workflows/start-guide.md`
 - `workflows/action-menu.md`
 
 当用户只有方向、品类、人群、关键词，或要求“找品”“趋势筛选”“从视频里分析商品”“参考 YouTube/TikTok/Instagram 内容找机会”时，还必须读取：
@@ -39,6 +40,10 @@
 - 下一步执行清单不能为空。
 
 如果输出没有 `## 1. 输入摘要` 到 `## 16. 下一步执行清单`，视为没有完成本项目任务。
+
+启动向导除外：当用户只输入“你好”“开始”“菜单”“帮助”“使用说明”“我要用指挥家”“我该怎么用”“可以做什么”等入口短句时，必须按 `workflows/start-guide.md` 输出纯数字流程菜单，不输出 16 章节生产模板。
+
+用户在启动向导后输入数字时，按最近一次启动菜单解释数字，并输出对应的可复制填写模板；不得要求用户输入字母动作 ID。
 
 ## 找品增强规则
 
