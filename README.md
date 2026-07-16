@@ -121,7 +121,7 @@ Conductor 采用“核心 Agent + 阶段子 Agent”的结构。
 
 | 场景 | 你已经有什么 | 适合让核心 Agent 做什么 | 会跳过什么 |
 | --- | --- |-------------------| --- |
-| 只有产品想法 | 一个品类或产品概念 | 判断是否值得做、适合哪个平台    | 文案和图片生成可以暂缓 |
+| 只有方向或产品想法 | 一个品类、目标人群、趋势关键词或视频链接 | 先做趋势与短视频找品，再判断候选商品是否值得做 | 文案和图片生成可以暂缓 |
 | 已经有产品 | 产品名称、规格、材质、供应商 | 直接输出平台文案、关键词和 AI 图片套图 | 可跳过选品来源和部分需求验证 |
 | 已经决定平台 | 产品资料 + 目标平台 | 直接按平台生成上架内容       | 可跳过平台匹配 |
 | 已经有竞品 | 产品资料 + 竞品链接 | 做竞品分析、差异化定位、文案和 AI 图片套图 | 不需要先做通用市场判断 |
@@ -173,20 +173,33 @@ Conductor 采用“核心 Agent + 阶段子 Agent”的结构。
 
 ### 3. 按场景发起任务
 
-#### 场景 A：只有产品想法，先判断是否值得做
+#### 场景 A：只有方向或产品想法，先找品再判断是否值得做
 
-适合在还没找供应商、还没决定平台时使用。
+适合在还没确定具体商品、还没找供应商、还没决定平台时使用。
 
 ```text
-我有一个产品想法：便携宠物饮水杯。
+我只有一个方向：宠物出行。
 目标市场：美国。
-请先判断这个产品是否值得做，适合哪些平台，并列出需要补充的信息。
+请先用趋势和短视频场景帮我筛选值得测试的商品机会，再判断优先做哪些产品、适合哪些平台，并列出需要补充的信息。
 ```
+
+找品时会先根据目标国家选择数据源和关键词语言。例如：
+
+| 目标市场 | 趋势/搜索优先 | 内容平台优先 | 电商验证优先 |
+| --- | --- | --- | --- |
+| 美国 | Google Trends / Google Search | TikTok / YouTube / Instagram / Pinterest | Amazon / Walmart / Etsy / TikTok Shop |
+| 德国 | Google Trends + 德语关键词 | YouTube / Instagram / TikTok | Amazon DE / Otto / eBay DE |
+| 日本 | Google Trends / Yahoo Japan + 日语关键词 | YouTube / Instagram / TikTok / X | Amazon JP / Rakuten / Yahoo Shopping |
+| 韩国 | Naver DataLab / Naver Search + 韩语关键词 | YouTube / Instagram / TikTok / Naver Blog | Coupang / Naver Shopping |
+| 中国 | 百度指数 / 巨量算数 / 中文关键词 | 抖音 / 小红书 / B站 / 快手 | 淘宝 / 天猫 / 京东 / 拼多多 |
+
+完整规则见 [目标市场数据源规则](./platforms/market-data-sources.md)。如果目标国家不是美国，核心 Agent 必须先生成本地语言关键词，再做趋势、短视频和电商平台验证；不能只用英文关键词或美国平台数据下结论。
 
 核心 Agent 通常会调度：
 
 ```text
 intake-agent
+-> trend-and-video-discovery-agent
 -> product-selection-agent
 -> market-demand-agent
 -> platform-strategy-agent
@@ -195,10 +208,49 @@ intake-agent
 
 常见产物：
 
+- 目标市场数据源选择
+- 本地语言关键词和英文对照关键词
+- 趋势关键词和增长信号
+- 短视频场景和评论购买意图
+- 候选商品清单
+- 品牌真空判断
 - 选品初筛
 - 平台优先级
 - 风险清单
 - 下一步需要补充的信息
+
+也可以直接给趋势关键词或视频链接：
+
+```text
+我想参考 Pilates / That Girl / Morning Routine 这个方向找品。
+目标市场：美国。
+请使用趋势筛选和短视频场景验证，提取视频里反复出现、适合跨境电商测试的商品。
+如果 YouTube、TikTok 或 Instagram 数据无法读取，请明确写出哪些数据未获取，不要编造播放量、评论、增长率或销量。
+```
+
+这个场景的判断逻辑是：
+
+```text
+增长赛道
++ 高频细分需求
++ 短视频真实场景
++ 无强品牌占位
++ 供应链可落地
++ 内容素材容易传播
+= 值得测试的候选商品
+```
+
+候选商品会按 100 分初筛：
+
+| 维度 | 分值 |
+| --- | --- |
+| 趋势增长 | 20 |
+| 场景真实度 | 15 |
+| 高频需求 | 15 |
+| 品牌真空 | 15 |
+| 供应链可行性 | 15 |
+| 平台适配 | 10 |
+| 风险可控 | 10 |
 
 #### 场景 B：已经有产品，只要输出文案和套图
 
@@ -459,6 +511,7 @@ growth-review-agent
 
 ```text
 intake-agent
+  -> trend-and-video-discovery-agent（仅在只有方向、趋势找品或视频找品时启用）
   -> product-selection-agent
   -> market-demand-agent + platform-strategy-agent + competitor-research-agent
   -> profit-agent + compliance-agent + supply-chain-agent
@@ -512,6 +565,7 @@ intake-agent
 - 生成上架包
 - 做上架前 QA
 - 补充竞品调研
+- 趋势与短视频找品
 - 利润测算
 - 合规风险复核
 - 制定测试计划
@@ -635,6 +689,7 @@ agents/
   cross-border-commerce-agent.md     核心 Agent（Conductor Agent / 指挥家）角色与提示词
   cross-border-commerce-agent.json   核心 Agent 结构化配置
   subagents.md                       阶段子 Agent 和调度规则
+  trend-and-video-discovery-agent.md 趋势筛选与短视频场景找品 agent
   visual-production-agent.md         图片套图和图片生成 agent
 
 main.go                              Conductor 桌面入口（Wails）
@@ -647,6 +702,7 @@ assets/
   favicon.svg                        浏览器标签页图标
 
 platforms/
+  market-data-sources.md             不同目标国家/地区的趋势、内容和电商验证数据源
   platform-profiles.md               不同电商平台的内容和上架规则
   image-set-rules.md                 不同平台的套图结构和图片内容规则
   image-technical-specs.md           不同平台的图片尺寸、比例、格式和质量建议
@@ -677,6 +733,56 @@ docs/
 - 多个平台同时推进时，必须分别输出平台版本。
 - 文案和图片脚本必须服务于具体产品，不输出泛泛模板。
 - 上架前必须经过合规检查和 listing QA。
+
+## 趋势找品测试示例
+
+```text
+请按 templates/production-output.md 强制格式输出。
+
+我现在只有方向，还没有确定具体商品。
+
+方向：Pilates / That Girl / Morning Routine
+目标市场：美国
+目标平台：待定
+要求：
+1. 先使用趋势筛选判断这个方向是否值得继续看。
+2. 再参考 YouTube、TikTok、Instagram 等短视频场景，提取视频或内容中反复出现的商品机会。
+3. 判断每个候选商品是否有品牌真空、供应链可行性、平台适配度和内容传播性。
+4. 输出候选商品评分，并告诉我优先验证哪 3 个商品。
+5. 如果无法读取某个平台的数据，请明确写“未获取”或“受访问限制”，不要编造播放量、评论、增长率、销量或排名。
+
+本轮只做找品和选品判断，不生成文案、套图或视频。
+```
+
+非美国市场测试示例：
+
+```text
+请按 templates/production-output.md 强制格式输出。
+
+我现在只有方向，还没有确定具体商品。
+
+方向：居家咖啡角 / Home Coffee Bar
+目标市场：日本
+目标平台：待定
+要求：
+1. 先选择适合日本市场的趋势、内容和电商验证数据源。
+2. 生成日语关键词，并保留英文对照关键词。
+3. 再做趋势筛选、短视频场景验证和候选商品评分。
+4. 不能只用美国市场数据或英文关键词下结论。
+5. 如果无法读取 Yahoo Japan、Rakuten、Amazon JP、YouTube 或 TikTok 数据，请明确写“未获取”或“受访问限制”。
+
+本轮只做找品和选品判断，不生成文案、套图或视频。
+```
+
+测试时重点检查：
+
+- 是否根据目标国家选择数据源，而不是默认套用美国/Google。
+- 非英语市场是否生成本地语言关键词和英文对照关键词。
+- 是否先进入 `trend-and-video-discovery-agent`，而不是直接生成标题、描述或图片。
+- 是否区分趋势信号、短视频场景信号和推断假设。
+- 是否输出候选商品清单、品牌真空判断和 100 分评分。
+- 是否把无法获取的数据明确标注为“未获取”或“受访问限制”。
+- 下一步执行清单是否包含“补充竞品调研”“供应链验证”“选择候选商品进入上架产出”等动作。
 
 ## 已有产品直接产出示例
 

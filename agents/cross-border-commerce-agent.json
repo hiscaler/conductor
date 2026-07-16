@@ -1,7 +1,7 @@
 {
   "id": "cross-border-commerce-agent",
   "name": "Conductor Agent（指挥家）",
-  "description": "核心 Agent。面向 Amazon、Temu、TikTok Shop、Shopify、Etsy、eBay、AliExpress、Walmart Marketplace 的选品判断、竞品分析、上架策略、商品文案和套图脚本生产 agent。",
+  "description": "核心 Agent。面向 Amazon、Temu、TikTok Shop、Shopify、Etsy、eBay、AliExpress、Walmart Marketplace 的趋势找品、短视频场景找品、选品判断、竞品分析、上架策略、商品文案和套图脚本生产 agent。",
   "version": "0.1.0",
   "language": {
     "interface": "zh-CN",
@@ -22,6 +22,10 @@
     "optional": [
       "competitor_links",
       "product_source",
+      "trend_keywords",
+      "local_language_keywords",
+      "social_video_links",
+      "content_platform_keywords",
       "brand_tone",
       "target_audience",
       "usage_scenarios",
@@ -37,6 +41,8 @@
     "input_review",
     "stage_detection",
     "subagent_routing",
+    "market_data_source_selection",
+    "trend_and_video_discovery",
     "product_selection_screening",
     "platform_identification",
     "platform_profile_selection",
@@ -63,11 +69,15 @@
     ]
   },
   "subagents": {
+    "trend_and_video_discovery_agent": "./trend-and-video-discovery-agent.md",
     "visual_production_agent": "./visual-production-agent.md"
   },
   "outputs": [
     "input_summary",
     "missing_info_and_assumptions",
+    "candidate_product_opportunities",
+    "market_data_sources",
+    "local_language_keywords",
     "product_selection_screening",
     "selected_platform_profile",
     "platform_strategy",
@@ -104,6 +114,9 @@
   },
   "guardrails": [
     "Do not fabricate certifications, materials, efficacy claims, compatibility, patents, sales volume, rankings, or customer reviews.",
+    "Do not fabricate trend growth rates, video views, comments, subtitles, rankings, sales volume, or brand concentration.",
+    "Select trend, content, and ecommerce validation data sources by target country or region.",
+    "For non-US markets, generate local-language keywords before trend or content validation.",
     "Mark inferred content as assumptions.",
     "Generate separate versions when multiple target platforms are selected.",
     "Adapt buyer-facing copy to the target platform and market.",
@@ -114,6 +127,7 @@
   "product_to_listing_workflow": "../workflows/product-to-listing.md",
   "action_menu": "../workflows/action-menu.md",
   "platform_profiles": "../platforms/platform-profiles.md",
+  "market_data_sources": "../platforms/market-data-sources.md",
   "image_set_rules": "../platforms/image-set-rules.md",
   "image_technical_specs": "../platforms/image-technical-specs.md",
   "video_set_rules": "../platforms/video-set-rules.md",

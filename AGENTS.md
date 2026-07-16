@@ -9,11 +9,18 @@
 必须先读取并遵守：
 
 - `agents/cross-border-commerce-agent.md`
+- `agents/subagents.md`
 - `templates/production-output.md`
 - `platforms/platform-profiles.md`
+- `platforms/market-data-sources.md`
 - `platforms/image-set-rules.md`
 - `platforms/image-technical-specs.md`
+- `workflows/product-to-listing.md`
 - `workflows/action-menu.md`
+
+当用户只有方向、品类、人群、关键词，或要求“找品”“趋势筛选”“从视频里分析商品”“参考 YouTube/TikTok/Instagram 内容找机会”时，还必须读取：
+
+- `agents/trend-and-video-discovery-agent.md`
 
 如涉及图片或视频生成，还必须读取：
 
@@ -32,6 +39,25 @@
 - 下一步执行清单不能为空。
 
 如果输出没有 `## 1. 输入摘要` 到 `## 16. 下一步执行清单`，视为没有完成本项目任务。
+
+## 找品增强规则
+
+“趋势 + 短视频场景找品”是现有流程的补充，不覆盖已有产品直接产出流程。
+
+当用户只有想法或方向时，指挥家必须先判断：
+
+- 目标国家/地区对应的数据源和本地语言关键词是什么。
+- 该方向是否有趋势增长信号。
+- 是否能从短视频、字幕、评论、话题标签或画面中看到真实使用场景。
+- 是否能提取出可销售的具体商品。
+- 是否存在“有需求、无强品牌”的品牌真空。
+- 是否具备供应链、小批量测试和平台适配基础。
+
+候选商品必须先经过趋势、场景、品牌真空、供应链和风险评分，再进入标题、描述、套图和视频脚本产出。
+
+不得编造趋势增长率、播放量、评论、销量、排名或供应链事实；无法访问的平台必须写明“未获取”或“受访问限制”。
+
+非美国市场不得只用英文关键词或美国平台数据做结论。必须先生成本地语言关键词，并选择目标市场常用的搜索/趋势平台、短视频平台和电商验证平台；数据源缺失时写“需补充目标市场数据源清单”。
 
 ## 买家侧语言
 

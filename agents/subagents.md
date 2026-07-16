@@ -9,6 +9,7 @@
 | 子 Agent | 阶段 | 职责 | 关键输出 |
 | --- | --- | --- | --- |
 | `intake-agent` | 信息接收 | 整理输入、识别缺失字段、区分事实和假设 | 输入摘要、缺失信息、风险字段 |
+| `trend-and-video-discovery-agent` | 趋势与短视频找品 | 当用户只有方向、品类、人群、关键词或视频链接时，先按目标国家选择数据源和本地语言关键词，再分析趋势增长、短视频场景、商品出现频率、购买意图和品牌真空 | 目标市场数据源、候选商品清单、趋势/场景证据、品牌真空判断、初筛评分 |
 | `product-selection-agent` | 选品初筛 | 判断需求、竞争、平台适配、供应链和新手友好度 | 选品评分、推进/暂缓建议 |
 | `market-demand-agent` | 需求验证 | 判断搜索需求、趋势、人群、季节性和使用频率 | 需求强度、目标人群、购买动机 |
 | `platform-strategy-agent` | 平台匹配 | 判断适合 Amazon、Temu、Shopify、Etsy 等哪个平台 | 平台优先级、平台机会和风险 |
@@ -30,6 +31,7 @@
 核心 Agent 先判断用户当前处于哪个阶段：
 
 - 只有产品想法：从 `product-selection-agent` 开始。
+- 只有方向、品类、人群、关键词或视频链接：先调度 `trend-and-video-discovery-agent`，提取候选商品后再进入 `product-selection-agent`。
 - 有产品资料但未选平台：先调度 `platform-strategy-agent`。
 - 有平台和竞品：进入 `competitor-research-agent`。
 - 已确定要上架：进入 `listing-strategy-agent`、`copywriting-agent`、`visual-production-agent`。
@@ -74,6 +76,7 @@
 
 ```text
 intake-agent
+  -> trend-and-video-discovery-agent（仅在只有方向/趋势找品/视频找品时启用）
   -> product-selection-agent
   -> market-demand-agent + platform-strategy-agent + competitor-research-agent
   -> profit-agent + compliance-agent + supply-chain-agent
