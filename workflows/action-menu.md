@@ -88,17 +88,18 @@ output/{目标平台}/{产品类目}/{产品名称}/
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | `save_copy_assets` | 保存文案资产 | 将标题、描述、关键词、广告文案保存为 Markdown 或 JSON | 建议 | 是 | `copywriting-agent` | 文案文件 | `output/{目标平台}/{产品类目}/{产品名称}/文案/文案资产.md` |
 | 2 | `generate_main_image` | 生成主图 | 根据套图脚本生成第 1 张主图 | 建议 | 是 | `visual-production-agent` | 主图文件、图片验收报告 | `output/{目标平台}/{产品类目}/{产品名称}/图片/01-主图.png` |
-| 3 | `generate_full_image_set` | 生成整套图片 | 根据套图脚本生成完整套图 | 可选 | 是 | `visual-production-agent` | 多张图片、图片验收报告 | `output/{目标平台}/{产品类目}/{产品名称}/图片/` |
+| 3 | `generate_full_image_set` | 生成整套图片 | 根据套图脚本逐张生成完整套图，一张图一个独立文件，不能用单张拼图代替 | 可选 | 是 | `visual-production-agent` | 多张图片、图片验收报告 | `output/{目标平台}/{产品类目}/{产品名称}/图片/` |
 | 4 | `save_image_plan` | 保存套图脚本 | 将图片脚本和生成提示词保存为文件 | 建议 | 是 | `visual-production-agent` | 套图脚本文档 | `output/{目标平台}/{产品类目}/{产品名称}/图片/套图脚本.md` |
-| 5 | `generate_listing_package` | 生成上架包 | 汇总标题、描述、关键词、图片脚本、合规检查 | 建议 | 是 | `listing-strategy-agent` | 上架包文档 | `output/{目标平台}/{产品类目}/{产品名称}/上架/上架包.md` |
-| 6 | `run_listing_qa` | 做上架前 QA | 检查 listing 字段、文案、图片、合规和缺失项 | 建议 | 是 | `listing-qa-agent` | QA 报告 | `output/{目标平台}/{产品类目}/{产品名称}/上架/上架前QA报告.md` |
-| 7 | `research_competitors` | 补充竞品调研 | 基于用户提供的竞品链接或可用数据做竞品分析 | 条件建议 | 是 | `competitor-research-agent` | 竞品矩阵 | `output/{目标平台}/{产品类目}/{产品名称}/竞品/竞品分析.md` |
-| 8 | `calculate_profit` | 利润测算 | 基于采购价、运费、平台费用和售价计算利润 | 条件建议 | 是 | `profit-agent` | 利润测算表 | `output/{目标平台}/{产品类目}/{产品名称}/利润/利润测算.md` |
-| 9 | `review_compliance` | 合规风险复核 | 检查认证、材质、敏感词、侵权和类目风险 | 建议 | 是 | `compliance-agent` | 合规报告 | `output/{目标平台}/{产品类目}/{产品名称}/合规/合规风险报告.md` |
-| 10 | `create_test_plan` | 制定测试计划 | 生成上架后的点击率、转化率、图片 A/B 和补货判断计划 | 可选 | 是 | `growth-review-agent` | 测试计划 | `output/{目标平台}/{产品类目}/{产品名称}/测试/测试计划.md` |
-| 11 | `save_video_script` | 保存视频脚本 | 将短视频脚本、分镜、字幕/口播和视频提示词保存为文件 | 可选 | 是 | `visual-production-agent` | 视频脚本文档 | `output/{目标平台}/{产品类目}/{产品名称}/视频/视频脚本.md` |
-| 12 | `generate_main_video` | 生成主视频 | 根据视频脚本生成第 1 条商品主视频 | 可选 | 是 | `visual-production-agent` | 主视频文件、视频验收报告 | `output/{目标平台}/{产品类目}/{产品名称}/视频/01-主视频.mp4` |
-| 13 | `generate_video_set` | 生成视频组 | 根据视频脚本生成多条平台短视频 | 可选 | 是 | `visual-production-agent` | 多条视频、视频验收报告 | `output/{目标平台}/{产品类目}/{产品名称}/视频/` |
+| 5 | `generate_missing_images` | 继续生成缺失图片 | 根据图片验收报告中的缺失图型逐张补齐图片 | 条件建议 | 是 | `visual-production-agent` | 缺失图片文件、更新后的图片验收报告 | `output/{目标平台}/{产品类目}/{产品名称}/图片/` |
+| 6 | `generate_listing_package` | 生成上架包 | 汇总标题、描述、关键词、图片脚本、合规检查 | 建议 | 是 | `listing-strategy-agent` | 上架包文档 | `output/{目标平台}/{产品类目}/{产品名称}/上架/上架包.md` |
+| 7 | `run_listing_qa` | 做上架前 QA | 检查 listing 字段、文案、图片、合规和缺失项 | 建议 | 是 | `listing-qa-agent` | QA 报告 | `output/{目标平台}/{产品类目}/{产品名称}/上架/上架前QA报告.md` |
+| 8 | `research_competitors` | 补充竞品调研 | 基于用户提供的竞品链接或可用数据做竞品分析 | 条件建议 | 是 | `competitor-research-agent` | 竞品矩阵 | `output/{目标平台}/{产品类目}/{产品名称}/竞品/竞品分析.md` |
+| 9 | `calculate_profit` | 利润测算 | 基于采购价、运费、平台费用和售价计算利润 | 条件建议 | 是 | `profit-agent` | 利润测算表 | `output/{目标平台}/{产品类目}/{产品名称}/利润/利润测算.md` |
+| 10 | `review_compliance` | 合规风险复核 | 检查认证、材质、敏感词、侵权和类目风险 | 建议 | 是 | `compliance-agent` | 合规报告 | `output/{目标平台}/{产品类目}/{产品名称}/合规/合规风险报告.md` |
+| 11 | `create_test_plan` | 制定测试计划 | 生成上架后的点击率、转化率、图片 A/B 和补货判断计划 | 可选 | 是 | `growth-review-agent` | 测试计划 | `output/{目标平台}/{产品类目}/{产品名称}/测试/测试计划.md` |
+| 12 | `save_video_script` | 保存视频脚本 | 将短视频脚本、分镜、字幕/口播和视频提示词保存为文件 | 可选 | 是 | `visual-production-agent` | 视频脚本文档 | `output/{目标平台}/{产品类目}/{产品名称}/视频/视频脚本.md` |
+| 13 | `generate_main_video` | 生成主视频 | 根据视频脚本生成第 1 条商品主视频 | 可选 | 是 | `visual-production-agent` | 主视频文件、视频验收报告 | `output/{目标平台}/{产品类目}/{产品名称}/视频/01-主视频.mp4` |
+| 14 | `generate_video_set` | 生成视频组 | 根据视频脚本生成多条平台短视频 | 可选 | 是 | `visual-production-agent` | 多条视频、视频验收报告 | `output/{目标平台}/{产品类目}/{产品名称}/视频/` |
 
 ## 核心 Agent 执行规则
 
@@ -106,6 +107,8 @@ output/{目标平台}/{产品类目}/{产品名称}/
 - 如果用户选择多个动作，核心 Agent 按依赖顺序执行。
 - 如果动作依赖缺失信息，先输出阻塞项，不执行。
 - 如果动作会生成图片、写文件或覆盖已有文件，必须说明产物路径；不得覆盖已有文件，除非用户明确要求。
+- `generate_full_image_set` 必须按套图脚本逐张执行。图片生成工具一次只返回一张图时，必须循环调用直到完整图片清单全部完成；不能只生成主图或单张组合预览图。
+- 图片验收报告状态为“未完成”时，下一步默认建议必须包含 `generate_missing_images`。
 - 如果动作执行失败，必须返回失败原因、已完成产物和下一步建议。
 
 ## 常见依赖
