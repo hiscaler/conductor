@@ -45,7 +45,7 @@ const indexHTML = `<!doctype html>
       box-shadow:0 8px 24px rgb(0 0 0 / 0.18);
     }
     .app-header-inner {
-      width:1280px; max-width:100%; margin:0 auto;
+      width:1440px; max-width:100%; margin:0 auto;
       min-height:72px; padding:14px 28px; box-sizing:border-box;
       display:flex; align-items:center; justify-content:space-between; gap:24px;
     }
@@ -65,7 +65,7 @@ const indexHTML = `<!doctype html>
       display:block; font-size:12px; color:rgb(148 163 184); letter-spacing:0.02em;
     }
     .app-frame {
-      width:1280px; max-width:100%; margin:0 auto;
+      width:1440px; max-width:100%; margin:0 auto;
       flex:1 1 auto; min-height:0;
       display:flex; flex-direction:column;
       background:rgb(2 6 23);
@@ -73,13 +73,30 @@ const indexHTML = `<!doctype html>
     }
     .app-frame > main { flex:1; min-height:0; }
     .content-panel { width:100%; }
+    .breadcrumb {
+      display:flex; flex-wrap:wrap; align-items:center; gap:6px;
+      margin:0 0 14px; font-size:13px; line-height:1.45;
+    }
+    .breadcrumb .crumb {
+      border:0; background:transparent; padding:0; font:inherit; max-width:100%;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .breadcrumb .crumb.link {
+      cursor:pointer; color:rgb(125 211 252);
+      transition:color .15s ease;
+    }
+    .breadcrumb .crumb.link:hover { color:rgb(186 230 253); }
+    .breadcrumb .crumb.current { color:rgb(148 163 184); cursor:default; }
+    .breadcrumb .crumb-sep {
+      color:rgb(71 85 105); user-select:none; flex-shrink:0;
+    }
     .app-footer {
       flex:0 0 auto; width:100%;
       border-top:1px solid rgb(51 65 85 / 0.7);
       background:linear-gradient(180deg, rgb(8 15 30) 0%, rgb(15 23 42) 100%);
     }
     .app-footer-inner {
-      width:1280px; max-width:100%; margin:0 auto;
+      width:1440px; max-width:100%; margin:0 auto;
       padding:22px 28px 20px; box-sizing:border-box;
       display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,0.8fr);
       gap:28px; align-items:start;
@@ -467,6 +484,7 @@ let galleryImages = [];
 let galleryIndex = -1;
 let markdownAssetMode = "output"; // output: /raw ; doc: /doc-asset（README）
 let markdownBasePath = "";
+let rootName = "output";
 
 // openReadme 加载项目 README，作为用户使用说明预览。
 async function openReadme() {
@@ -488,6 +506,7 @@ async function loadTree() {
   const res = await fetch("/api/tree");
   if (!res.ok) return;
   const data = await res.json();
+  rootName = data.name || "output";
   rememberExpanded();
   document.getElementById("tree").innerHTML = renderChildren(data.children || [], 1);
   if (activePath) markActive();
@@ -614,7 +633,7 @@ function renderContent(data) {
   const size = formatSize(data.size || 0);
   const sizeHint = size ? "<span class='text-xs text-slate-500'>" + esc(size) + "</span>" : "";
   document.getElementById("content").innerHTML = contentShell(
-    "<div class='mb-5'><div class='mb-1 flex items-baseline gap-3'><h1 class='m-0 text-xl font-semibold tracking-tight'>" + esc(data.name) + "</h1>" + sizeHint + "</div>" + renderPathBar(data) + "</div>",
+    contentHeader(data, "<div class='mb-1 flex items-baseline gap-3'><h1 class='m-0 text-xl font-semibold tracking-tight'>" + esc(data.name) + "</h1>" + sizeHint + "</div>"),
     body
   );
 }
@@ -622,6 +641,33 @@ function renderContent(data) {
 // contentShell 组装右侧预览外壳，避免多层边框套框。
 function contentShell(header, body) {
   return "<div class='content-panel'>" + header + body + "</div>";
+}
+
+// contentHeader 组装预览区标题区：面包屑 + 标题 + 可复制路径。
+function contentHeader(data, titleHtml) {
+  return "<div class='mb-5'>" + renderBreadcrumb(data) + titleHtml + renderPathBar(data) + "</div>";
+}
+
+// renderBreadcrumb 根据相对路径生成可点击的面包屑导航。
+function renderBreadcrumb(data) {
+  if (activePath === "__readme__") {
+    return "<nav class='breadcrumb' aria-label='面包屑'><span class='crumb current'>使用说明</span></nav>";
+  }
+  const rel = (data && data.path != null) ? data.path : (activePath || "");
+  const parts = String(rel).split("/").filter(Boolean);
+  const items = [{ name: rootName || "全部", path: "" }];
+  let acc = "";
+  for (const part of parts) {
+    acc = acc ? acc + "/" + part : part;
+    items.push({ name: part, path: acc });
+  }
+  const html = items.map((item, i) => {
+    const isLast = i === items.length - 1;
+    if (isLast) return "<span class='crumb current' title='" + escAttr(item.name) + "'>" + esc(item.name) + "</span>";
+    return "<button type='button' class='crumb link' title='" + escAttr(item.name) + "' onclick='openPath(\"" + escJS(item.path) + "\")'>" + esc(item.name) + "</button>"
+      + "<span class='crumb-sep' aria-hidden='true'>/</span>";
+  }).join("");
+  return "<nav class='breadcrumb' aria-label='面包屑'>" + html + "</nav>";
 }
 
 // renderDirContent 渲染目录内容；含图片时优先展示缩略图网格。
@@ -646,7 +692,7 @@ function renderDirContent(data) {
   }
   if (!body) body = "<div class='text-slate-500'>空目录</div>";
   document.getElementById("content").innerHTML = contentShell(
-    "<div class='mb-5'><h1 class='m-0 text-xl font-semibold tracking-tight'>" + esc(data.name || "output") + "</h1>" + renderPathBar(data) + "</div>",
+    contentHeader(data, "<h1 class='m-0 text-xl font-semibold tracking-tight'>" + esc(data.name || "output") + "</h1>"),
     body
   );
 }
@@ -669,7 +715,7 @@ async function renderImageContent(data) {
   const size = formatSize(data.size || 0);
   const sizeHint = size ? "<span class='text-xs text-slate-500'>" + esc(size) + "</span>" : "";
   document.getElementById("content").innerHTML = contentShell(
-    "<div class='mb-5'><div class='mb-1 flex items-baseline gap-3'><h1 class='m-0 text-xl font-semibold tracking-tight'>" + esc(data.name) + "</h1>" + sizeHint + "</div>" + renderPathBar(data) + "</div>",
+    contentHeader(data, "<div class='mb-1 flex items-baseline gap-3'><h1 class='m-0 text-xl font-semibold tracking-tight'>" + esc(data.name) + "</h1>" + sizeHint + "</div>"),
     "<div class='relative inline-block max-w-full'><img id='previewImage' class='max-w-full rounded-lg bg-slate-900' src='" + escAttr(data.rawUrl) + "' alt='" + escAttr(data.name) + "'><button type='button' class='absolute right-3 top-3 rounded-md bg-slate-950/80 px-2.5 py-1 text-[12px] text-slate-200 hover:text-sky-300' onclick='copyImage(event)'>复制图片</button></div><div id='siblingGallery' class='mt-5'></div>"
   );
   await loadSiblingGallery(data.path);
