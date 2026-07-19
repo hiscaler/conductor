@@ -63,7 +63,7 @@ func main() {
 	app := NewApp(absRoot)
 	err = wails.Run(&options.App{
 		Title:            "Conductor",
-		Width:            1280,
+		Width:            1440,
 		Height:           800,
 		MinWidth:         900,
 		MinHeight:        600,
