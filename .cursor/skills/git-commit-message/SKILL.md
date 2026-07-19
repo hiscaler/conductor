@@ -2,8 +2,8 @@
 name: git-commit-message
 description: >-
   Drafts Git commit messages for this repo using Sign: Message (New/Chg/Enh/Bug/Doc)
-  from staged diffs, with user confirmation before commit. Use when the user asks to
-  撰写提交消息、git message、commit message
+  from staged diffs only (ignore unstaged/untracked), with user confirmation before
+  commit. Use when the user asks to 撰写提交消息、git message、commit message
 ---
 
 根据以下规则来撰写 Git 提交消息
@@ -24,9 +24,11 @@ Sign 有以下几种方式：
 
 ## 注意事项
 
-Git 处理只针对 Staged 中的文件，如果 Staged 中没有暂存文件，直接跳过，并提示用户
+**范围：只处理 Staged 文件。**
 
-- 仅提交 Staged 中的文件
+- 撰写消息前只看 `git diff --cached` / staged 列表；忽略 unstaged 与 untracked
+- 若 Staged 为空：不写消息、不提交，直接提示用户先 `git add`
+- 仅提交 Staged 中的文件；不要 `git add` 其它改动
 - 如果发现文件用户修改过了，以用户的修改结果为准
 - 添加了新功能，应该读取方法注释，说明方法含义
 - 修改了调用方法的参数，应该读取参数注释，说明参数含义
