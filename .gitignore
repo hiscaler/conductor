@@ -24,3 +24,5 @@ frontend/node_modules/
 
 # Node (icon tooling)
 node_modules/
+
+.DS_Store
