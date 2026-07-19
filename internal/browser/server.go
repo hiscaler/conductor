@@ -51,6 +51,7 @@ func NewHandler(root string) http.Handler {
 	mux.HandleFunc("/api/file", s.file)
 	mux.HandleFunc("/api/readme", s.readme)
 	mux.HandleFunc("/raw", s.raw)
+	mux.HandleFunc("/doc-asset", s.docAsset)
 	mux.HandleFunc("/assets/", s.asset)
 	return mux
 }
@@ -173,6 +174,49 @@ func (s *server) raw(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", ct)
 	}
 	http.ServeFile(w, r, full)
+}
+
+// docAsset 返回 README 所在目录下的相对资源（如图片），供使用说明预览引用。
+func (s *server) docAsset(w http.ResponseWriter, r *http.Request) {
+	readmePath, err := findReadme(s.root)
+	if err != nil {
+		writeError(w, err, http.StatusNotFound)
+		return
+	}
+	docRoot, err := filepath.Abs(filepath.Dir(readmePath))
+	if err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
+	}
+	rel := filepath.Clean(filepath.FromSlash(r.URL.Query().Get("path")))
+	if rel == "." {
+		rel = ""
+	}
+	if rel == "" || filepath.IsAbs(rel) || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		writeError(w, errors.New("invalid path"), http.StatusBadRequest)
+		return
+	}
+	full := filepath.Join(docRoot, rel)
+	abs, err := filepath.Abs(full)
+	if err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	rootWithSep := docRoot + string(filepath.Separator)
+	if abs != docRoot && !strings.HasPrefix(abs, rootWithSep) {
+		writeError(w, errors.New("path escapes doc root"), http.StatusBadRequest)
+		return
+	}
+	info, err := os.Stat(abs)
+	if err != nil || info.IsDir() {
+		http.NotFound(w, r)
+		return
+	}
+	if ct := mime.TypeByExtension(strings.ToLower(filepath.Ext(abs))); ct != "" {
+		w.Header().Set("Content-Type", ct)
+	}
+	w.Header().Set("Content-Disposition", "inline")
+	http.ServeFile(w, r, abs)
 }
 
 // asset 返回内嵌静态资源，并强制正确的 SVG MIME，避免浏览器把 logo 当作下载文件。

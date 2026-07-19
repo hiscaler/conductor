@@ -43,6 +43,11 @@ const indexHTML = `<!doctype html>
     .markdown th, .markdown td { border:1px solid rgb(51 65 85); padding:8px; vertical-align:top; }
     .markdown th, .markdown td { overflow-wrap:anywhere; word-break:break-word; }
     .markdown th { background:rgb(15 23 42); }
+    .markdown .md-image { margin:1em 0 1.2em; padding:0; border:0; background:transparent; }
+    .markdown .md-image img {
+      display:block; width:100%; max-width:100%; height:auto;
+      border-radius:12px; background:rgb(15 23 42);
+    }
     @media (max-width: 1050px) { .markdown-shell { grid-template-columns:1fr; } .toc { position:static; max-height:none; order:-1; } }
     .header-actions {
       display:flex; align-items:center; gap:2px;
@@ -293,10 +298,14 @@ let refreshTimer = null;
 let expandedPaths = new Set();
 let galleryImages = [];
 let galleryIndex = -1;
+let markdownAssetMode = "output"; // output: /raw ; doc: /doc-asset（README）
+let markdownBasePath = "";
 
 // openReadme 加载项目 README，作为用户使用说明预览。
 async function openReadme() {
   activePath = "__readme__";
+  markdownAssetMode = "doc";
+  markdownBasePath = "";
   markActive();
   const res = await fetch("/api/readme");
   if (!res.ok) {
@@ -381,6 +390,8 @@ function markActive() {
 // openPath 加载选中路径的元信息和预览内容。
 async function openPath(path) {
   activePath = path;
+  markdownAssetMode = "output";
+  markdownBasePath = parentPath(path);
   markActive();
   const res = await fetch("/api/file?path=" + encodeURIComponent(path));
   if (!res.ok) {
@@ -668,6 +679,11 @@ function renderMarkdown(src) {
       out.push(renderTableBlock(tableLines));
       continue;
     }
+    if (isImageLine(line)) {
+      if (inList) { out.push("</ul>"); inList = false; }
+      out.push(renderImageBlock(line));
+      continue;
+    }
     if (line.startsWith("### ")) { if (inList) { out.push("</ul>"); inList = false; } out.push(headingBlock("h3", 3, line.slice(4), headings)); }
     else if (line.startsWith("## ")) { if (inList) { out.push("</ul>"); inList = false; } out.push(headingBlock("h2", 2, line.slice(3), headings)); }
     else if (line.startsWith("# ")) { if (inList) { out.push("</ul>"); inList = false; } out.push(headingBlock("h1", 1, line.slice(2), headings)); }
@@ -678,6 +694,38 @@ function renderMarkdown(src) {
   }
   if (inList) out.push("</ul>");
   return { html: out.join(""), headings };
+}
+
+// isImageLine 判断一行是否为独立的 Markdown 图片语法。
+function isImageLine(line) {
+  return /^!\[[^\]]*\]\([^)]+\)\s*$/.test(String(line || "").trim());
+}
+
+// renderImageBlock 将 Markdown 图片行渲染为可加载的 figure/img。
+function renderImageBlock(line) {
+  const m = String(line || "").trim().match(/^!\[([^\]]*)\]\(([^)]+)\)\s*$/);
+  if (!m) return copyBlock("p", line);
+  const alt = m[1];
+  const src = resolveMarkdownImageSrc(m[2]);
+  return "<figure class='md-image'><img src='" + escAttr(src) + "' alt='" + alt + "' loading='lazy'></figure>";
+}
+
+// resolveMarkdownImageSrc 将 Markdown 图片路径解析为浏览器可访问的 URL。
+function resolveMarkdownImageSrc(src) {
+  let path = decodeEntities(src || "").trim().replace(/^<|>$/g, "");
+  if (!path) return "";
+  if (/^(https?:|data:|blob:|\/)/i.test(path)) return path;
+  path = path.replace(/^\.\//, "");
+  if (markdownAssetMode === "doc") {
+    return "/doc-asset?path=" + encodeURIComponent(path);
+  }
+  const parts = [];
+  for (const part of (markdownBasePath + "/" + path).split("/")) {
+    if (!part || part === ".") continue;
+    if (part === "..") parts.pop();
+    else parts.push(part);
+  }
+  return "/raw?path=" + encodeURIComponent(parts.join("/"));
 }
 
 // headingBlock 渲染标题块，并登记到目录导航。
@@ -816,7 +864,12 @@ function decodeEntities(s) {
 function inline(s) {
   const tick = String.fromCharCode(96);
   const codePattern = new RegExp(tick + "([^" + tick + "]+)" + tick, "g");
-  return s.replace(codePattern, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  return s
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) =>
+      "<img class='inline-md-image' src='" + escAttr(resolveMarkdownImageSrc(src)) + "' alt='" + alt + "' loading='lazy'>"
+    )
+    .replace(codePattern, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
 }
 
 // toggleAutoRefresh 开启或关闭目录树自动刷新。
