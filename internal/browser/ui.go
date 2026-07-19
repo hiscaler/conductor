@@ -15,6 +15,28 @@ const indexHTML = `<!doctype html>
       display:flex; flex-direction:column;
       background:rgb(2 6 23);
     }
+    * {
+      scrollbar-width:thin;
+      scrollbar-color:rgb(71 85 105 / 0.85) transparent;
+    }
+    *::-webkit-scrollbar {
+      width:8px; height:8px;
+    }
+    *::-webkit-scrollbar-track {
+      background:transparent;
+    }
+    *::-webkit-scrollbar-thumb {
+      background:rgb(71 85 105 / 0.75);
+      border-radius:999px;
+      border:2px solid transparent;
+      background-clip:padding-box;
+    }
+    *::-webkit-scrollbar-thumb:hover {
+      background:rgb(100 116 139 / 0.95);
+      border:2px solid transparent;
+      background-clip:padding-box;
+    }
+    *::-webkit-scrollbar-corner { background:transparent; }
     .app-header {
       flex:0 0 auto; width:100%;
       border-bottom:1px solid rgb(51 65 85 / 0.7);
