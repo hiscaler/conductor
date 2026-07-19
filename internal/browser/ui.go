@@ -345,11 +345,23 @@ function renderNode(n, depth) {
 
 // iconFor 根据文件类型选择显示图标。
 function iconFor(type) {
+  if (type === "dir") return "📁";
   if (type === "markdown") return "📝";
   if (type === "image") return "🖼️";
   if (type === "video") return "🎬";
   if (type === "json") return "{}";
   return "📄";
+}
+
+// typeLabel 将内部类型转为界面展示用的中文名称。
+function typeLabel(type) {
+  if (type === "dir") return "目录";
+  if (type === "markdown") return "Markdown";
+  if (type === "image") return "图片";
+  if (type === "video") return "视频";
+  if (type === "json") return "JSON";
+  if (type === "text") return "文本";
+  return type || "文件";
 }
 
 // handleNodeClick 处理节点点击，目录会展开/收起并打开内容。
@@ -399,7 +411,21 @@ async function openPath(path) {
     return;
   }
   const data = await res.json();
+  // 目录下仅有一个文件时直接打开，减少多余点击。
+  if (data.type === "dir") {
+    const onlyFile = soleFileChild(data.children || []);
+    if (onlyFile) {
+      return openPath(onlyFile.path);
+    }
+  }
   renderContent(data);
+}
+
+// soleFileChild 若目录恰好只有一个非目录子项，返回该文件节点，否则返回 null。
+function soleFileChild(children) {
+  if (!children || children.length !== 1) return null;
+  const only = children[0];
+  return only && only.type !== "dir" ? only : null;
 }
 
 // renderContent 根据文件类型选择合适的预览方式。
@@ -463,7 +489,7 @@ function renderFileList(items) {
   const rows = items.map(n =>
     "<tr class='file-row' onclick='openPath(\"" + escJS(n.path) + "\")'>"
     + "<td class='name'>" + iconFor(n.type) + " " + esc(n.name) + "</td>"
-    + "<td class='type'>" + esc(n.type) + "</td>"
+    + "<td class='type'>" + esc(typeLabel(n.type)) + "</td>"
     + "<td class='size'>" + esc(formatSize(n.size || 0) || "—") + "</td></tr>"
   ).join("");
   return "<table class='file-list'><thead><tr><th>名称</th><th>类型</th><th>大小</th></tr></thead><tbody>"
