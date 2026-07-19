@@ -30,6 +30,7 @@ type node struct {
 type fileInfo struct {
 	Name    string `json:"name"`
 	Path    string `json:"path"`
+	AbsPath string `json:"absPath,omitempty"`
 	Type    string `json:"type"`
 	Size    int64  `json:"size"`
 	ModTime string `json:"modTime"`
@@ -98,6 +99,7 @@ func (s *server) file(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, map[string]any{
 			"name":     info.Name(),
 			"path":     filepath.ToSlash(rel),
+			"absPath":  full,
 			"type":     "dir",
 			"children": children,
 		})
@@ -108,6 +110,7 @@ func (s *server) file(w http.ResponseWriter, r *http.Request) {
 	out := fileInfo{
 		Name:    info.Name(),
 		Path:    filepath.ToSlash(rel),
+		AbsPath: full,
 		Type:    kind,
 		Size:    info.Size(),
 		ModTime: info.ModTime().Format(time.RFC3339),
@@ -145,6 +148,7 @@ func (s *server) readme(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, fileInfo{
 		Name:    "README.md",
 		Path:    "README.md",
+		AbsPath: readmePath,
 		Type:    "markdown",
 		Size:    info.Size(),
 		ModTime: info.ModTime().Format(time.RFC3339),

@@ -237,16 +237,30 @@ function renderContent(data) {
   if (data.type === "dir") {
     const cell = " class='border border-slate-700 p-2 align-top'";
     const rows = (data.children || []).map(n => "<tr><td" + cell + ">" + iconFor(n.type) + " " + esc(n.name) + "</td><td" + cell + ">" + esc(n.type) + "</td><td" + cell + ">" + formatSize(n.size || 0) + "</td></tr>").join("");
-    document.getElementById("content").innerHTML = "<div class='max-w-6xl rounded-lg border border-slate-800 bg-slate-900 p-5'><div class='mb-4 flex items-baseline gap-3'><h1 class='m-0 text-xl font-semibold'>" + esc(data.name || "output") + "</h1><small class='text-slate-400'>" + esc(data.path || "") + "</small></div><table class='w-full table-fixed border-collapse'><thead><tr><th class='border border-slate-700 bg-slate-950 p-2 text-left'>名称</th><th class='border border-slate-700 bg-slate-950 p-2 text-left'>类型</th><th class='border border-slate-700 bg-slate-950 p-2 text-left'>大小</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
+    document.getElementById("content").innerHTML = "<div class='max-w-6xl rounded-lg border border-slate-800 bg-slate-900 p-5'><div class='mb-4'><h1 class='m-0 text-xl font-semibold'>" + esc(data.name || "output") + "</h1>" + renderPathBar(data) + "</div><table class='w-full table-fixed border-collapse'><thead><tr><th class='border border-slate-700 bg-slate-950 p-2 text-left'>名称</th><th class='border border-slate-700 bg-slate-950 p-2 text-left'>类型</th><th class='border border-slate-700 bg-slate-950 p-2 text-left'>大小</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
     return;
   }
   let body = "";
   if (data.type === "markdown") body = renderMarkdownPreview(data.content || "");
-  else if (data.type === "image") body = "<div><img class='max-w-full rounded-lg border border-slate-700 bg-slate-950' src='" + escAttr(data.rawUrl) + "' alt='" + escAttr(data.name) + "'></div>";
+  else if (data.type === "image") body = "<div class='relative inline-block max-w-full'><img id='previewImage' class='max-w-full rounded-lg border border-slate-700 bg-slate-950' src='" + escAttr(data.rawUrl) + "' alt='" + escAttr(data.name) + "'><button type='button' class='absolute right-3 top-3 rounded border border-slate-600 bg-slate-900/90 px-2.5 py-1 text-[12px] text-slate-200 shadow hover:border-sky-400 hover:text-sky-300' onclick='copyImage(event)'>复制图片</button></div>";
   else if (data.type === "video") body = "<div><video class='max-w-full rounded-lg border border-slate-700 bg-black' src='" + escAttr(data.rawUrl) + "' controls></video></div>";
   else if (data.type === "text" || data.type === "json") body = "<pre class='overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-950 p-4 text-slate-200'>" + esc(data.content || "") + "</pre>";
   else body = "<p><a href='" + escAttr(data.rawUrl) + "' target='_blank'>下载或打开文件</a></p>";
-  document.getElementById("content").innerHTML = "<div class='max-w-6xl rounded-lg border border-slate-800 bg-slate-900 p-5'><div class='mb-4 flex items-baseline gap-3'><h1 class='m-0 text-xl font-semibold'>" + esc(data.name) + "</h1><small class='text-slate-400'>" + esc(data.path) + " · " + formatSize(data.size || 0) + "</small></div>" + body + "</div>";
+  const size = formatSize(data.size || 0);
+  const sizeHint = size ? "<span class='text-xs text-slate-500'>" + esc(size) + "</span>" : "";
+  document.getElementById("content").innerHTML = "<div class='max-w-6xl rounded-lg border border-slate-800 bg-slate-900 p-5'><div class='mb-4'><div class='mb-2 flex items-baseline gap-3'><h1 class='m-0 text-xl font-semibold'>" + esc(data.name) + "</h1>" + sizeHint + "</div>" + renderPathBar(data) + "</div>" + body + "</div>";
+}
+
+// renderPathBar 显示可复制的本地绝对路径，便于在访达/资源管理器中定位。
+function renderPathBar(data) {
+  const abs = data.absPath || "";
+  if (!abs) return "";
+  const folderPath = data.type === "dir" ? abs : abs.replace(/[/\\][^/\\]+$/, "") || abs;
+  const showPath = data.type === "dir" ? abs : folderPath;
+  return "<div class='mt-2 flex min-w-0 items-center gap-2 rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1.5'>"
+    + "<code class='min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[12px] text-sky-300' title='" + escAttr(showPath) + "'>" + esc(showPath) + "</code>"
+    + "<button type='button' class='shrink-0 rounded border border-slate-600 bg-slate-900 px-2 py-0.5 text-[11px] text-slate-300 hover:border-sky-400 hover:text-sky-300' onclick='copyText(event,\"" + escJS(showPath) + "\")'>复制路径</button>"
+    + "</div>";
 }
 
 // renderMarkdownPreview 渲染 Markdown 正文和右侧悬浮目录。
@@ -394,16 +408,67 @@ function blockText(el) {
 // copyFeedback 写入剪贴板并在按钮上显示短暂反馈。
 function copyFeedback(btn, text) {
   navigator.clipboard.writeText(text).then(() => {
-    const old = btn.textContent;
-    btn.textContent = "已复制";
-    setTimeout(() => btn.textContent = old, 900);
+    flashCopied(btn);
   });
+}
+
+// flashCopied 在按钮上短暂显示“已复制”反馈。
+function flashCopied(btn, label) {
+  const old = btn.textContent;
+  btn.textContent = label || "已复制";
+  setTimeout(() => btn.textContent = old, 900);
 }
 
 // copyText 复制单个 Markdown 块文本，并显示短暂反馈。
 function copyText(event, text) {
   event.stopPropagation();
   copyFeedback(event.currentTarget, text);
+}
+
+// copyImage 将当前预览图片以 PNG 写入系统剪贴板。
+async function copyImage(event) {
+  event.stopPropagation();
+  const btn = event.currentTarget;
+  const img = document.getElementById("previewImage");
+  if (!img || !img.src) return;
+  try {
+    btn.disabled = true;
+    const blob = await imageToPngBlob(img);
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+    flashCopied(btn);
+  } catch (err) {
+    flashCopied(btn, "复制失败");
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// imageToPngBlob 将图片元素绘制到 canvas 后导出为 PNG Blob（剪贴板兼容性更好）。
+function imageToPngBlob(img) {
+  return new Promise((resolve, reject) => {
+    const draw = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        if (!canvas.width || !canvas.height) {
+          reject(new Error("image not ready"));
+          return;
+        }
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error("toBlob failed")), "image/png");
+      } catch (err) {
+        reject(err);
+      }
+    };
+    if (img.complete && img.naturalWidth) draw();
+    else {
+      img.addEventListener("load", draw, { once: true });
+      img.addEventListener("error", () => reject(new Error("image load failed")), { once: true });
+    }
+  });
 }
 
 // decodeEntities 将转义后的 HTML 文本还原为可复制的纯文本。
