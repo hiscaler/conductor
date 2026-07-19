@@ -486,7 +486,30 @@ const indexHTML = `<!doctype html>
       background:transparent; border-color:rgb(71 85 105 / 0.7); color:rgb(203 213 225);
     }
     .lightbox-btn.ghost:hover {
-      background:rgb(239 68 68 / 0.12); border-color:rgb(248 113 113 / 0.45); color:rgb(254 202 202);
+      background:rgb(148 163 184 / 0.12); border-color:rgb(148 163 184 / 0.45); color:rgb(241 245 249);
+    }
+    .lightbox-btn.danger {
+      background:rgb(127 29 29 / 0.45); border-color:rgb(248 113 113 / 0.35); color:rgb(254 202 202);
+    }
+    .lightbox-btn.danger:hover {
+      background:rgb(185 28 28 / 0.7); border-color:rgb(252 165 165 / 0.45); color:rgb(255 255 255);
+    }
+    .preview-actions {
+      position:absolute; right:12px; top:12px;
+      display:flex; align-items:center; gap:8px;
+    }
+    .preview-action {
+      border:1px solid rgb(71 85 105 / 0.7); border-radius:8px;
+      background:rgb(2 6 23 / 0.82); color:rgb(226 232 240);
+      padding:6px 10px; font:inherit; font-size:12px; cursor:pointer;
+      backdrop-filter:blur(6px);
+      transition:color .15s ease, background .15s ease, border-color .15s ease;
+    }
+    .preview-action:hover { color:rgb(186 230 253); border-color:rgb(56 189 248 / 0.4); }
+    .preview-action.danger { color:rgb(254 202 202); border-color:rgb(248 113 113 / 0.35); }
+    .preview-action.danger:hover {
+      color:rgb(255 255 255); background:rgb(185 28 28 / 0.7);
+      border-color:rgb(252 165 165 / 0.45);
     }
     .lightbox-stage {
       position:relative; display:flex; align-items:center; justify-content:center;
@@ -579,6 +602,10 @@ const indexHTML = `<!doctype html>
         <button type="button" class="lightbox-btn primary" onclick="copyLightboxImage(event)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M5 15V7a2 2 0 0 1 2-2h8"/></svg>
           <span>复制图片</span>
+        </button>
+        <button type="button" class="lightbox-btn danger" onclick="deleteLightboxImage(event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 7h14M10 7V5h4v2m-5 3v7m4-7v7M7 7l1 12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l1-12"/></svg>
+          <span>删除</span>
         </button>
         <button type="button" class="lightbox-btn ghost" onclick="closeLightbox()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" d="M7 7l10 10M17 7L7 17"/></svg>
@@ -838,7 +865,12 @@ async function renderImageContent(data) {
   const sizeHint = size ? "<span class='text-xs text-slate-500'>" + esc(size) + "</span>" : "";
   document.getElementById("content").innerHTML = contentShell(
     contentHeader(data, "<div class='mb-1 flex items-baseline gap-3'><h1 class='m-0 text-xl font-semibold tracking-tight'>" + esc(data.name) + "</h1>" + sizeHint + "</div>"),
-    "<div class='relative inline-block max-w-full'><img id='previewImage' class='max-w-full rounded-lg bg-slate-900' src='" + escAttr(data.rawUrl) + "' alt='" + escAttr(data.name) + "'><button type='button' class='absolute right-3 top-3 rounded-md bg-slate-950/80 px-2.5 py-1 text-[12px] text-slate-200 hover:text-sky-300' onclick='copyImage(event)'>复制图片</button></div><div id='siblingGallery' class='mt-5'></div>"
+    "<div class='relative inline-block max-w-full'>"
+      + "<img id='previewImage' class='max-w-full rounded-lg bg-slate-900' src='" + escAttr(data.rawUrl) + "' alt='" + escAttr(data.name) + "'>"
+      + "<div class='preview-actions'>"
+      + "<button type='button' class='preview-action' onclick='copyImage(event)'>复制图片</button>"
+      + "<button type='button' class='preview-action danger' onclick='deleteImage(\"" + escJS(data.path) + "\",\"" + escJS(data.name) + "\")'>删除</button>"
+      + "</div></div><div id='siblingGallery' class='mt-5'></div>"
   );
   await loadSiblingGallery(data.path);
 }
@@ -851,16 +883,19 @@ async function loadSiblingGallery(imagePath) {
   const data = await res.json();
   if (data.type !== "dir") return;
   const images = (data.children || []).filter(n => n.type === "image");
-  if (images.length < 2) return;
   galleryImages = images.map(n => ({
     name: n.name,
     path: n.path,
     size: n.size || 0,
     rawUrl: rawUrlFor(n.path)
   }));
-  const currentIndex = galleryImages.findIndex(n => n.path === imagePath);
   const shell = document.getElementById("siblingGallery");
   if (!shell) return;
+  if (images.length < 2) {
+    shell.innerHTML = "";
+    return;
+  }
+  const currentIndex = galleryImages.findIndex(n => n.path === imagePath);
   shell.innerHTML = "<div class='mb-2 text-sm text-slate-400'>同目录共 " + images.length + " 张，点击切换</div><div class='gallery-grid'>"
     + images.map((n, i) => renderGalleryCard(n, i, i === currentIndex)).join("")
     + "</div>";
@@ -947,6 +982,102 @@ async function copyLightboxImage(event) {
   } finally {
     btn.disabled = false;
   }
+}
+
+// deleteLightboxImage 删除灯箱中当前图片（先确认再删除）。
+async function deleteLightboxImage(event) {
+  event.stopPropagation();
+  const item = galleryImages[galleryIndex];
+  if (!item) return;
+  await deleteImage(item.path, item.name, { keepLightbox: true });
+}
+
+// sameRelPath 比较相对路径，忽略首尾斜杠与反斜杠差异。
+function sameRelPath(a, b) {
+  const norm = (p) => String(p || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+  return norm(a) === norm(b);
+}
+
+// deleteImage 确认后删除 output 内的图片；有相邻图则直接打开该图片文件（灯箱内删除则继续在灯箱显示）。
+async function deleteImage(path, name, options) {
+  const keepLightbox = !!(options && options.keepLightbox);
+  const label = name || String(path || "").split("/").pop() || path;
+  if (!window.confirm("确认删除该图片？此操作不可恢复。\n\n" + label)) return;
+
+  const parent = parentPath(path);
+  let siblings;
+  if (galleryImages.length && galleryImages.some(g => sameRelPath(g.path, path))) {
+    siblings = galleryImages.map(g => ({ path: g.path, name: g.name }));
+  } else {
+    siblings = await listSiblingImages(parent);
+  }
+  let idx = siblings.findIndex(n => sameRelPath(n.path, path));
+  if (idx < 0 && galleryIndex >= 0 && galleryImages[galleryIndex] && sameRelPath(galleryImages[galleryIndex].path, path)) {
+    idx = galleryIndex;
+  }
+  let nextPath = "";
+  if (idx >= 0) {
+    if (idx + 1 < siblings.length) nextPath = siblings[idx + 1].path; // 优先下一张
+    else if (idx - 1 >= 0) nextPath = siblings[idx - 1].path; // 已是最后一张则前一张
+  }
+
+  const res = await fetch("/api/file?path=" + encodeURIComponent(path || ""), { method: "DELETE" });
+  let payload = null;
+  try { payload = await res.json(); } catch (_) {}
+  if (!res.ok) {
+    const msg = (payload && payload.error) ? payload.error : ("删除失败（" + res.status + "）");
+    window.alert(msg);
+    return;
+  }
+  const fallbackParent = (payload && payload.parent != null) ? payload.parent : parent;
+
+  await loadTree();
+
+  if (!nextPath) {
+    closeLightbox();
+    await openPath(fallbackParent);
+    return;
+  }
+
+  // 始终打开相邻图片文件本身，避免停在目录缩略图预览。
+  await openPath(nextPath);
+
+  if (keepLightbox) {
+    await refreshGalleryImages(parent);
+    let i = galleryImages.findIndex(g => sameRelPath(g.path, nextPath));
+    if (i < 0) {
+      galleryImages = [{
+        name: String(nextPath).split("/").pop() || nextPath,
+        path: nextPath,
+        size: 0,
+        rawUrl: rawUrlFor(nextPath)
+      }];
+      i = 0;
+    }
+    openGallery(i);
+  } else {
+    closeLightbox();
+  }
+}
+
+// listSiblingImages 列出目录下全部图片（保持服务端排序）。
+async function listSiblingImages(parent) {
+  const res = await fetch("/api/file?path=" + encodeURIComponent(parent || ""));
+  if (!res.ok) return [];
+  const data = await res.json();
+  if (data.type !== "dir") return [];
+  return (data.children || []).filter(n => n.type === "image");
+}
+
+// refreshGalleryImages 删除后重建灯箱用的同目录图片列表。
+async function refreshGalleryImages(parent) {
+  const images = await listSiblingImages(parent);
+  galleryImages = images.map(n => ({
+    name: n.name,
+    path: n.path,
+    size: n.size || 0,
+    rawUrl: rawUrlFor(n.path)
+  }));
 }
 
 document.addEventListener("keydown", event => {

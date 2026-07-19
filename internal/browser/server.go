@@ -78,8 +78,21 @@ func (s *server) tree(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, root)
 }
 
-// file 返回所选文件或目录的元信息和预览内容。
+// file 按方法分发：GET 预览元数据，DELETE 删除图片文件。
 func (s *server) file(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet, "":
+		s.getFile(w, r)
+	case http.MethodDelete:
+		s.deleteFile(w, r)
+	default:
+		w.Header().Set("Allow", "GET, DELETE")
+		writeError(w, errors.New("method not allowed"), http.StatusMethodNotAllowed)
+	}
+}
+
+// getFile 返回所选文件或目录的元信息和预览内容。
+func (s *server) getFile(w http.ResponseWriter, r *http.Request) {
 	rel := r.URL.Query().Get("path")
 	full, err := s.clean(rel)
 	if err != nil {
@@ -127,6 +140,47 @@ func (s *server) file(w http.ResponseWriter, r *http.Request) {
 		out.RawURL = "/raw?path=" + queryEscapePath(rel)
 	}
 	writeJSON(w, out)
+}
+
+// deleteFile 删除 output 根目录内的图片文件；目录与非图片一律拒绝。
+func (s *server) deleteFile(w http.ResponseWriter, r *http.Request) {
+	rel := r.URL.Query().Get("path")
+	full, err := s.clean(rel)
+	if err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	info, err := os.Stat(full)
+	if err != nil {
+		if os.IsNotExist(err) {
+			writeError(w, errors.New("file not found"), http.StatusNotFound)
+			return
+		}
+		writeError(w, err, http.StatusInternalServerError)
+		return
+	}
+	if info.IsDir() {
+		writeError(w, errors.New("refusing to delete directory"), http.StatusBadRequest)
+		return
+	}
+	if kindFor(full) != "image" {
+		writeError(w, errors.New("only image files can be deleted"), http.StatusBadRequest)
+		return
+	}
+	if err := os.Remove(full); err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
+	}
+	slashRel := filepath.ToSlash(rel)
+	parent := path.Dir(slashRel)
+	if parent == "." {
+		parent = ""
+	}
+	writeJSON(w, map[string]any{
+		"ok":     true,
+		"path":   slashRel,
+		"parent": parent,
+	})
 }
 
 // readme 返回项目 README.md，方便用户在浏览器内查看使用说明。
