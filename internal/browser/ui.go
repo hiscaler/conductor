@@ -170,7 +170,120 @@ const indexHTML = `<!doctype html>
     .tree { padding-left:0; }
     .collapsed > ul { display:none; }
     .markdown { line-height:1.7; min-width:0; overflow-wrap:anywhere; word-break:break-word; }
-    .markdown-shell { display:grid; grid-template-columns:minmax(0, 1fr) 220px; gap:18px; align-items:start; min-width:0; }
+    .markdown-shell { display:block; min-width:0; }
+    /* 宽屏：目录固定在内容区外，不占正文宽度；窄屏：收进内容区内并可折叠 */
+    .toc-dock {
+      position:fixed; z-index:35;
+      top:96px; right:max(12px, calc((100vw - 1440px) / 2 - 236px));
+      width:224px; max-height:calc(100vh - 120px);
+      display:flex; flex-direction:column; gap:0;
+      padding:0; box-sizing:border-box; overflow:hidden;
+      border:1px solid rgb(71 85 105 / 0.55);
+      border-radius:14px;
+      background:linear-gradient(165deg, rgb(22 32 51 / 0.96) 0%, rgb(12 20 36 / 0.96) 100%);
+      backdrop-filter:blur(12px);
+      box-shadow:
+        0 0 0 1px rgb(255 255 255 / 0.03) inset,
+        0 12px 32px rgb(0 0 0 / 0.35);
+    }
+    .toc-dock.is-collapsed {
+      width:auto; max-height:none; border-radius:999px;
+      background:rgb(15 23 42 / 0.92);
+    }
+    .toc-dock.is-collapsed .toc-body,
+    .toc-dock.is-collapsed .toc-head-meta { display:none; }
+    .toc-head {
+      display:flex; align-items:center; gap:8px;
+      padding:10px 12px;
+      border-bottom:1px solid rgb(51 65 85 / 0.55);
+      background:rgb(15 23 42 / 0.45);
+    }
+    .toc-dock.is-collapsed .toc-head {
+      border-bottom:0; padding:0; background:transparent;
+    }
+    .toc-head-meta {
+      display:flex; flex-direction:column; gap:1px; min-width:0; flex:1;
+    }
+    .toc-head-title {
+      font-size:12px; font-weight:700; letter-spacing:0.08em;
+      text-transform:uppercase; color:rgb(186 230 253);
+    }
+    .toc-head-count {
+      font-size:11px; color:rgb(100 116 139); font-variant-numeric:tabular-nums;
+    }
+    .toc-toggle {
+      display:inline-flex; align-items:center; justify-content:center;
+      flex:0 0 auto; width:28px; height:28px; margin:0; padding:0;
+      border:1px solid rgb(71 85 105 / 0.55); border-radius:8px;
+      background:rgb(30 41 59 / 0.55); color:rgb(148 163 184);
+      cursor:pointer; transition:color .15s ease, background .15s ease, border-color .15s ease;
+    }
+    .toc-toggle:hover {
+      color:rgb(186 230 253); background:rgb(51 65 85 / 0.7);
+      border-color:rgb(56 189 248 / 0.35);
+    }
+    .toc-toggle svg { width:14px; height:14px; display:block; }
+    .toc-dock.is-collapsed .toc-toggle {
+      width:auto; height:auto; gap:8px; padding:8px 12px; border-radius:999px;
+      border-color:rgb(71 85 105 / 0.65);
+    }
+    .toc-dock.is-collapsed .toc-toggle-label { display:inline; font-size:12px; font-weight:600; color:inherit; }
+    .toc-toggle-label { display:none; }
+    .toc-body {
+      overflow:auto; min-height:0; padding:8px 8px 10px;
+      display:flex; flex-direction:column; gap:2px;
+    }
+    .toc-body a {
+      position:relative; border-radius:8px;
+      padding:7px 10px 7px 12px;
+      font-size:12.5px; line-height:1.4; color:rgb(148 163 184);
+      text-decoration:none;
+      border-left:2px solid transparent;
+      transition:color .12s ease, background .12s ease, border-color .12s ease;
+      overflow:hidden; text-overflow:ellipsis;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    }
+    .toc-body a:hover {
+      background:rgb(56 189 248 / 0.08); color:rgb(226 232 240);
+      border-left-color:rgb(56 189 248 / 0.45);
+    }
+    .toc-body a.is-active {
+      background:rgb(56 189 248 / 0.12); color:rgb(186 230 253);
+      border-left-color:rgb(56 189 248);
+    }
+    .toc-body a.level-1 {
+      margin-top:6px; padding-top:8px; padding-bottom:8px;
+      font-size:13px; font-weight:600; color:rgb(241 245 249);
+    }
+    .toc-body a.level-1:first-child { margin-top:0; }
+    .toc-body a.level-2 { padding-left:16px; color:rgb(163 174 191); }
+    .toc-body a.level-3 {
+      padding-left:24px; font-size:12px; color:rgb(120 133 153);
+    }
+    @media (max-width: 1679px) {
+      /* 视口不足以把目录放到 1440 定宽外侧时，仍浮在右侧边缘，不挤占正文 */
+      .toc-dock { right:12px; }
+    }
+    @media (max-width: 1100px) {
+      /* 窄屏：目录进入内容区顶部，可折叠 */
+      .markdown-shell { display:flex; flex-direction:column; gap:14px; }
+      .toc-dock {
+        position:static; order:-1; z-index:auto;
+        width:100%; max-height:none;
+        right:auto; top:auto;
+        box-shadow:none;
+      }
+      .toc-dock.is-collapsed {
+        width:100%; border-radius:12px;
+      }
+      .toc-dock.is-collapsed .toc-head { padding:8px 10px; }
+      .toc-dock.is-collapsed .toc-head-meta { display:flex; }
+      .toc-dock.is-collapsed .toc-toggle { border-radius:8px; padding:0; width:28px; height:28px; }
+      .toc-dock.is-collapsed .toc-toggle-label { display:none; }
+      .toc-dock:not(.is-collapsed) .toc-body {
+        max-height:min(40vh, 320px); overflow:auto;
+      }
+    }
     .copyable { position:relative; padding-right:42px; }
     .copy-btn {
       position:absolute; right:0; top:0.1em; border:0; background:transparent;
@@ -204,7 +317,6 @@ const indexHTML = `<!doctype html>
       display:block; width:100%; max-width:100%; height:auto;
       border-radius:12px; background:rgb(15 23 42);
     }
-    @media (max-width: 1050px) { .markdown-shell { grid-template-columns:1fr; } .toc { position:static; max-height:none; order:-1; } }
     .header-actions {
       display:flex; align-items:center; gap:4px;
       font-size:14px; letter-spacing:0.01em;
@@ -617,6 +729,10 @@ function soleFileChild(children) {
 // renderContent 根据文件类型选择合适的预览方式。
 function renderContent(data) {
   closeLightbox();
+  if (tocSpyCleanup) {
+    tocSpyCleanup();
+    tocSpyCleanup = null;
+  }
   if (data.type === "dir") {
     renderDirContent(data);
     return;
@@ -636,6 +752,7 @@ function renderContent(data) {
     contentHeader(data, "<div class='mb-1 flex items-baseline gap-3'><h1 class='m-0 text-xl font-semibold tracking-tight'>" + esc(data.name) + "</h1>" + sizeHint + "</div>"),
     body
   );
+  applyTocCollapsedState();
 }
 
 // contentShell 组装右侧预览外壳，避免多层边框套框。
@@ -847,7 +964,7 @@ function renderPathBar(data) {
     + "</div>";
 }
 
-// renderMarkdownPreview 渲染 Markdown 正文和右侧悬浮目录。
+// renderMarkdownPreview 渲染 Markdown 正文；目录默认浮在内容区外，窄屏时进入内容区。
 function renderMarkdownPreview(src) {
   const rendered = renderMarkdown(src);
   return "<div class='markdown-shell'><div class='markdown'>" + rendered.html + "</div>" + renderToc(rendered.headings) + "</div>";
@@ -975,12 +1092,115 @@ function headingBlock(tag, level, text, headings) {
   return "<" + tag + " id='" + id + "' data-level='" + level + "' class='copyable'>" + inline(text) + "<button class='copy-btn' onclick='copySection(event)'>复制</button></" + tag + ">";
 }
 
-// renderToc 生成 Markdown 右侧悬浮目录导航。
+// renderToc 生成可折叠目录；宽屏固定在内容区外，窄屏进入内容区顶部。
 function renderToc(headings) {
   if (!headings.length) return "";
-  const levelClass = h => h.level === 1 ? "font-semibold text-slate-200" : h.level === 2 ? "pl-3" : "pl-6 text-xs";
-  const links = headings.map(h => "<a class='block rounded px-1 py-1 text-sm leading-snug text-slate-400 hover:bg-slate-800 hover:text-blue-300 " + levelClass(h) + "' href='#" + h.id + "'>" + esc(h.text) + "</a>").join("");
-  return "<nav class='toc sticky top-5 max-h-[calc(100vh-7rem)] overflow-auto p-1'><div class='mb-2 text-sm font-semibold text-slate-200'>目录</div>" + links + "</nav>";
+  const links = headings.map(h => {
+    const level = h.level === 1 ? "level-1" : h.level === 2 ? "level-2" : "level-3";
+    return "<a class='" + level + "' href='#" + h.id + "' title='" + escAttr(h.text) + "'>" + esc(h.text) + "</a>";
+  }).join("");
+  return "<aside class='toc-dock' id='tocDock'>"
+    + "<div class='toc-head'>"
+    + "<div class='toc-head-meta'>"
+    + "<div class='toc-head-title'>目录</div>"
+    + "<div class='toc-head-count'>" + headings.length + " 个章节</div>"
+    + "</div>"
+    + "<button type='button' class='toc-toggle' onclick='toggleToc()' aria-expanded='true' title='折叠目录'>"
+    + "<span class='toc-toggle-label'>目录</span>"
+    + "<svg class='toc-toggle-icon' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>"
+    + "<path stroke-linecap='round' stroke-linejoin='round' d='M6 9l6 6 6-6'/>"
+    + "</svg>"
+    + "</button>"
+    + "</div>"
+    + "<nav class='toc-body' aria-label='目录'>" + links + "</nav>"
+    + "</aside>";
+}
+
+// TOC_COLLAPSED_KEY 记住用户是否收起 Markdown 目录。
+const TOC_COLLAPSED_KEY = "conductor.tocCollapsed";
+let tocSpyCleanup = null;
+
+// applyTocCollapsedState 根据本地存储恢复目录折叠状态。
+function applyTocCollapsedState() {
+  const dock = document.getElementById("tocDock");
+  if (!dock) return;
+  const collapsed = localStorage.getItem(TOC_COLLAPSED_KEY) === "1";
+  dock.classList.toggle("is-collapsed", collapsed);
+  const btn = dock.querySelector(".toc-toggle");
+  if (btn) {
+    btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    btn.title = collapsed ? "展开目录" : "折叠目录";
+    const icon = btn.querySelector(".toc-toggle-icon");
+    if (icon) {
+      icon.innerHTML = collapsed
+        ? "<path stroke-linecap='round' stroke-linejoin='round' d='M4 7h16M4 12h10M4 17h14'/>"
+        : "<path stroke-linecap='round' stroke-linejoin='round' d='M6 9l6 6 6-6'/>";
+    }
+  }
+  if (!collapsed) initTocScrollSpy();
+  else if (tocSpyCleanup) {
+    tocSpyCleanup();
+    tocSpyCleanup = null;
+  }
+}
+
+// toggleToc 折叠或展开 Markdown 目录，并写入本地存储。
+function toggleToc() {
+  const dock = document.getElementById("tocDock");
+  if (!dock) return;
+  const collapsed = !dock.classList.contains("is-collapsed");
+  localStorage.setItem(TOC_COLLAPSED_KEY, collapsed ? "1" : "0");
+  applyTocCollapsedState();
+}
+
+// initTocScrollSpy 点击立即激活，并随内容区滚动同步高亮章节。
+function initTocScrollSpy() {
+  if (tocSpyCleanup) {
+    tocSpyCleanup();
+    tocSpyCleanup = null;
+  }
+  const root = document.getElementById("layoutContent");
+  const dock = document.getElementById("tocDock");
+  const links = Array.from(document.querySelectorAll("#tocDock .toc-body a[href^='#']"));
+  if (!root || !dock || !links.length) return;
+  const items = links.map(a => {
+    const id = (a.getAttribute("href") || "").slice(1);
+    return { a, id, el: id ? document.getElementById(id) : null };
+  }).filter(item => item.el);
+  if (!items.length) return;
+
+  const setActive = (id) => {
+    links.forEach(a => a.classList.toggle("is-active", a.getAttribute("href") === "#" + id));
+  };
+
+  const updateFromScroll = () => {
+    const marker = root.getBoundingClientRect().top + Math.min(120, root.clientHeight * 0.2);
+    let current = items[0].id;
+    for (const item of items) {
+      if (item.el.getBoundingClientRect().top <= marker) current = item.id;
+      else break;
+    }
+    setActive(current);
+  };
+
+  const onClick = (event) => {
+    const a = event.target.closest("a[href^='#']");
+    if (!a || !dock.contains(a)) return;
+    const id = (a.getAttribute("href") || "").slice(1);
+    const el = id ? document.getElementById(id) : null;
+    if (!el) return;
+    event.preventDefault();
+    setActive(id);
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  dock.addEventListener("click", onClick);
+  root.addEventListener("scroll", updateFromScroll, { passive: true });
+  tocSpyCleanup = () => {
+    dock.removeEventListener("click", onClick);
+    root.removeEventListener("scroll", updateFromScroll);
+  };
+  updateFromScroll();
 }
 
 // copyBlock 为 Markdown 块包裹复制按钮。
