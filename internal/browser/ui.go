@@ -16,21 +16,29 @@ const indexHTML = `<!doctype html>
     .markdown { line-height:1.7; min-width:0; overflow-wrap:anywhere; word-break:break-word; }
     .markdown-shell { display:grid; grid-template-columns:minmax(0, 1fr) 220px; gap:18px; align-items:start; min-width:0; }
     .copyable { position:relative; padding-right:42px; }
-    .copy-btn { position:absolute; right:0; top:0.15em; border:1px solid rgb(51 65 85); background:rgb(15 23 42); color:rgb(148 163 184); border-radius:5px; padding:2px 6px; font-size:12px; opacity:0; }
+    .copy-btn {
+      position:absolute; right:0; top:0.1em; border:0; background:transparent;
+      color:rgb(100 116 139); border-radius:4px; padding:2px 6px; font-size:12px; opacity:0; cursor:pointer;
+    }
     .copyable:hover .copy-btn { opacity:1; }
-    .copy-btn:hover { color:rgb(37 99 235); border-color:rgb(191 219 254); }
+    .copy-btn:hover { color:rgb(125 211 252); background:rgb(148 163 184 / 0.08); }
     .markdown h1, .markdown h2, .markdown h3 { line-height:1.25; scroll-margin-top:18px; }
-    .markdown h1 { font-size:24px; font-weight:700; color:rgb(248 250 252); border-bottom:1px solid rgb(51 65 85); padding-bottom:8px; margin:0 0 0.85em; }
-    .markdown h2 { font-size:21px; font-weight:700; color:rgb(241 245 249); border-bottom:1px solid rgb(51 65 85); padding-bottom:8px; margin:2.2em 0 0.9em; }
-    .markdown h3 { font-size:13px; font-weight:600; color:rgb(125 211 252); letter-spacing:0.03em; margin:1.35em 0 0.55em; padding:7px 12px 7px 10px; background:rgb(15 23 42); border-left:3px solid rgb(56 189 248); border-radius:0 8px 8px 0; }
+    .markdown h1 { font-size:24px; font-weight:700; color:rgb(248 250 252); border-bottom:1px solid rgb(51 65 85 / 0.7); padding-bottom:8px; margin:0 0 0.85em; }
+    .markdown h2 { font-size:21px; font-weight:700; color:rgb(241 245 249); border-bottom:1px solid rgb(51 65 85 / 0.55); padding-bottom:8px; margin:2.2em 0 0.9em; }
+    .markdown h3 { font-size:14px; font-weight:600; color:rgb(125 211 252); letter-spacing:0.02em; margin:1.5em 0 0.55em; padding:0; background:transparent; border:0; }
     .markdown h3.copyable { padding-right:52px; }
     .markdown p, .markdown li { color:rgb(203 213 225); font-size:15px; line-height:1.75; }
-    .markdown p { margin:0 0 0.85em; padding:10px 12px; padding-right:42px; background:rgb(15 23 42 / 0.55); border:1px solid rgb(30 41 59); border-radius:8px; }
+    .markdown p { margin:0 0 0.9em; padding:0; padding-right:42px; background:transparent; border:0; }
     .markdown h3 + p, .markdown h3 + ul, .markdown h3 + pre, .markdown h3 + table { margin-top:0; }
-    .markdown ul { margin:0 0 0.85em; padding:10px 12px 10px 28px; background:rgb(15 23 42 / 0.55); border:1px solid rgb(30 41 59); border-radius:8px; }
-    .markdown li { margin:0.35em 0; padding-right:42px; }
-    .markdown code { background:rgb(30 41 59); padding:2px 4px; border-radius:4px; color:rgb(226 232 240); }
-    .markdown pre { white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; margin:0 0 0.85em; padding:12px; background:rgb(15 23 42); border:1px solid rgb(30 41 59); border-radius:8px; color:rgb(226 232 240); }
+    .markdown ul { margin:0 0 0.9em; padding:0 0 0 1.25em; background:transparent; border:0; }
+    .markdown li { margin:0.3em 0; padding-right:42px; }
+    .markdown code { background:rgb(30 41 59 / 0.7); padding:1px 5px; border-radius:4px; color:rgb(226 232 240); }
+    .markdown pre {
+      white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere;
+      margin:0 0 0.9em; padding:12px 0; padding-right:42px;
+      background:transparent; border:0; border-top:1px solid rgb(51 65 85 / 0.45); border-bottom:1px solid rgb(51 65 85 / 0.45);
+      color:rgb(226 232 240);
+    }
     .markdown table { border-collapse:collapse; width:100%; margin:12px 0; table-layout:fixed; }
     .markdown th, .markdown td { border:1px solid rgb(51 65 85); padding:8px; vertical-align:top; }
     .markdown th, .markdown td { overflow-wrap:anywhere; word-break:break-word; }
@@ -101,14 +109,39 @@ const indexHTML = `<!doctype html>
     }
     .gallery-card {
       display:flex; flex-direction:column; gap:8px;
-      padding:0; border:1px solid rgb(51 65 85); border-radius:10px;
-      background:rgb(2 6 23); color:inherit; font:inherit; text-align:left;
-      cursor:pointer; overflow:hidden; transition:border-color .15s ease, box-shadow .15s ease;
+      padding:0; border:0; border-radius:10px;
+      background:rgb(15 23 42); color:inherit; font:inherit; text-align:left;
+      cursor:pointer; overflow:hidden; transition:background .15s ease, outline-color .15s ease;
+      outline:1px solid transparent; outline-offset:0;
     }
-    .gallery-card:hover { border-color:rgb(56 189 248); box-shadow:0 0 0 1px rgb(56 189 248 / 0.25); }
+    .gallery-card:hover { background:rgb(30 41 59); outline-color:rgb(56 189 248 / 0.45); }
+    .gallery-card.is-active { outline-color:rgb(56 189 248); }
     .gallery-card img {
-      display:block; width:100%; aspect-ratio:1; object-fit:cover; background:rgb(15 23 42);
+      display:block; width:100%; aspect-ratio:1; object-fit:cover; background:rgb(2 6 23);
     }
+    .file-list { width:100%; border-collapse:collapse; table-layout:fixed; }
+    .file-list th, .file-list td {
+      border:1px solid rgb(51 65 85); padding:9px 10px; vertical-align:middle; text-align:left;
+    }
+    .file-list th {
+      background:rgb(15 23 42); color:rgb(148 163 184); font-size:12px; font-weight:500;
+    }
+    .file-list td { color:rgb(203 213 225); font-size:14px; }
+    .file-list tr.file-row { cursor:pointer; }
+    .file-list tr.file-row:hover td { background:rgb(30 41 59 / 0.7); color:rgb(224 242 254); }
+    .file-list .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .file-list .type, .file-list .size { color:rgb(148 163 184); font-size:12px; width:110px; }
+    .file-list .size { width:88px; }
+    .path-bar { display:flex; min-width:0; align-items:center; gap:10px; margin-top:6px; }
+    .path-bar code {
+      min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+      font-size:12px; color:rgb(100 116 139); background:transparent; padding:0;
+    }
+    .path-bar button {
+      flex-shrink:0; border:0; background:transparent; padding:0;
+      color:rgb(56 189 248); font:inherit; font-size:12px; cursor:pointer;
+    }
+    .path-bar button:hover { color:rgb(125 211 252); }
     .gallery-card .meta {
       padding:0 10px 10px; min-width:0;
     }
@@ -128,34 +161,73 @@ const indexHTML = `<!doctype html>
       max-width:min(1100px, 100%); max-height:100%;
     }
     .lightbox-toolbar {
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      width:100%; margin-bottom:12px; color:rgb(226 232 240); font-size:13px;
+      display:flex; align-items:center; justify-content:space-between; gap:16px;
+      width:100%; margin-bottom:14px; color:rgb(226 232 240); font-size:13px;
     }
-    .lightbox-toolbar .title { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .lightbox-actions { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+    .lightbox-toolbar .title {
+      min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+      font-size:14px; font-weight:500; letter-spacing:0.01em; color:rgb(241 245 249);
+    }
+    .lightbox-actions { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+    .lightbox-counter {
+      min-width:3.25rem; text-align:right;
+      font-size:12px; font-variant-numeric:tabular-nums;
+      color:rgb(148 163 184); letter-spacing:0.02em;
+    }
     .lightbox-btn {
-      border:1px solid rgb(71 85 105); background:rgb(15 23 42); color:rgb(226 232 240);
-      border-radius:8px; padding:6px 12px; font:inherit; font-size:12px; cursor:pointer;
+      display:inline-flex; align-items:center; gap:6px;
+      height:32px; padding:0 12px 0 10px;
+      border:1px solid transparent; border-radius:999px;
+      background:rgb(255 255 255 / 0.06); color:rgb(226 232 240);
+      font:inherit; font-size:12px; font-weight:500; letter-spacing:0.02em;
+      cursor:pointer; backdrop-filter:blur(8px);
+      transition:background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease;
     }
-    .lightbox-btn:hover { border-color:rgb(56 189 248); color:rgb(125 211 252); }
+    .lightbox-btn svg { width:14px; height:14px; stroke-width:1.7; opacity:.9; }
+    .lightbox-btn:hover {
+      background:rgb(255 255 255 / 0.1); color:rgb(255 255 255);
+      border-color:rgb(148 163 184 / 0.25);
+    }
+    .lightbox-btn:active { transform:translateY(1px); }
+    .lightbox-btn.primary {
+      background:linear-gradient(180deg, rgb(14 165 233), rgb(2 132 199));
+      border-color:rgb(56 189 248 / 0.35); color:white;
+      box-shadow:0 1px 2px rgb(0 0 0 / 0.25), inset 0 1px 0 rgb(255 255 255 / 0.18);
+    }
+    .lightbox-btn.primary:hover {
+      background:linear-gradient(180deg, rgb(56 189 248), rgb(14 165 233));
+      border-color:rgb(125 211 252 / 0.5); color:white;
+    }
+    .lightbox-btn.ghost {
+      background:transparent; border-color:rgb(71 85 105 / 0.7); color:rgb(203 213 225);
+    }
+    .lightbox-btn.ghost:hover {
+      background:rgb(239 68 68 / 0.12); border-color:rgb(248 113 113 / 0.45); color:rgb(254 202 202);
+    }
     .lightbox-stage {
       position:relative; display:flex; align-items:center; justify-content:center;
       max-width:100%; max-height:calc(100vh - 120px);
     }
     .lightbox-stage img {
       max-width:100%; max-height:calc(100vh - 120px);
-      border-radius:10px; border:1px solid rgb(51 65 85); background:rgb(15 23 42);
+      border-radius:12px; background:rgb(15 23 42);
+      box-shadow:0 20px 50px rgb(0 0 0 / 0.45);
     }
     .lightbox-nav {
       position:absolute; top:50%; transform:translateY(-50%);
-      width:42px; height:42px; border-radius:999px;
-      border:1px solid rgb(71 85 105); background:rgb(15 23 42 / 0.9);
-      color:rgb(226 232 240); font-size:22px; line-height:1; cursor:pointer;
+      display:inline-flex; align-items:center; justify-content:center;
+      width:40px; height:40px; border-radius:999px;
+      border:1px solid rgb(255 255 255 / 0.12);
+      background:rgb(15 23 42 / 0.72); color:rgb(241 245 249);
+      font-size:20px; line-height:1; cursor:pointer; backdrop-filter:blur(8px);
+      transition:background .15s ease, border-color .15s ease, color .15s ease;
     }
-    .lightbox-nav:hover { border-color:rgb(56 189 248); color:rgb(125 211 252); }
-    .lightbox-nav.prev { left:10px; }
-    .lightbox-nav.next { right:10px; }
-    .lightbox-nav:disabled { opacity:.35; cursor:default; }
+    .lightbox-nav:hover {
+      background:rgb(15 23 42 / 0.92); border-color:rgb(56 189 248 / 0.55); color:rgb(125 211 252);
+    }
+    .lightbox-nav.prev { left:12px; }
+    .lightbox-nav.next { right:12px; }
+    .lightbox-nav:disabled { opacity:.28; cursor:default; pointer-events:none; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100">
@@ -189,7 +261,7 @@ const indexHTML = `<!doctype html>
     <ul id="tree" class="tree"></ul>
   </aside>
   <section class="min-w-0 overflow-auto overflow-x-hidden p-6 max-[800px]:h-[calc(62vh-3.5rem)]">
-    <div id="content" class="rounded-lg border border-dashed border-slate-700 bg-slate-900 p-6 text-slate-400">请选择左侧文件或目录。</div>
+    <div id="content" class="text-slate-500">请选择左侧文件或目录。</div>
   </section>
 </main>
 <div id="lightbox" class="lightbox" hidden onclick="closeLightboxBackdrop(event)">
@@ -197,9 +269,15 @@ const indexHTML = `<!doctype html>
     <div class="lightbox-toolbar">
       <div class="title" id="lightboxTitle"></div>
       <div class="lightbox-actions">
-        <span id="lightboxCounter" class="text-slate-400"></span>
-        <button type="button" class="lightbox-btn" onclick="copyLightboxImage(event)">复制图片</button>
-        <button type="button" class="lightbox-btn" onclick="closeLightbox()">关闭</button>
+        <span id="lightboxCounter" class="lightbox-counter"></span>
+        <button type="button" class="lightbox-btn primary" onclick="copyLightboxImage(event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M5 15V7a2 2 0 0 1 2-2h8"/></svg>
+          <span>复制图片</span>
+        </button>
+        <button type="button" class="lightbox-btn ghost" onclick="closeLightbox()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" d="M7 7l10 10M17 7L7 17"/></svg>
+          <span>关闭</span>
+        </button>
       </div>
     </div>
     <div class="lightbox-stage">
@@ -222,7 +300,7 @@ async function openReadme() {
   markActive();
   const res = await fetch("/api/readme");
   if (!res.ok) {
-    document.getElementById("content").innerHTML = "<div class='rounded-lg border border-dashed border-slate-700 bg-slate-900 p-6 text-slate-400'>README.md 读取失败</div>";
+    document.getElementById("content").innerHTML = "<div class='text-slate-500'>README.md 读取失败</div>";
     return;
   }
   const data = await res.json();
@@ -306,7 +384,7 @@ async function openPath(path) {
   markActive();
   const res = await fetch("/api/file?path=" + encodeURIComponent(path));
   if (!res.ok) {
-    document.getElementById("content").innerHTML = "<div class='rounded-lg border border-dashed border-slate-700 bg-slate-900 p-6 text-slate-400'>读取失败</div>";
+    document.getElementById("content").innerHTML = "<div class='text-slate-500'>读取失败</div>";
     return;
   }
   const data = await res.json();
@@ -326,12 +404,20 @@ function renderContent(data) {
   }
   let body = "";
   if (data.type === "markdown") body = renderMarkdownPreview(data.content || "");
-  else if (data.type === "video") body = "<div><video class='max-w-full rounded-lg border border-slate-700 bg-black' src='" + escAttr(data.rawUrl) + "' controls></video></div>";
-  else if (data.type === "text" || data.type === "json") body = "<pre class='overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-950 p-4 text-slate-200'>" + esc(data.content || "") + "</pre>";
+  else if (data.type === "video") body = "<div><video class='max-w-full rounded-lg bg-black' src='" + escAttr(data.rawUrl) + "' controls></video></div>";
+  else if (data.type === "text" || data.type === "json") body = "<pre class='overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-900/60 p-4 text-slate-200'>" + esc(data.content || "") + "</pre>";
   else body = "<p><a href='" + escAttr(data.rawUrl) + "' target='_blank'>下载或打开文件</a></p>";
   const size = formatSize(data.size || 0);
   const sizeHint = size ? "<span class='text-xs text-slate-500'>" + esc(size) + "</span>" : "";
-  document.getElementById("content").innerHTML = "<div class='max-w-6xl rounded-lg border border-slate-800 bg-slate-900 p-5'><div class='mb-4'><div class='mb-2 flex items-baseline gap-3'><h1 class='m-0 text-xl font-semibold'>" + esc(data.name) + "</h1>" + sizeHint + "</div>" + renderPathBar(data) + "</div>" + body + "</div>";
+  document.getElementById("content").innerHTML = contentShell(
+    "<div class='mb-5'><div class='mb-1 flex items-baseline gap-3'><h1 class='m-0 text-xl font-semibold tracking-tight'>" + esc(data.name) + "</h1>" + sizeHint + "</div>" + renderPathBar(data) + "</div>",
+    body
+  );
+}
+
+// contentShell 组装右侧预览外壳，避免多层边框套框。
+function contentShell(header, body) {
+  return "<div class='max-w-6xl'>" + header + body + "</div>";
 }
 
 // renderDirContent 渲染目录内容；含图片时优先展示缩略图网格。
@@ -347,24 +433,40 @@ function renderDirContent(data) {
   }));
   let body = "";
   if (images.length) {
-    body += "<div class='mb-2 text-sm text-slate-400'>共 " + images.length + " 张图片，点击可放大预览</div>";
+    body += "<div class='mb-2 text-sm text-slate-500'>共 " + images.length + " 张图片，点击可放大预览</div>";
     body += "<div class='gallery-grid'>" + images.map((n, i) => renderGalleryCard(n, i)).join("") + "</div>";
   }
   if (others.length) {
-    const cell = " class='border border-slate-700 p-2 align-top'";
-    const rows = others.map(n => "<tr class='cursor-pointer hover:bg-slate-800' onclick='openPath(\"" + escJS(n.path) + "\")'><td" + cell + ">" + iconFor(n.type) + " " + esc(n.name) + "</td><td" + cell + ">" + esc(n.type) + "</td><td" + cell + ">" + formatSize(n.size || 0) + "</td></tr>").join("");
-    body += (images.length ? "<div class='mt-6 mb-2 text-sm font-medium text-slate-300'>其他文件</div>" : "")
-      + "<table class='w-full table-fixed border-collapse'><thead><tr><th class='border border-slate-700 bg-slate-950 p-2 text-left'>名称</th><th class='border border-slate-700 bg-slate-950 p-2 text-left'>类型</th><th class='border border-slate-700 bg-slate-950 p-2 text-left'>大小</th></tr></thead><tbody>" + rows + "</tbody></table>";
+    body += (images.length ? "<div class='mt-6 mb-2 text-sm text-slate-500'>其他文件</div>" : "")
+      + renderFileList(others);
   }
-  if (!body) body = "<div class='text-slate-400'>空目录</div>";
-  document.getElementById("content").innerHTML = "<div class='max-w-6xl rounded-lg border border-slate-800 bg-slate-900 p-5'><div class='mb-4'><h1 class='m-0 text-xl font-semibold'>" + esc(data.name || "output") + "</h1>" + renderPathBar(data) + "</div>" + body + "</div>";
+  if (!body) body = "<div class='text-slate-500'>空目录</div>";
+  document.getElementById("content").innerHTML = contentShell(
+    "<div class='mb-5'><h1 class='m-0 text-xl font-semibold tracking-tight'>" + esc(data.name || "output") + "</h1>" + renderPathBar(data) + "</div>",
+    body
+  );
+}
+
+// renderFileList 以带边框表格展示目录中的非图片项。
+function renderFileList(items) {
+  const rows = items.map(n =>
+    "<tr class='file-row' onclick='openPath(\"" + escJS(n.path) + "\")'>"
+    + "<td class='name'>" + iconFor(n.type) + " " + esc(n.name) + "</td>"
+    + "<td class='type'>" + esc(n.type) + "</td>"
+    + "<td class='size'>" + esc(formatSize(n.size || 0) || "—") + "</td></tr>"
+  ).join("");
+  return "<table class='file-list'><thead><tr><th>名称</th><th>类型</th><th>大小</th></tr></thead><tbody>"
+    + rows + "</tbody></table>";
 }
 
 // renderImageContent 渲染单张图片，并加载同目录图片供左右切换。
 async function renderImageContent(data) {
   const size = formatSize(data.size || 0);
   const sizeHint = size ? "<span class='text-xs text-slate-500'>" + esc(size) + "</span>" : "";
-  document.getElementById("content").innerHTML = "<div class='max-w-6xl rounded-lg border border-slate-800 bg-slate-900 p-5'><div class='mb-4'><div class='mb-2 flex items-baseline gap-3'><h1 class='m-0 text-xl font-semibold'>" + esc(data.name) + "</h1>" + sizeHint + "</div>" + renderPathBar(data) + "</div><div class='relative inline-block max-w-full'><img id='previewImage' class='max-w-full rounded-lg border border-slate-700 bg-slate-950' src='" + escAttr(data.rawUrl) + "' alt='" + escAttr(data.name) + "'><button type='button' class='absolute right-3 top-3 rounded border border-slate-600 bg-slate-900/90 px-2.5 py-1 text-[12px] text-slate-200 shadow hover:border-sky-400 hover:text-sky-300' onclick='copyImage(event)'>复制图片</button></div><div id='siblingGallery' class='mt-5'></div></div>";
+  document.getElementById("content").innerHTML = contentShell(
+    "<div class='mb-5'><div class='mb-1 flex items-baseline gap-3'><h1 class='m-0 text-xl font-semibold tracking-tight'>" + esc(data.name) + "</h1>" + sizeHint + "</div>" + renderPathBar(data) + "</div>",
+    "<div class='relative inline-block max-w-full'><img id='previewImage' class='max-w-full rounded-lg bg-slate-900' src='" + escAttr(data.rawUrl) + "' alt='" + escAttr(data.name) + "'><button type='button' class='absolute right-3 top-3 rounded-md bg-slate-950/80 px-2.5 py-1 text-[12px] text-slate-200 hover:text-sky-300' onclick='copyImage(event)'>复制图片</button></div><div id='siblingGallery' class='mt-5'></div>"
+  );
   await loadSiblingGallery(data.path);
 }
 
@@ -394,7 +496,7 @@ async function loadSiblingGallery(imagePath) {
 // renderGalleryCard 渲染单张缩略图卡片。
 function renderGalleryCard(n, index, active) {
   const raw = rawUrlFor(n.path);
-  const activeClass = active ? " border-sky-400" : "";
+  const activeClass = active ? " is-active" : "";
   return "<button type='button' class='gallery-card" + activeClass + "' onclick='openGallery(" + index + ")'>"
     + "<img src='" + escAttr(raw) + "' alt='" + escAttr(n.name) + "' loading='lazy'>"
     + "<div class='meta'><span class='name' title='" + escAttr(n.name) + "'>" + esc(n.name) + "</span>"
@@ -488,9 +590,9 @@ function renderPathBar(data) {
   if (!abs) return "";
   const folderPath = data.type === "dir" ? abs : abs.replace(/[/\\][^/\\]+$/, "") || abs;
   const showPath = data.type === "dir" ? abs : folderPath;
-  return "<div class='mt-2 flex min-w-0 items-center gap-2 rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1.5'>"
-    + "<code class='min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[12px] text-sky-300' title='" + escAttr(showPath) + "'>" + esc(showPath) + "</code>"
-    + "<button type='button' class='shrink-0 rounded border border-slate-600 bg-slate-900 px-2 py-0.5 text-[11px] text-slate-300 hover:border-sky-400 hover:text-sky-300' onclick='copyText(event,\"" + escJS(showPath) + "\")'>复制路径</button>"
+  return "<div class='path-bar'>"
+    + "<code title='" + escAttr(showPath) + "'>" + esc(showPath) + "</code>"
+    + "<button type='button' onclick='copyText(event,\"" + escJS(showPath) + "\")'>复制路径</button>"
     + "</div>";
 }
 
@@ -590,7 +692,7 @@ function renderToc(headings) {
   if (!headings.length) return "";
   const levelClass = h => h.level === 1 ? "font-semibold text-slate-200" : h.level === 2 ? "pl-3" : "pl-6 text-xs";
   const links = headings.map(h => "<a class='block rounded px-1 py-1 text-sm leading-snug text-slate-400 hover:bg-slate-800 hover:text-blue-300 " + levelClass(h) + "' href='#" + h.id + "'>" + esc(h.text) + "</a>").join("");
-  return "<nav class='toc sticky top-5 max-h-[calc(100vh-7rem)] overflow-auto rounded-lg border border-slate-800 bg-slate-900 p-3'><div class='mb-2 text-sm font-semibold text-slate-200'>目录</div>" + links + "</nav>";
+  return "<nav class='toc sticky top-5 max-h-[calc(100vh-7rem)] overflow-auto p-1'><div class='mb-2 text-sm font-semibold text-slate-200'>目录</div>" + links + "</nav>";
 }
 
 // copyBlock 为 Markdown 块包裹复制按钮。
@@ -645,9 +747,10 @@ function copyFeedback(btn, text) {
 
 // flashCopied 在按钮上短暂显示“已复制”反馈。
 function flashCopied(btn, label) {
-  const old = btn.textContent;
-  btn.textContent = label || "已复制";
-  setTimeout(() => btn.textContent = old, 900);
+  const target = btn.querySelector("span") || btn;
+  const old = target.textContent;
+  target.textContent = label || "已复制";
+  setTimeout(() => target.textContent = old, 900);
 }
 
 // copyText 复制单个 Markdown 块文本，并显示短暂反馈。
