@@ -19,12 +19,18 @@ const indexHTML = `<!doctype html>
     .copy-btn { position:absolute; right:0; top:0.15em; border:1px solid rgb(51 65 85); background:rgb(15 23 42); color:rgb(148 163 184); border-radius:5px; padding:2px 6px; font-size:12px; opacity:0; }
     .copyable:hover .copy-btn { opacity:1; }
     .copy-btn:hover { color:rgb(37 99 235); border-color:rgb(191 219 254); }
-    .markdown h1, .markdown h2, .markdown h3 { line-height:1.25; margin-top:1.2em; scroll-margin-top:18px; }
-    .markdown h1 { font-size:24px; border-bottom:1px solid rgb(51 65 85); padding-bottom:8px; }
-    .markdown h2 { font-size:20px; border-bottom:1px solid rgb(51 65 85); padding-bottom:6px; }
-    .markdown h3 { font-size:16px; }
-    .markdown code { background:rgb(30 41 59); padding:2px 4px; border-radius:4px; }
-    .markdown pre { white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; }
+    .markdown h1, .markdown h2, .markdown h3 { line-height:1.25; scroll-margin-top:18px; }
+    .markdown h1 { font-size:24px; font-weight:700; color:rgb(248 250 252); border-bottom:1px solid rgb(51 65 85); padding-bottom:8px; margin:0 0 0.85em; }
+    .markdown h2 { font-size:21px; font-weight:700; color:rgb(241 245 249); border-bottom:1px solid rgb(51 65 85); padding-bottom:8px; margin:2.2em 0 0.9em; }
+    .markdown h3 { font-size:13px; font-weight:600; color:rgb(125 211 252); letter-spacing:0.03em; margin:1.35em 0 0.55em; padding:7px 12px 7px 10px; background:rgb(15 23 42); border-left:3px solid rgb(56 189 248); border-radius:0 8px 8px 0; }
+    .markdown h3.copyable { padding-right:52px; }
+    .markdown p, .markdown li { color:rgb(203 213 225); font-size:15px; line-height:1.75; }
+    .markdown p { margin:0 0 0.85em; padding:10px 12px; padding-right:42px; background:rgb(15 23 42 / 0.55); border:1px solid rgb(30 41 59); border-radius:8px; }
+    .markdown h3 + p, .markdown h3 + ul, .markdown h3 + pre, .markdown h3 + table { margin-top:0; }
+    .markdown ul { margin:0 0 0.85em; padding:10px 12px 10px 28px; background:rgb(15 23 42 / 0.55); border:1px solid rgb(30 41 59); border-radius:8px; }
+    .markdown li { margin:0.35em 0; padding-right:42px; }
+    .markdown code { background:rgb(30 41 59); padding:2px 4px; border-radius:4px; color:rgb(226 232 240); }
+    .markdown pre { white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; margin:0 0 0.85em; padding:12px; background:rgb(15 23 42); border:1px solid rgb(30 41 59); border-radius:8px; color:rgb(226 232 240); }
     .markdown table { border-collapse:collapse; width:100%; margin:12px 0; table-layout:fixed; }
     .markdown th, .markdown td { border:1px solid rgb(51 65 85); padding:8px; vertical-align:top; }
     .markdown th, .markdown td { overflow-wrap:anywhere; word-break:break-word; }
