@@ -125,6 +125,8 @@ const indexHTML = `<!doctype html>
       display:block; width:100%; aspect-ratio:1; object-fit:cover; background:rgb(2 6 23);
     }
     .file-list { width:100%; border-collapse:collapse; table-layout:fixed; }
+    .file-list col.type { width:4.5rem; }
+    .file-list col.size { width:5rem; }
     .file-list th, .file-list td {
       border:1px solid rgb(51 65 85); padding:9px 10px; vertical-align:middle; text-align:left;
     }
@@ -134,9 +136,10 @@ const indexHTML = `<!doctype html>
     .file-list td { color:rgb(203 213 225); font-size:14px; }
     .file-list tr.file-row { cursor:pointer; }
     .file-list tr.file-row:hover td { background:rgb(30 41 59 / 0.7); color:rgb(224 242 254); }
-    .file-list .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .file-list .type, .file-list .size { color:rgb(148 163 184); font-size:12px; width:110px; }
-    .file-list .size { width:88px; }
+    .file-list .name { overflow-wrap:anywhere; word-break:break-word; white-space:normal; }
+    .file-list .type, .file-list .size {
+      color:rgb(148 163 184); font-size:12px; white-space:nowrap; vertical-align:top;
+    }
     .path-bar { display:flex; min-width:0; align-items:center; gap:10px; margin-top:6px; }
     .path-bar code {
       min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
@@ -492,7 +495,8 @@ function renderFileList(items) {
     + "<td class='type'>" + esc(typeLabel(n.type)) + "</td>"
     + "<td class='size'>" + esc(formatSize(n.size || 0) || "—") + "</td></tr>"
   ).join("");
-  return "<table class='file-list'><thead><tr><th>名称</th><th>类型</th><th>大小</th></tr></thead><tbody>"
+  return "<table class='file-list'><colgroup><col class='name'><col class='type'><col class='size'></colgroup>"
+    + "<thead><tr><th class='name'>名称</th><th class='type'>类型</th><th class='size'>大小</th></tr></thead><tbody>"
     + rows + "</tbody></table>";
 }
 
