@@ -331,8 +331,7 @@ function renderMarkdown(src) {
 function headingBlock(tag, level, text, headings) {
   const id = "heading-" + headings.length;
   headings.push({ id, level, text: decodeEntities(text) });
-  const value = decodeEntities(text);
-  return "<" + tag + " id='" + id + "' class='copyable'>" + inline(text) + "<button class='copy-btn' onclick='copyText(event,\"" + escJS(value) + "\")'>复制</button></" + tag + ">";
+  return "<" + tag + " id='" + id + "' data-level='" + level + "' class='copyable'>" + inline(text) + "<button class='copy-btn' onclick='copySection(event)'>复制</button></" + tag + ">";
 }
 
 // renderToc 生成 Markdown 右侧悬浮目录导航。
@@ -349,15 +348,56 @@ function copyBlock(tag, text) {
   return "<" + tag + " class='copyable'>" + inline(text) + "<button class='copy-btn' onclick='copyText(event,\"" + escJS(value) + "\")'>复制</button></" + tag + ">";
 }
 
-// copyText 复制单个 Markdown 块文本，并显示短暂反馈。
-function copyText(event, text) {
+// copySection 复制标题下直到同级或更高级标题前的全部内容。
+function copySection(event) {
   event.stopPropagation();
+  const heading = event.currentTarget.closest("h1,h2,h3");
+  if (!heading) return;
+  const level = parseInt(heading.dataset.level || heading.tagName.slice(1), 10);
+  const lines = [];
+  let node = heading.nextElementSibling;
+  while (node) {
+    const tag = node.tagName;
+    if (tag === "H1" || tag === "H2" || tag === "H3") {
+      const nextLevel = parseInt(node.dataset.level || tag.slice(1), 10);
+      if (nextLevel <= level) break;
+    }
+    const text = blockText(node);
+    if (text) lines.push(text);
+    node = node.nextElementSibling;
+  }
+  copyFeedback(event.currentTarget, lines.join("\n\n"));
+}
+
+// blockText 提取单个渲染块的可复制纯文本。
+function blockText(el) {
+  const clone = el.cloneNode(true);
+  clone.querySelectorAll(".copy-btn").forEach(btn => btn.remove());
+  if (clone.tagName === "UL") {
+    return Array.from(clone.querySelectorAll("li")).map(li => li.textContent.trim()).filter(Boolean).join("\n");
+  }
+  if (clone.tagName === "TABLE") {
+    return Array.from(clone.querySelectorAll("tr")).map(row =>
+      Array.from(row.querySelectorAll("th,td")).map(cell => cell.textContent.trim()).join("\t")
+    ).join("\n");
+  }
+  if (clone.tagName === "PRE") return clone.textContent.replace(/\s+$/, "");
+  return clone.textContent.replace(/\s+/g, " ").trim();
+}
+
+// copyFeedback 写入剪贴板并在按钮上显示短暂反馈。
+function copyFeedback(btn, text) {
   navigator.clipboard.writeText(text).then(() => {
-    const btn = event.currentTarget;
     const old = btn.textContent;
     btn.textContent = "已复制";
     setTimeout(() => btn.textContent = old, 900);
   });
+}
+
+// copyText 复制单个 Markdown 块文本，并显示短暂反馈。
+function copyText(event, text) {
+  event.stopPropagation();
+  copyFeedback(event.currentTarget, text);
 }
 
 // decodeEntities 将转义后的 HTML 文本还原为可复制的纯文本。

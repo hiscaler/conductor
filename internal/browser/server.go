@@ -208,7 +208,7 @@ func (s *server) readDir(rel string) ([]node, error) {
 	}
 	out := make([]node, 0, len(entries))
 	for _, entry := range entries {
-		if entry.Name() == ".gitignore" {
+		if skipEntry(entry.Name()) {
 			continue
 		}
 		info, err := entry.Info()
@@ -243,6 +243,15 @@ func (s *server) readDir(rel string) ([]node, error) {
 		return strings.ToLower(out[i].Name) < strings.ToLower(out[j].Name)
 	})
 	return out, nil
+}
+
+// skipEntry 判断目录树中应隐藏的系统或无关文件。
+func skipEntry(name string) bool {
+	switch name {
+	case ".gitignore", ".DS_Store", "Thumbs.db", "desktop.ini":
+		return true
+	}
+	return strings.HasPrefix(name, "._")
 }
 
 // clean 解析用户传入的相对路径，并防止访问 output 之外的文件。
