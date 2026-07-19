@@ -801,6 +801,7 @@ platforms/
   image-technical-specs.md           不同平台的图片尺寸、比例、格式和质量建议
   video-set-rules.md                 不同平台的视频结构和内容规则
   video-technical-specs.md           不同平台的视频尺寸、比例、时长和质量建议
+  video-scene-presets.md             自动选择的视频预设场景、动态镜头和音频字幕门禁
 
 templates/
   product-input.md                   产品输入模板
