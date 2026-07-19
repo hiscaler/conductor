@@ -1,12 +1,11 @@
 <svg width="220" height="72" viewBox="0 0 220 72" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Coor logo">
-  <rect width="220" height="72" rx="18" fill="#0F172A"/>
   <path d="M42 49C31.8 49 24 41.5 24 31.9C24 22.3 31.8 15 42 15C48.7 15 54.2 17.8 57.5 22.7L50.4 28.1C48.4 25.5 45.7 24.1 42.4 24.1C36.8 24.1 32.7 27.6 32.7 31.9C32.7 36.4 36.8 39.9 42.4 39.9C45.7 39.9 48.4 38.5 50.4 35.9L57.5 41.3C54.2 46.2 48.7 49 42 49Z" fill="white"/>
   <g filter="url(#glow)">
     <circle cx="83" cy="32" r="17" fill="#38BDF8"/>
     <circle cx="122" cy="32" r="17" fill="#38BDF8"/>
   </g>
-  <circle cx="87" cy="30" r="7" fill="#0F172A"/>
-  <circle cx="118" cy="30" r="7" fill="#0F172A"/>
+  <circle cx="87" cy="30" r="7" fill="#020617"/>
+  <circle cx="118" cy="30" r="7" fill="#020617"/>
   <circle cx="90" cy="27" r="2.6" fill="white"/>
   <circle cx="121" cy="27" r="2.6" fill="white"/>
   <path d="M75 50C82 57 94 57 101 50" stroke="#E0F2FE" stroke-width="4" stroke-linecap="round"/>

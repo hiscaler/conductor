@@ -9,7 +9,124 @@ const indexHTML = `<!doctype html>
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    html, body { overflow-x:hidden; }
+    html, body { height:100%; overflow-x:hidden; }
+    body {
+      margin:0;
+      display:flex; flex-direction:column;
+      background:rgb(2 6 23);
+    }
+    .app-header {
+      flex:0 0 auto; width:100%;
+      border-bottom:1px solid rgb(51 65 85 / 0.7);
+      background:
+        linear-gradient(180deg, rgb(15 23 42) 0%, rgb(8 15 30) 100%);
+      box-shadow:0 8px 24px rgb(0 0 0 / 0.18);
+    }
+    .app-header-inner {
+      width:1280px; max-width:100%; margin:0 auto;
+      min-height:72px; padding:14px 28px; box-sizing:border-box;
+      display:flex; align-items:center; justify-content:space-between; gap:24px;
+    }
+    .brand {
+      display:flex; align-items:center; gap:14px; min-width:0;
+    }
+    .brand img {
+      height:42px; width:auto; flex-shrink:0;
+      filter:drop-shadow(0 2px 8px rgb(56 189 248 / 0.18));
+    }
+    .brand-copy { min-width:0; display:flex; flex-direction:column; gap:2px; }
+    .brand-copy strong {
+      display:block; font-size:20px; font-weight:700; letter-spacing:0.04em;
+      color:rgb(248 250 252); line-height:1.15;
+    }
+    .brand-copy span {
+      display:block; font-size:12px; color:rgb(148 163 184); letter-spacing:0.02em;
+    }
+    .app-frame {
+      width:1280px; max-width:100%; margin:0 auto;
+      flex:1 1 auto; min-height:0;
+      display:flex; flex-direction:column;
+      background:rgb(2 6 23);
+      border:0;
+    }
+    .app-frame > main { flex:1; min-height:0; }
+    .content-panel { width:100%; }
+    .app-footer {
+      flex:0 0 auto; width:100%;
+      border-top:1px solid rgb(51 65 85 / 0.7);
+      background:linear-gradient(180deg, rgb(8 15 30) 0%, rgb(15 23 42) 100%);
+    }
+    .app-footer-inner {
+      width:1280px; max-width:100%; margin:0 auto;
+      padding:22px 28px 20px; box-sizing:border-box;
+      display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,0.8fr);
+      gap:28px; align-items:start;
+    }
+    .footer-brand {
+      display:flex; flex-direction:column; gap:8px; min-width:0;
+    }
+    .footer-brand strong {
+      font-size:15px; font-weight:700; letter-spacing:0.03em; color:rgb(248 250 252);
+    }
+    .footer-brand p {
+      margin:0; font-size:12px; line-height:1.6; color:rgb(148 163 184);
+    }
+    .footer-brand code {
+      color:rgb(186 230 253); font-size:12px;
+    }
+    .footer-col h3 {
+      margin:0 0 10px; font-size:12px; font-weight:600; letter-spacing:0.06em;
+      text-transform:uppercase; color:rgb(100 116 139);
+    }
+    .footer-col ul {
+      list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;
+    }
+    .footer-col a, .footer-col button {
+      display:inline-flex; align-items:center; gap:6px;
+      border:0; padding:0; background:transparent; cursor:pointer;
+      color:rgb(203 213 225); font:inherit; font-size:13px; text-decoration:none;
+      transition:color .15s ease;
+    }
+    .footer-col a:hover, .footer-col button:hover { color:rgb(125 211 252); }
+    .footer-meta {
+      grid-column:1 / -1;
+      margin-top:4px; padding-top:16px;
+      border-top:1px solid rgb(51 65 85 / 0.55);
+      font-size:12px; color:rgb(100 116 139);
+    }
+    @media (max-width: 800px) {
+      .app-footer-inner { grid-template-columns:1fr; gap:20px; padding:18px 16px 16px; }
+    }
+    .layout-main {
+      display:flex; flex-direction:row; height:100%; min-height:0; overflow:hidden;
+    }
+    .layout-aside {
+      width:var(--aside-width, 300px); flex:0 0 auto; min-width:180px; max-width:60%;
+      overflow:auto; border-right:0; background:rgb(15 23 42); padding:12px;
+    }
+    .layout-splitter {
+      flex:0 0 6px; width:6px; cursor:col-resize; position:relative;
+      background:transparent; touch-action:none;
+    }
+    .layout-splitter::after {
+      content:""; position:absolute; top:0; bottom:0; left:-4px; right:-4px;
+    }
+    .layout-splitter:hover,
+    .layout-splitter.is-dragging { background:rgb(56 189 248 / 0.55); }
+    .layout-content {
+      flex:1 1 auto; min-width:0; overflow:auto; overflow-x:hidden; padding:24px;
+    }
+    body.is-resizing { cursor:col-resize; user-select:none; }
+    body.is-resizing iframe, body.is-resizing img, body.is-resizing video { pointer-events:none; }
+    @media (max-width: 800px) {
+      .layout-main { flex-direction:column; }
+      .layout-aside {
+        width:100% !important; max-width:none; min-width:0; flex:0 0 38vh;
+        border-right:0; border-bottom:1px solid rgb(30 41 59);
+      }
+      .layout-splitter { display:none; }
+      .layout-content { flex:1 1 auto; min-height:0; }
+    }
     .tree, .tree ul { list-style:none; margin:0; padding-left:14px; }
     .tree { padding-left:0; }
     .collapsed > ul { display:none; }
@@ -50,31 +167,31 @@ const indexHTML = `<!doctype html>
     }
     @media (max-width: 1050px) { .markdown-shell { grid-template-columns:1fr; } .toc { position:static; max-height:none; order:-1; } }
     .header-actions {
-      display:flex; align-items:center; gap:2px;
-      font-size:13px; letter-spacing:0.01em;
+      display:flex; align-items:center; gap:4px;
+      font-size:14px; letter-spacing:0.01em;
     }
     .header-actions > * + * { margin-left:2px; }
     .header-link {
-      display:inline-flex; align-items:center; gap:7px;
-      padding:6px 10px; border:0; background:transparent; cursor:pointer;
-      color:rgb(148 163 184); font:inherit; line-height:1;
-      border-radius:6px; transition:color .15s ease, background .15s ease;
+      display:inline-flex; align-items:center; gap:8px;
+      padding:9px 14px; border:0; background:transparent; cursor:pointer;
+      color:rgb(203 213 225); font:inherit; line-height:1;
+      border-radius:10px; transition:color .15s ease, background .15s ease;
     }
-    .header-link:hover { color:rgb(224 242 254); background:rgb(148 163 184 / 0.08); }
+    .header-link:hover { color:rgb(255 255 255); background:rgb(148 163 184 / 0.1); }
     .header-link:focus-visible { outline:1px solid rgb(56 189 248 / 0.5); outline-offset:2px; }
-    .header-link svg { width:15px; height:15px; stroke-width:1.6; opacity:.85; }
+    .header-link svg { width:16px; height:16px; stroke-width:1.6; opacity:.9; }
     .header-link:hover svg { opacity:1; }
     .header-sep {
-      width:1px; height:14px; margin:0 8px;
-      background:rgb(51 65 85 / 0.9);
+      width:1px; height:18px; margin:0 10px;
+      background:rgb(71 85 105 / 0.9);
     }
     .header-auto {
-      display:inline-flex; align-items:center; gap:9px;
-      padding:4px 4px 4px 10px; cursor:pointer;
-      color:rgb(100 116 139); font:inherit; line-height:1;
-      transition:color .15s ease;
+      display:inline-flex; align-items:center; gap:10px;
+      padding:6px 6px 6px 12px; cursor:pointer;
+      color:rgb(148 163 184); font:inherit; line-height:1;
+      border-radius:999px; transition:color .15s ease, background .15s ease;
     }
-    .header-auto:hover { color:rgb(148 163 184); }
+    .header-auto:hover { color:rgb(226 232 240); background:rgb(148 163 184 / 0.08); }
     .header-auto:has(input:checked) { color:rgb(186 230 253); }
     .header-auto input {
       appearance:none; width:30px; height:16px; margin:0; flex-shrink:0;
@@ -102,10 +219,13 @@ const indexHTML = `<!doctype html>
     }
     .header-auto:not(:has(input:checked)) #refreshState { opacity:.45; }
     @media (max-width: 640px) {
-      header { height:auto; min-height:3.5rem; padding-top:10px; padding-bottom:10px; flex-wrap:wrap; }
+      .app-header-inner { min-height:64px; padding:12px 16px; }
+      .brand img { height:36px; }
+      .brand-copy strong { font-size:17px; }
+      .brand-copy span { display:none; }
       .header-link span, .header-auto > span:first-of-type { display:none; }
       .header-sep { margin:0 4px; }
-      .header-link { padding:6px 8px; }
+      .header-link { padding:8px 10px; }
     }
     .gallery-grid {
       display:grid;
@@ -238,40 +358,62 @@ const indexHTML = `<!doctype html>
     .lightbox-nav:disabled { opacity:.28; cursor:default; pointer-events:none; }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100">
-<header class="flex h-14 items-center justify-between gap-4 border-b border-slate-800 bg-slate-900 px-5">
-  <div class="flex min-w-0 items-center gap-3">
-    <img class="h-9 w-auto shrink-0" src="/assets/coor-logo.svg" alt="Coor">
-    <div class="min-w-0 leading-tight">
-      <strong class="block text-[15px] tracking-wide text-slate-100">浏览器</strong>
-      <span class="hidden text-xs text-slate-400 sm:block">AI 成果浏览</span>
+<body class="text-slate-100">
+<header class="app-header">
+  <div class="app-header-inner">
+    <div class="brand">
+      <img src="/assets/coor-logo.svg" alt="Coor">
+      <div class="brand-copy">
+        <strong>Conductor</strong>
+        <span>跨境电商智能编排与交付预览</span>
+      </div>
     </div>
+    <nav class="header-actions" aria-label="工具">
+      <button class="header-link" type="button" onclick="openReadme()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8 4.5h6.2L17.5 7.8V19.5H8z"/><path stroke-linecap="round" d="M10.2 11h3.8M10.2 14.2h3.8"/></svg>
+        <span>使用说明</span>
+      </button>
+      <button class="header-link" type="button" onclick="loadTree()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.8 12a7.2 7.2 0 0 1 12.3-5.1M19.2 12a7.2 7.2 0 0 1-12.3 5.1"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.8 4.2V8h-3.8M7.2 19.8V16h3.8"/></svg>
+        <span>刷新</span>
+      </button>
+      <span class="header-sep" aria-hidden="true"></span>
+      <label class="header-auto" title="自动刷新目录树">
+        <span>自动刷新</span>
+        <span id="refreshState">5 秒</span>
+        <input id="autoRefresh" type="checkbox" checked onchange="toggleAutoRefresh()">
+      </label>
+    </nav>
   </div>
-  <nav class="header-actions" aria-label="工具">
-    <button class="header-link" type="button" onclick="openReadme()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8 4.5h6.2L17.5 7.8V19.5H8z"/><path stroke-linecap="round" d="M10.2 11h3.8M10.2 14.2h3.8"/></svg>
-      <span>使用说明</span>
-    </button>
-    <button class="header-link" type="button" onclick="loadTree()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.8 12a7.2 7.2 0 0 1 12.3-5.1M19.2 12a7.2 7.2 0 0 1-12.3 5.1"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.8 4.2V8h-3.8M7.2 19.8V16h3.8"/></svg>
-      <span>刷新</span>
-    </button>
-    <span class="header-sep" aria-hidden="true"></span>
-    <label class="header-auto" title="自动刷新目录树">
-      <span>自动刷新</span>
-      <span id="refreshState">5 秒</span>
-      <input id="autoRefresh" type="checkbox" checked onchange="toggleAutoRefresh()">
-    </label>
-  </nav>
 </header>
-<main class="grid h-[calc(100vh-3.5rem)] grid-cols-[330px_minmax(0,1fr)] overflow-hidden max-[800px]:grid-cols-1 max-[640px]:h-[calc(100vh-4.5rem)]">
-  <aside class="overflow-auto border-r border-slate-800 bg-slate-900 p-3 max-[800px]:h-[38vh] max-[800px]:border-b max-[800px]:border-r-0">
+<div class="app-frame">
+<main id="layoutMain" class="layout-main">
+  <aside id="layoutAside" class="layout-aside">
     <ul id="tree" class="tree"></ul>
   </aside>
-  <section class="min-w-0 overflow-auto overflow-x-hidden p-6 max-[800px]:h-[calc(62vh-3.5rem)]">
+  <div id="layoutSplitter" class="layout-splitter" role="separator" aria-orientation="vertical" aria-label="调整左右栏宽度" title="拖动调整左右宽度"></div>
+  <section id="layoutContent" class="layout-content">
     <div id="content" class="text-slate-500">请选择左侧文件或目录。</div>
   </section>
 </main>
+</div>
+<footer class="app-footer">
+  <div class="app-footer-inner">
+    <div class="footer-brand">
+      <strong>Conductor</strong>
+      <p>面向跨境电商的 AI 选品到上架工作流。本页用于浏览与验收 <code>output/</code> 中的文案、图片与视频成果。</p>
+    </div>
+    <div class="footer-col">
+      <h3>产品</h3>
+      <ul>
+        <li><button type="button" onclick="openReadme()">使用说明</button></li>
+      </ul>
+    </div>
+    <div class="footer-meta">
+      <span>© <span id="footerYear"></span> Conductor</span>
+    </div>
+  </div>
+</footer>
 <div id="lightbox" class="lightbox" hidden onclick="closeLightboxBackdrop(event)">
   <div class="lightbox-inner" onclick="event.stopPropagation()">
     <div class="lightbox-toolbar">
@@ -457,7 +599,7 @@ function renderContent(data) {
 
 // contentShell 组装右侧预览外壳，避免多层边框套框。
 function contentShell(header, body) {
-  return "<div class='max-w-6xl'>" + header + body + "</div>";
+  return "<div class='content-panel'>" + header + body + "</div>";
 }
 
 // renderDirContent 渲染目录内容；含图片时优先展示缩略图网格。
@@ -937,9 +1079,73 @@ function escAttr(s) { return esc(s); }
 // escJS 转义嵌入行内 JavaScript 字符串的路径。
 function escJS(s) { return String(s || "").replace(/\\/g, "\\\\").replace(/"/g, "\\\""); }
 
+const ASIDE_WIDTH_KEY = "conductor.asideWidth";
+const ASIDE_MIN = 180;
+const ASIDE_MAX_RATIO = 0.6;
+
+// applyAsideWidth 设置左侧目录栏宽度，并写入 CSS 变量。
+function applyAsideWidth(px) {
+  const main = document.getElementById("layoutMain");
+  if (!main || window.matchMedia("(max-width: 800px)").matches) return;
+  const max = Math.floor(main.clientWidth * ASIDE_MAX_RATIO);
+  const width = Math.max(ASIDE_MIN, Math.min(max, Math.round(px)));
+  document.documentElement.style.setProperty("--aside-width", width + "px");
+  return width;
+}
+
+// restoreAsideWidth 从本地存储恢复用户上次调整的左右栏宽度。
+function restoreAsideWidth() {
+  const saved = parseInt(localStorage.getItem(ASIDE_WIDTH_KEY) || "300", 10);
+  applyAsideWidth(Number.isFinite(saved) ? saved : 300);
+}
+
+// initAsideResize 启用左右分栏拖拽调整宽度。
+function initAsideResize() {
+  const splitter = document.getElementById("layoutSplitter");
+  const main = document.getElementById("layoutMain");
+  if (!splitter || !main) return;
+  restoreAsideWidth();
+  let dragging = false;
+  const onMove = (event) => {
+    if (!dragging) return;
+    const x = event.touches ? event.touches[0].clientX : event.clientX;
+    const width = applyAsideWidth(x - main.getBoundingClientRect().left);
+    if (width) localStorage.setItem(ASIDE_WIDTH_KEY, String(width));
+  };
+  const onUp = () => {
+    if (!dragging) return;
+    dragging = false;
+    splitter.classList.remove("is-dragging");
+    document.body.classList.remove("is-resizing");
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerup", onUp);
+    window.removeEventListener("touchmove", onMove);
+    window.removeEventListener("touchend", onUp);
+  };
+  const onDown = (event) => {
+    if (window.matchMedia("(max-width: 800px)").matches) return;
+    event.preventDefault();
+    dragging = true;
+    splitter.classList.add("is-dragging");
+    document.body.classList.add("is-resizing");
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend", onUp);
+  };
+  splitter.addEventListener("pointerdown", onDown);
+  splitter.addEventListener("touchstart", onDown, { passive: false });
+  window.addEventListener("resize", () => {
+    const current = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--aside-width"), 10);
+    applyAsideWidth(Number.isFinite(current) ? current : 300);
+  });
+}
+
 loadTree();
 openReadme();
 startAutoRefresh();
+initAsideResize();
+document.getElementById("footerYear").textContent = String(new Date().getFullYear());
 </script>
 </body>
 </html>`
