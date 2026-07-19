@@ -249,6 +249,43 @@ function renderMarkdownPreview(src) {
   return "<div class='markdown-shell'><div class='markdown'>" + rendered.html + "</div>" + renderToc(rendered.headings) + "</div>";
 }
 
+// isTableRow 判断一行是否像 Markdown 表格行。
+function isTableRow(line) {
+  const trimmed = line.trim();
+  return trimmed.includes("|") && (trimmed.startsWith("|") || trimmed.endsWith("|") || trimmed.split("|").length > 2);
+}
+
+// isTableSeparator 判断一行是否为 Markdown 表格分隔行。
+function isTableSeparator(line) {
+  return /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(line.trim());
+}
+
+// parseTableRow 将 Markdown 表格行拆分为单元格。
+function parseTableRow(line) {
+  const trimmed = line.trim();
+  let cells = trimmed.split("|").map(c => c.trim());
+  if (trimmed.startsWith("|")) cells = cells.slice(1);
+  if (trimmed.endsWith("|")) cells = cells.slice(0, -1);
+  return cells;
+}
+
+// renderTableBlock 将 Markdown 表格块渲染为 HTML table。
+function renderTableBlock(tableLines) {
+  const header = parseTableRow(tableLines[0]);
+  const bodyLines = tableLines.slice(2);
+  let html = "<table><thead><tr>";
+  for (const cell of header) html += "<th>" + inline(cell) + "</th>";
+  html += "</tr></thead><tbody>";
+  for (const row of bodyLines) {
+    const cells = parseTableRow(row);
+    html += "<tr>";
+    for (const cell of cells) html += "<td>" + inline(cell) + "</td>";
+    html += "</tr>";
+  }
+  html += "</tbody></table>";
+  return html;
+}
+
 // renderMarkdown 将常用 Markdown 内容转换为预览 HTML，并收集标题。
 function renderMarkdown(src) {
   const lines = esc(src).split(/\r?\n/);
@@ -259,13 +296,25 @@ function renderMarkdown(src) {
   let code = [];
   const tick = String.fromCharCode(96);
   const fence = tick + tick + tick;
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     if (line.startsWith(fence)) {
       if (inCode) { out.push(copyBlock("pre", code.join("\n"))); code = []; inCode = false; }
       else { if (inList) { out.push("</ul>"); inList = false; } inCode = true; }
       continue;
     }
     if (inCode) { code.push(line); continue; }
+    if (isTableRow(line) && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
+      if (inList) { out.push("</ul>"); inList = false; }
+      const tableLines = [line, lines[i + 1]];
+      i++;
+      while (i + 1 < lines.length && isTableRow(lines[i + 1]) && !isTableSeparator(lines[i + 1])) {
+        i++;
+        tableLines.push(lines[i]);
+      }
+      out.push(renderTableBlock(tableLines));
+      continue;
+    }
     if (line.startsWith("### ")) { if (inList) { out.push("</ul>"); inList = false; } out.push(headingBlock("h3", 3, line.slice(4), headings)); }
     else if (line.startsWith("## ")) { if (inList) { out.push("</ul>"); inList = false; } out.push(headingBlock("h2", 2, line.slice(3), headings)); }
     else if (line.startsWith("# ")) { if (inList) { out.push("</ul>"); inList = false; } out.push(headingBlock("h1", 1, line.slice(2), headings)); }
