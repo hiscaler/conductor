@@ -309,6 +309,11 @@ const indexHTML = `<!doctype html>
       color:rgb(226 232 240);
     }
     .markdown table { border-collapse:collapse; width:100%; margin:12px 0; table-layout:fixed; }
+    .markdown col.col-narrow { width:3.25rem; }
+    .markdown th.col-narrow, .markdown td.col-narrow {
+      width:3.25rem; text-align:center; white-space:nowrap;
+      overflow-wrap:normal; word-break:normal;
+    }
     .markdown th, .markdown td { border:1px solid rgb(51 65 85); padding:8px; vertical-align:top; }
     .markdown th, .markdown td { overflow-wrap:anywhere; word-break:break-word; }
     .markdown th { background:rgb(15 23 42); }
@@ -990,17 +995,29 @@ function parseTableRow(line) {
   return cells;
 }
 
+// isNarrowTableHeader 判断表头是否应使用窄列（如序号）。
+function isNarrowTableHeader(text) {
+  return /^(序号|展示序号|#|No\.?|ID)$/i.test(String(text || "").trim());
+}
+
 // renderTableBlock 将 Markdown 表格块渲染为 HTML table。
 function renderTableBlock(tableLines) {
   const header = parseTableRow(tableLines[0]);
   const bodyLines = tableLines.slice(2);
-  let html = "<table><thead><tr>";
-  for (const cell of header) html += "<th>" + inline(cell) + "</th>";
+  const narrowFlags = header.map(cell => isNarrowTableHeader(decodeEntities(cell)));
+  let html = "<table><colgroup>";
+  for (const narrow of narrowFlags) html += narrow ? "<col class='col-narrow'>" : "<col>";
+  html += "</colgroup><thead><tr>";
+  header.forEach((cell, i) => {
+    html += "<th" + (narrowFlags[i] ? " class='col-narrow'" : "") + ">" + inline(cell) + "</th>";
+  });
   html += "</tr></thead><tbody>";
   for (const row of bodyLines) {
     const cells = parseTableRow(row);
     html += "<tr>";
-    for (const cell of cells) html += "<td>" + inline(cell) + "</td>";
+    for (let i = 0; i < cells.length; i++) {
+      html += "<td" + (narrowFlags[i] ? " class='col-narrow'" : "") + ">" + inline(cells[i] || "") + "</td>";
+    }
     html += "</tr>";
   }
   html += "</tbody></table>";
