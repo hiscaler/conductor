@@ -94,6 +94,68 @@ const indexHTML = `<!doctype html>
       .header-sep { margin:0 4px; }
       .header-link { padding:6px 8px; }
     }
+    .gallery-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));
+      gap:12px;
+    }
+    .gallery-card {
+      display:flex; flex-direction:column; gap:8px;
+      padding:0; border:1px solid rgb(51 65 85); border-radius:10px;
+      background:rgb(2 6 23); color:inherit; font:inherit; text-align:left;
+      cursor:pointer; overflow:hidden; transition:border-color .15s ease, box-shadow .15s ease;
+    }
+    .gallery-card:hover { border-color:rgb(56 189 248); box-shadow:0 0 0 1px rgb(56 189 248 / 0.25); }
+    .gallery-card img {
+      display:block; width:100%; aspect-ratio:1; object-fit:cover; background:rgb(15 23 42);
+    }
+    .gallery-card .meta {
+      padding:0 10px 10px; min-width:0;
+    }
+    .gallery-card .name {
+      display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+      font-size:12px; color:rgb(226 232 240);
+    }
+    .gallery-card .size { font-size:11px; color:rgb(100 116 139); }
+    .lightbox {
+      position:fixed; inset:0; z-index:50;
+      display:flex; align-items:center; justify-content:center;
+      background:rgb(2 6 23 / 0.88); padding:24px;
+    }
+    .lightbox[hidden] { display:none; }
+    .lightbox-inner {
+      position:relative; display:flex; flex-direction:column; align-items:center;
+      max-width:min(1100px, 100%); max-height:100%;
+    }
+    .lightbox-toolbar {
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      width:100%; margin-bottom:12px; color:rgb(226 232 240); font-size:13px;
+    }
+    .lightbox-toolbar .title { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lightbox-actions { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+    .lightbox-btn {
+      border:1px solid rgb(71 85 105); background:rgb(15 23 42); color:rgb(226 232 240);
+      border-radius:8px; padding:6px 12px; font:inherit; font-size:12px; cursor:pointer;
+    }
+    .lightbox-btn:hover { border-color:rgb(56 189 248); color:rgb(125 211 252); }
+    .lightbox-stage {
+      position:relative; display:flex; align-items:center; justify-content:center;
+      max-width:100%; max-height:calc(100vh - 120px);
+    }
+    .lightbox-stage img {
+      max-width:100%; max-height:calc(100vh - 120px);
+      border-radius:10px; border:1px solid rgb(51 65 85); background:rgb(15 23 42);
+    }
+    .lightbox-nav {
+      position:absolute; top:50%; transform:translateY(-50%);
+      width:42px; height:42px; border-radius:999px;
+      border:1px solid rgb(71 85 105); background:rgb(15 23 42 / 0.9);
+      color:rgb(226 232 240); font-size:22px; line-height:1; cursor:pointer;
+    }
+    .lightbox-nav:hover { border-color:rgb(56 189 248); color:rgb(125 211 252); }
+    .lightbox-nav.prev { left:10px; }
+    .lightbox-nav.next { right:10px; }
+    .lightbox-nav:disabled { opacity:.35; cursor:default; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100">
@@ -130,10 +192,29 @@ const indexHTML = `<!doctype html>
     <div id="content" class="rounded-lg border border-dashed border-slate-700 bg-slate-900 p-6 text-slate-400">请选择左侧文件或目录。</div>
   </section>
 </main>
+<div id="lightbox" class="lightbox" hidden onclick="closeLightboxBackdrop(event)">
+  <div class="lightbox-inner" onclick="event.stopPropagation()">
+    <div class="lightbox-toolbar">
+      <div class="title" id="lightboxTitle"></div>
+      <div class="lightbox-actions">
+        <span id="lightboxCounter" class="text-slate-400"></span>
+        <button type="button" class="lightbox-btn" onclick="copyLightboxImage(event)">复制图片</button>
+        <button type="button" class="lightbox-btn" onclick="closeLightbox()">关闭</button>
+      </div>
+    </div>
+    <div class="lightbox-stage">
+      <button type="button" class="lightbox-nav prev" id="lightboxPrev" onclick="galleryStep(-1)" aria-label="上一张">‹</button>
+      <img id="lightboxImage" alt="">
+      <button type="button" class="lightbox-nav next" id="lightboxNext" onclick="galleryStep(1)" aria-label="下一张">›</button>
+    </div>
+  </div>
+</div>
 <script>
 let activePath = "";
 let refreshTimer = null;
 let expandedPaths = new Set();
+let galleryImages = [];
+let galleryIndex = -1;
 
 // openReadme 加载项目 README，作为用户使用说明预览。
 async function openReadme() {
@@ -234,15 +315,17 @@ async function openPath(path) {
 
 // renderContent 根据文件类型选择合适的预览方式。
 function renderContent(data) {
+  closeLightbox();
   if (data.type === "dir") {
-    const cell = " class='border border-slate-700 p-2 align-top'";
-    const rows = (data.children || []).map(n => "<tr><td" + cell + ">" + iconFor(n.type) + " " + esc(n.name) + "</td><td" + cell + ">" + esc(n.type) + "</td><td" + cell + ">" + formatSize(n.size || 0) + "</td></tr>").join("");
-    document.getElementById("content").innerHTML = "<div class='max-w-6xl rounded-lg border border-slate-800 bg-slate-900 p-5'><div class='mb-4'><h1 class='m-0 text-xl font-semibold'>" + esc(data.name || "output") + "</h1>" + renderPathBar(data) + "</div><table class='w-full table-fixed border-collapse'><thead><tr><th class='border border-slate-700 bg-slate-950 p-2 text-left'>名称</th><th class='border border-slate-700 bg-slate-950 p-2 text-left'>类型</th><th class='border border-slate-700 bg-slate-950 p-2 text-left'>大小</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
+    renderDirContent(data);
+    return;
+  }
+  if (data.type === "image") {
+    renderImageContent(data);
     return;
   }
   let body = "";
   if (data.type === "markdown") body = renderMarkdownPreview(data.content || "");
-  else if (data.type === "image") body = "<div class='relative inline-block max-w-full'><img id='previewImage' class='max-w-full rounded-lg border border-slate-700 bg-slate-950' src='" + escAttr(data.rawUrl) + "' alt='" + escAttr(data.name) + "'><button type='button' class='absolute right-3 top-3 rounded border border-slate-600 bg-slate-900/90 px-2.5 py-1 text-[12px] text-slate-200 shadow hover:border-sky-400 hover:text-sky-300' onclick='copyImage(event)'>复制图片</button></div>";
   else if (data.type === "video") body = "<div><video class='max-w-full rounded-lg border border-slate-700 bg-black' src='" + escAttr(data.rawUrl) + "' controls></video></div>";
   else if (data.type === "text" || data.type === "json") body = "<pre class='overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-950 p-4 text-slate-200'>" + esc(data.content || "") + "</pre>";
   else body = "<p><a href='" + escAttr(data.rawUrl) + "' target='_blank'>下载或打开文件</a></p>";
@@ -250,6 +333,154 @@ function renderContent(data) {
   const sizeHint = size ? "<span class='text-xs text-slate-500'>" + esc(size) + "</span>" : "";
   document.getElementById("content").innerHTML = "<div class='max-w-6xl rounded-lg border border-slate-800 bg-slate-900 p-5'><div class='mb-4'><div class='mb-2 flex items-baseline gap-3'><h1 class='m-0 text-xl font-semibold'>" + esc(data.name) + "</h1>" + sizeHint + "</div>" + renderPathBar(data) + "</div>" + body + "</div>";
 }
+
+// renderDirContent 渲染目录内容；含图片时优先展示缩略图网格。
+function renderDirContent(data) {
+  const children = data.children || [];
+  const images = children.filter(n => n.type === "image");
+  const others = children.filter(n => n.type !== "image");
+  galleryImages = images.map(n => ({
+    name: n.name,
+    path: n.path,
+    size: n.size || 0,
+    rawUrl: rawUrlFor(n.path)
+  }));
+  let body = "";
+  if (images.length) {
+    body += "<div class='mb-2 text-sm text-slate-400'>共 " + images.length + " 张图片，点击可放大预览</div>";
+    body += "<div class='gallery-grid'>" + images.map((n, i) => renderGalleryCard(n, i)).join("") + "</div>";
+  }
+  if (others.length) {
+    const cell = " class='border border-slate-700 p-2 align-top'";
+    const rows = others.map(n => "<tr class='cursor-pointer hover:bg-slate-800' onclick='openPath(\"" + escJS(n.path) + "\")'><td" + cell + ">" + iconFor(n.type) + " " + esc(n.name) + "</td><td" + cell + ">" + esc(n.type) + "</td><td" + cell + ">" + formatSize(n.size || 0) + "</td></tr>").join("");
+    body += (images.length ? "<div class='mt-6 mb-2 text-sm font-medium text-slate-300'>其他文件</div>" : "")
+      + "<table class='w-full table-fixed border-collapse'><thead><tr><th class='border border-slate-700 bg-slate-950 p-2 text-left'>名称</th><th class='border border-slate-700 bg-slate-950 p-2 text-left'>类型</th><th class='border border-slate-700 bg-slate-950 p-2 text-left'>大小</th></tr></thead><tbody>" + rows + "</tbody></table>";
+  }
+  if (!body) body = "<div class='text-slate-400'>空目录</div>";
+  document.getElementById("content").innerHTML = "<div class='max-w-6xl rounded-lg border border-slate-800 bg-slate-900 p-5'><div class='mb-4'><h1 class='m-0 text-xl font-semibold'>" + esc(data.name || "output") + "</h1>" + renderPathBar(data) + "</div>" + body + "</div>";
+}
+
+// renderImageContent 渲染单张图片，并加载同目录图片供左右切换。
+async function renderImageContent(data) {
+  const size = formatSize(data.size || 0);
+  const sizeHint = size ? "<span class='text-xs text-slate-500'>" + esc(size) + "</span>" : "";
+  document.getElementById("content").innerHTML = "<div class='max-w-6xl rounded-lg border border-slate-800 bg-slate-900 p-5'><div class='mb-4'><div class='mb-2 flex items-baseline gap-3'><h1 class='m-0 text-xl font-semibold'>" + esc(data.name) + "</h1>" + sizeHint + "</div>" + renderPathBar(data) + "</div><div class='relative inline-block max-w-full'><img id='previewImage' class='max-w-full rounded-lg border border-slate-700 bg-slate-950' src='" + escAttr(data.rawUrl) + "' alt='" + escAttr(data.name) + "'><button type='button' class='absolute right-3 top-3 rounded border border-slate-600 bg-slate-900/90 px-2.5 py-1 text-[12px] text-slate-200 shadow hover:border-sky-400 hover:text-sky-300' onclick='copyImage(event)'>复制图片</button></div><div id='siblingGallery' class='mt-5'></div></div>";
+  await loadSiblingGallery(data.path);
+}
+
+// loadSiblingGallery 拉取当前图片所在目录的全部图片，渲染缩略图并支持灯箱切换。
+async function loadSiblingGallery(imagePath) {
+  const parent = parentPath(imagePath);
+  const res = await fetch("/api/file?path=" + encodeURIComponent(parent));
+  if (!res.ok) return;
+  const data = await res.json();
+  if (data.type !== "dir") return;
+  const images = (data.children || []).filter(n => n.type === "image");
+  if (images.length < 2) return;
+  galleryImages = images.map(n => ({
+    name: n.name,
+    path: n.path,
+    size: n.size || 0,
+    rawUrl: rawUrlFor(n.path)
+  }));
+  const currentIndex = galleryImages.findIndex(n => n.path === imagePath);
+  const shell = document.getElementById("siblingGallery");
+  if (!shell) return;
+  shell.innerHTML = "<div class='mb-2 text-sm text-slate-400'>同目录共 " + images.length + " 张，点击切换</div><div class='gallery-grid'>"
+    + images.map((n, i) => renderGalleryCard(n, i, i === currentIndex)).join("")
+    + "</div>";
+}
+
+// renderGalleryCard 渲染单张缩略图卡片。
+function renderGalleryCard(n, index, active) {
+  const raw = rawUrlFor(n.path);
+  const activeClass = active ? " border-sky-400" : "";
+  return "<button type='button' class='gallery-card" + activeClass + "' onclick='openGallery(" + index + ")'>"
+    + "<img src='" + escAttr(raw) + "' alt='" + escAttr(n.name) + "' loading='lazy'>"
+    + "<div class='meta'><span class='name' title='" + escAttr(n.name) + "'>" + esc(n.name) + "</span>"
+    + "<span class='size'>" + esc(formatSize(n.size || 0)) + "</span></div></button>";
+}
+
+// rawUrlFor 根据相对路径生成原始文件 URL。
+function rawUrlFor(path) {
+  return "/raw?path=" + encodeURIComponent(path || "");
+}
+
+// parentPath 返回相对路径的父目录，根目录返回空字符串。
+function parentPath(path) {
+  const parts = String(path || "").split("/").filter(Boolean);
+  parts.pop();
+  return parts.join("/");
+}
+
+// openGallery 打开灯箱并展示指定索引的图片。
+function openGallery(index) {
+  if (!galleryImages.length) return;
+  galleryIndex = Math.max(0, Math.min(index, galleryImages.length - 1));
+  updateLightbox();
+  document.getElementById("lightbox").hidden = false;
+}
+
+// closeLightbox 关闭图片灯箱。
+function closeLightbox() {
+  const box = document.getElementById("lightbox");
+  if (box) box.hidden = true;
+  galleryIndex = -1;
+}
+
+// closeLightboxBackdrop 点击遮罩空白处关闭灯箱。
+function closeLightboxBackdrop(event) {
+  if (event.target === event.currentTarget) closeLightbox();
+}
+
+// galleryStep 在灯箱中前后切换图片。
+function galleryStep(delta) {
+  if (!galleryImages.length || galleryIndex < 0) return;
+  const next = galleryIndex + delta;
+  if (next < 0 || next >= galleryImages.length) return;
+  galleryIndex = next;
+  updateLightbox();
+}
+
+// updateLightbox 根据当前索引刷新灯箱内容与导航状态。
+function updateLightbox() {
+  const item = galleryImages[galleryIndex];
+  if (!item) return;
+  const img = document.getElementById("lightboxImage");
+  img.src = item.rawUrl;
+  img.alt = item.name;
+  document.getElementById("lightboxTitle").textContent = item.name;
+  document.getElementById("lightboxCounter").textContent = (galleryIndex + 1) + " / " + galleryImages.length;
+  document.getElementById("lightboxPrev").disabled = galleryIndex <= 0;
+  document.getElementById("lightboxNext").disabled = galleryIndex >= galleryImages.length - 1;
+}
+
+// copyLightboxImage 复制灯箱中当前预览的图片。
+async function copyLightboxImage(event) {
+  event.stopPropagation();
+  const btn = event.currentTarget;
+  const img = document.getElementById("lightboxImage");
+  if (!img || !img.src) return;
+  try {
+    btn.disabled = true;
+    const blob = await imageToPngBlob(img);
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+    flashCopied(btn);
+  } catch (err) {
+    flashCopied(btn, "复制失败");
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.addEventListener("keydown", event => {
+  const box = document.getElementById("lightbox");
+  if (!box || box.hidden) return;
+  if (event.key === "Escape") closeLightbox();
+  else if (event.key === "ArrowLeft") galleryStep(-1);
+  else if (event.key === "ArrowRight") galleryStep(1);
+});
 
 // renderPathBar 显示可复制的本地绝对路径，便于在访达/资源管理器中定位。
 function renderPathBar(data) {
