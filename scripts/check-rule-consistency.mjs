@@ -13,6 +13,7 @@ const files = Object.fromEntries(
       "README.md",
       "workflows/start-guide.md",
       "workflows/action-menu.md",
+      "workflows/output-structure.md",
       "templates/production-output.md",
       "docs/agent-testing.md",
       "agents/cross-border-commerce-agent.json",
@@ -44,6 +45,15 @@ const actions = files["workflows/action-menu.md"];
 assert.match(actions, /用户选择启动菜单或下一步动作即视为同意执行该动作/);
 assert.doesNotMatch(actions, /\| 是 \|/);
 assert.match(actions, /不得覆盖已有文件，除非用户明确要求/);
+assert.match(actions, /output\/\{平台\}-\{市场\}\/\{Listing标识\}/);
+assert.doesNotMatch(actions, /output\/\{目标平台\}\/\{产品类目\}\/\{产品名称\}/);
+
+const outputStructure = files["workflows/output-structure.md"];
+assert.match(outputStructure, /单个已匹配 SKU/);
+assert.match(outputStructure, /多个 SKU/);
+assert.match(outputStructure, /未建档-\{简短商品名\}/);
+assert.match(outputStructure, /找品-\{简短方向\}/);
+assert.match(outputStructure, /商品名称、类目.*不再作为目录层级/);
 
 const output = files["templates/production-output.md"];
 for (let i = 1; i <= 16; i += 1) {

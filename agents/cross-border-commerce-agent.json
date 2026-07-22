@@ -127,6 +127,7 @@
   "product_catalog": "../data/product-catalog.xlsx",
   "start_guide": "../workflows/start-guide.md",
   "action_menu": "../workflows/action-menu.md",
+  "output_structure": "../workflows/output-structure.md",
   "platform_profiles": "../platforms/platform-profiles.md",
   "market_data_sources": "../platforms/market-data-sources.md",
   "image_set_rules": "../platforms/image-set-rules.md",
