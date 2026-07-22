@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "gen-icon": "node scripts/gen-icon.mjs"
+    "gen-icon": "node scripts/gen-icon.mjs",
+    "test": "node scripts/check-rule-consistency.mjs"
   },
   "devDependencies": {
     "sharp": "^0.34.2"

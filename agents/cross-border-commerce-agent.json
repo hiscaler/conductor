@@ -1,25 +1,21 @@
 {
   "id": "cross-border-commerce-agent",
   "name": "Conductor Agent（指挥家）",
-  "description": "核心 Agent。面向 Amazon、Temu、TikTok Shop、Shopify、Etsy、eBay、AliExpress、Walmart Marketplace 的趋势找品、短视频场景找品、选品判断、竞品分析、上架策略、商品文案和套图脚本生产 agent。",
+  "description": "核心 Agent。面向跨境电商平台执行趋势找品、商品识别、竞品分析、上架策略、文案、AI 商品图、商品视频、供应链研究和质量验收。",
   "version": "0.1.0",
   "language": {
     "interface": "zh-CN",
     "buyer_copy_default": "en-US"
   },
   "inputs": {
-    "required": [
-      "product_name",
-      "category",
+    "required": [],
+    "optional": [
+      "task_intent_or_menu_selection",
+      "product_name_or_sku",
+      "sku_combination",
       "target_platform",
       "target_market",
-      "core_functions",
-      "specifications",
-      "visual_assets",
-      "target_price_or_cost_range",
-      "sourcing_status"
-    ],
-    "optional": [
+      "visual_assets_or_product_link",
       "competitor_links",
       "product_source",
       "trend_keywords",
@@ -110,6 +106,7 @@
       "Each executable action must include display_number, action_id, action_name, description, default_recommendation, requires_confirmation, subagent, expected_artifact, and output_path.",
       "Prefer showing a UI action picker instead of asking the user to type an action ID.",
       "When the user selects an action in the picker, route execution to the mapped subagent.",
+      "Treat the user's menu or action selection as authorization for that in-scope action; ask again only for scope expansion, overwriting an existing file, or an external side effect.",
       "If the runtime does not support a UI picker, fall back to numeric display numbers, not letter-prefixed action IDs.",
       "Generated or saved artifacts must be written to the declared output path without overwriting existing files unless explicitly requested."
     ]
@@ -127,6 +124,7 @@
     "Flag compliance, infringement, and visual risks."
   ],
   "product_to_listing_workflow": "../workflows/product-to-listing.md",
+  "product_catalog": "../data/product-catalog.xlsx",
   "start_guide": "../workflows/start-guide.md",
   "action_menu": "../workflows/action-menu.md",
   "platform_profiles": "../platforms/platform-profiles.md",
