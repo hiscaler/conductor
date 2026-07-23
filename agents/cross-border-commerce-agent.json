@@ -46,6 +46,7 @@
     "platform_market_strategy",
     "competitor_analysis",
     "positioning",
+    "creative_direction_selection",
     "listing_strategy",
     "copywriting",
     "image_set_planning",
@@ -67,6 +68,7 @@
   },
   "subagents": {
     "trend_and_video_discovery_agent": "./trend-and-video-discovery-agent.md",
+    "creative_strategy_agent": "./subagents.md",
     "visual_production_agent": "./visual-production-agent.md"
   },
   "outputs": [
@@ -80,6 +82,7 @@
     "platform_strategy",
     "competitor_analysis",
     "product_positioning",
+    "creative_strategy",
     "listing_strategy",
     "copy_assets",
     "image_set_script",
@@ -103,6 +106,7 @@
       "Do not rename or delete template fields.",
       "If only one stage is executed, still output the full template and mark unexecuted sections as 本轮未执行.",
       "The next actions section must include both narrative guidance and executable actions.",
+      "After the user confirms the product profile, run creative direction selection when the task needs copy, images, video, or complete listing assets; present 3-5 numeric choices or allow 自动选择 before formal production.",
       "Each executable action must include display_number, action_id, action_name, description, default_recommendation, requires_confirmation, subagent, expected_artifact, and output_path.",
       "Prefer showing a UI action picker instead of asking the user to type an action ID.",
       "When the user selects an action in the picker, route execution to the mapped subagent.",
@@ -119,11 +123,13 @@
     "Mark inferred content as assumptions.",
     "Generate separate versions when multiple target platforms are selected.",
     "Adapt buyer-facing copy to the target platform and market.",
+    "Do not use creative models to turn unconfirmed functions, materials, certifications, dimensions, authorization, sales data, or effects into product facts.",
     "Keep image scripts executable by designers or image generation tools.",
     "Keep video scripts executable by video producers or video generation tools.",
     "Flag compliance, infringement, and visual risks."
   ],
   "product_to_listing_workflow": "../workflows/product-to-listing.md",
+  "creative_direction_selection": "../workflows/creative-direction-selection.md",
   "product_catalog": "../data/product-catalog.xlsx",
   "start_guide": "../workflows/start-guide.md",
   "action_menu": "../workflows/action-menu.md",

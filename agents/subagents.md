@@ -18,6 +18,7 @@
 | `compliance-agent` | 合规检查 | 检查商标、专利、认证、敏感类目和禁用表达 | 风险等级、禁用表达、补证清单 |
 | `supply-chain-agent` | 供应链确认 | 面向中国采购时优先从 1688、义乌购等国内货源平台查询，再用 Alibaba 国际站补充；平台需要登录时，用户只负责登录和验证，Agent 负责搜索、筛选候选、打开商品页和店铺页、验证最终地址与访问状态，并按公开信息判断 MOQ、价格、交期、店铺年限、销量/成交、评分、联系方式、定制能力、质检、包装和 SKU 稳定性 | 国内优先供应商候选表、来源覆盖报告、链接验证表、供应链问题清单、首批建议 |
 | `positioning-agent` | 定位卖点 | 综合自身事实、市场研究和仍可执行的未来节日，自动生成核心功能、希望突出卖点、主要购买动机和定制示例，并结合平台策略补充类目必需属性 | 可复制完整商品示例、一句话定位、卖点矩阵、节日机会 |
+| `creative-strategy-agent` | 创意方向 | 在商品资料回传后、正式内容生产前，判断是否需要创意方向选择；需要时生成 3-5 个数字方向菜单，用户选择后形成可执行创意方案 | 创意方向菜单、已选择创意方案、文案/图片/视频主线、风险边界 |
 | `listing-strategy-agent` | 上架策略 | 设计 SKU、价格、offer、物流和字段结构 | 上架策略、字段 checklist |
 | `copywriting-agent` | 文案生产 | 先使用通用语义与创意规则识别买家意图、选择表达模型、预判问题，再按平台生成标题、要点、描述、关键词、广告文案 | 平台适配文案包 |
 | `visual-production-agent` | 图片/视频视觉资产 | 先使用通用视觉叙事角色分配每张图和每条视频要解决的问题，再按平台规则规划图片和视频，并在工具可用时生成资产 | 套图脚本、视频脚本、生成提示词、资产路径、验收报告 |
@@ -41,24 +42,25 @@
 - 只有方向、品类、人群、关键词或视频链接：先调度 `trend-and-video-discovery-agent`，提取候选商品后再进入 `product-selection-agent`。
 - 有产品资料但未选平台：先调度 `platform-strategy-agent`。
 - 有平台和竞品：进入 `competitor-research-agent`。
-- 已确定要上架：进入 `listing-strategy-agent`、`copywriting-agent`、`visual-production-agent`。
+- 已确定要上架：先判断是否需要 `creative-strategy-agent`，再进入 `listing-strategy-agent`、`copywriting-agent`、`visual-production-agent`。
 - 已有 listing 草稿：进入 `listing-qa-agent`。
 - 已上架：进入 `growth-review-agent`。
 
-用户选择任务后，必须按 `workflows/start-guide.md` 先给出带示例值的最小输入模板。需要具体商品时，系统自动完成商品识别与电商研究，并返回包含四项营销建议和平台必需属性的完整可复制商品资料；可复制区域只放商品资料本体，用户回传修改后的商品资料前不得进入生产。
+用户选择任务后，必须按 `workflows/start-guide.md` 先给出带示例值的最小输入模板。需要具体商品时，系统自动完成商品识别与电商研究，并返回包含四项营销建议和平台必需属性的完整可复制商品资料；可复制区域只放商品资料本体，用户回传修改后的商品资料前不得进入生产。用户回传商品资料后，按 `workflows/creative-direction-selection.md` 判断是否需要先选择创意方向；触发时只输出数字菜单，用户选择后再继续生产。
 
 ### 2. 串行和并行
 
 必须串行的阶段：
 
 - 信息接收必须先于所有阶段。
+- 创意方向选择如被触发，必须在商品资料回传后、文案/图片/视频生产前完成。
 - 合规检查必须在最终上架前完成。
 - 上架 QA 必须在文案和套图完成后进行。
 
 可以并行的阶段：
 
 - 需求验证、竞品分析、平台匹配可以并行。
-- 文案生产、图片套图和视频脚本可以在定位确认后并行。
+- 文案生产、图片套图和视频脚本可以在定位确认且创意方向处理完成后并行。
 - 利润测算和供应链确认可以并行。
 - 完整流程中，供应链确认必须在选品初筛后、正式上架策略前完成；如果平台访问受限，仍必须输出供应商候选表并标注“未获取”或“受访问限制”。
 - 供应链确认获得有效公开价格区间后，`profit-agent` 必须回填采购价预估区间、目标售价建议和仍需确认的成本项。只有泛化价格区间、没有店铺名称或商品链接时，不得回填采购价结论。
@@ -93,6 +95,7 @@ intake-agent
   -> market-demand-agent + platform-strategy-agent + competitor-research-agent
   -> profit-agent + compliance-agent + supply-chain-agent
   -> positioning-agent
+  -> creative-strategy-agent（需要创意方向选择时启用）
   -> listing-strategy-agent
   -> copywriting-agent + visual-production-agent
   -> listing-qa-agent

@@ -12,8 +12,10 @@ const files = Object.fromEntries(
       "AGENTS.md",
       "README.md",
       "workflows/start-guide.md",
+      "workflows/creative-direction-selection.md",
       "workflows/action-menu.md",
       "workflows/output-structure.md",
+      "platforms/commerce-semantic-creative-rules.md",
       "templates/production-output.md",
       "docs/agent-testing.md",
       "agents/cross-border-commerce-agent.json",
@@ -24,6 +26,8 @@ const files = Object.fromEntries(
 const agent = JSON.parse(files["agents/cross-border-commerce-agent.json"]);
 assert.deepEqual(agent.inputs.required, [], "核心 Agent 不应预设一组统一必填字段");
 assert.equal(agent.product_catalog, "../data/product-catalog.xlsx");
+assert.equal(agent.creative_direction_selection, "../workflows/creative-direction-selection.md");
+assert.ok(agent.workflow.includes("creative_direction_selection"), "核心 Agent 工作流缺少创意方向选择阶段");
 
 const start = files["workflows/start-guide.md"];
 for (const trigger of ["你好", "hello", "开始", "菜单", "帮助"]) {
@@ -34,12 +38,25 @@ assert.match(start, /多个 SKU 始终组成一个 listing/);
 assert.match(start, /未写数量默认 1/);
 assert.match(start, /相同 SKU 自动合并数量/);
 assert.doesNotMatch(start, /分别生成.{0,12}组合销售/);
+assert.match(start, /创意方向选择/);
+assert.match(start, /用户只需回复一个数字/);
 
 const rules = files["AGENTS.md"];
 assert.match(rules, /去除整个输入及每个组合项首尾空格/);
 assert.match(rules, /英文字母不区分大小写/);
 assert.match(rules, /两个 SKU 去除首尾空格并忽略大小写后相同时/);
 assert.match(rules, /用户未回传商品资料示例前，不进入正式/);
+assert.match(rules, /workflows\/creative-direction-selection\.md/);
+
+const creative = files["workflows/creative-direction-selection.md"];
+assert.match(creative, /不替代 `templates\/production-output\.md` 的 16 章正式产出/);
+assert.match(creative, /输出 3-5 个.*创意方向/);
+assert.match(creative, /用户只回复数字或“自动选择”|用户回复 `1`/);
+assert.match(creative, /第 6 节“产品定位”/);
+
+const semantic = files["platforms/commerce-semantic-creative-rules.md"];
+assert.match(semantic, /创意方向选择/);
+assert.match(semantic, /创意方向选择流程/);
 
 const actions = files["workflows/action-menu.md"];
 assert.match(actions, /用户选择启动菜单或下一步动作即视为同意执行该动作/);
@@ -71,6 +88,10 @@ for (const imageType of [
 ]) {
   assert.match(output, new RegExp(imageType.replace("/", "\\/")), `缺少 Temu 图型：${imageType}`);
 }
+assert.match(output, /### 创意策略/);
+assert.match(output, /文案主线/);
+assert.match(output, /图片主线/);
+assert.match(output, /视频主线/);
 
 const allText = Object.values(files).join("\n");
 assert.doesNotMatch(allText, /product-catalog\.csv/);
@@ -102,4 +123,4 @@ for (const markdownPath of markdownFiles) {
   }
 }
 
-console.log("规则一致性检查通过：入口、动态输入、SKU、示例确认、动作确认、16 章模板、Temu 套图、XLSX 和本地文档链接均一致。");
+console.log("规则一致性检查通过：入口、动态输入、SKU、示例确认、创意方向、动作确认、16 章模板、Temu 套图、XLSX 和本地文档链接均一致。");
