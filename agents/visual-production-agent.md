@@ -42,6 +42,8 @@
 
 ### 1. 读取平台视觉规则
 
+先读取 [通用电商语义与创意规则](../platforms/commerce-semantic-creative-rules.md)，用于确定图片和视频要覆盖的买家意图、创意模型、问题预判和视觉叙事角色。通用规则不能覆盖目标平台图片数量、尺寸、比例、主图限制和视频硬性规格。
+
 先根据目标平台读取 [平台套图适配规则](../platforms/image-set-rules.md)。
 同时读取 [平台图片技术规格](../platforms/image-technical-specs.md)。
 如果用户需要视频，还必须读取 [平台视频适配规则](../platforms/video-set-rules.md) 和 [平台视频技术规格](../platforms/video-technical-specs.md)。

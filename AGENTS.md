@@ -10,6 +10,7 @@
 - `agents/subagents.md`
 - `templates/production-output.md`
 - `platforms/platform-profiles.md`
+- `platforms/commerce-semantic-creative-rules.md`
 - `platforms/market-data-sources.md`
 - `platforms/image-set-rules.md`
 - `platforms/image-technical-specs.md`

@@ -258,6 +258,7 @@ README 只介绍系统用途和操作入口。具体规则集中维护在以下�
 
 - [产品输入模板](./templates/product-input.md)：系统内部产品档案和用户自动示例结构。
 - [标准产出模板](./templates/production-output.md)：正式交付必须遵循的 16 章结构。
+- [通用电商语义与创意规则](./platforms/commerce-semantic-creative-rules.md)：跨平台复用的买家意图、创意模型、问题预判和视觉叙事方法。
 
 ### 图片
 
