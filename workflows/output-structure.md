@@ -13,7 +13,7 @@ output/{平台}-{市场}/{Listing标识}/
 示例：
 
 ```text
-output/Temu-US/MUG-RD-11OZ/
+output/Temu-US/MUG0110RD/
 ```
 
 平台和市场由系统根据当前任务自动生成，不要求用户额外填写目录名称。
@@ -32,8 +32,8 @@ Listing 标识由系统自动生成，不要求用户手工命名。
 
 生成优先级：
 
-1. 单个已匹配 SKU：使用商品主表中的标准 SKU，例如 `MUG-RD-11OZ`。
-2. 多个 SKU：按标准 SKU 排序并合并重复数量，生成 `组合-{SKU}x{数量}+{SKU}x{数量}`。
+1. 单个已匹配 SKU 且销售数量为 1：使用商品主表中的标准 SKU，例如 `MUG0110RD`。
+2. 销售数量大于 1 或包含多个 SKU：按标准 SKU 排序并合并重复数量，生成 `组合-{SKU}x{数量}+{SKU}x{数量}`。
 3. 没有 SKU 的具体商品：使用 `未建档-{简短商品名}`。
 4. 尚无具体商品的找品任务：使用 `找品-{简短方向}`。
 5. 只有竞品、关键词或榜单的调研任务：使用 `调研-{简短关键词}`。
@@ -41,8 +41,9 @@ Listing 标识由系统自动生成，不要求用户手工命名。
 示例：
 
 ```text
-output/Temu-US/MUG-RD-11OZ/
-output/Temu-US/组合-GIFT-BOX-001x1+MUG-RD-11OZx2/
+output/Temu-US/MUG0110RD/
+output/Temu-US/组合-MUG0110WHx6/
+output/Temu-US/组合-BOX000001x1+MUG0110RDx2/
 output/Temu-US/未建档-红色定制马克杯/
 output/待定-US/找品-宠物出行用品/
 ```
@@ -50,7 +51,7 @@ output/待定-US/找品-宠物出行用品/
 规则：
 
 - SKU 匹配沿用商品资料库规则：去除首尾空格、忽略英文字母大小写，命中后使用主表标准写法。
-- 组合标识必须与本轮实际售卖内容一致；数量变化视为不同 Listing。
+- 组合标识必须与本轮实际售卖内容一致；即使只有一个 SKU，销售数量大于 1 时也必须写入数量。数量变化视为不同 Listing。
 - 标识中的文件系统非法字符替换为短横线；连续空格压缩为一个短横线。
 - 商品改名、标题优化或类目调整不得改变已确定的 SKU 或组合 Listing 目录。
 
@@ -115,7 +116,7 @@ output/{平台}-{市场}/{Listing标识}/
 所有下一步动作必须遵守本规范，例如：
 
 ```text
-output/Temu-US/MUG-RD-11OZ/文案/文案资产.md
-output/Temu-US/MUG-RD-11OZ/图片/01-主图.png
-output/Temu-US/MUG-RD-11OZ/图片/图片验收报告.md
+output/Temu-US/MUG0110RD/文案/文案资产.md
+output/Temu-US/MUG0110RD/图片/01-主图.png
+output/Temu-US/MUG0110RD/图片/图片验收报告.md
 ```

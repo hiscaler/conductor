@@ -29,7 +29,7 @@ npm test
 - 创意方向选择流程文档存在，并被主规则、启动向导和 README 引用。
 - 正式产出模板仍包含完整 16 个章节。
 - Temu 定制类默认 8 张图的图型保持完整。
-- `product-catalog.xlsx` 文件存在并具备 XLSX 文件签名。
+- `product-catalog.csv` 和 `product-attributes.csv` 存在，表头、列数、SKU、数字、日期、允许值、属性关联和本地资料路径通过校验。
 - Markdown 中引用的本地规则和文档链接能够找到目标文件。
 
 它不检查：

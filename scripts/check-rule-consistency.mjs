@@ -25,7 +25,10 @@ const files = Object.fromEntries(
 
 const agent = JSON.parse(files["agents/cross-border-commerce-agent.json"]);
 assert.deepEqual(agent.inputs.required, [], "核心 Agent 不应预设一组统一必填字段");
-assert.equal(agent.product_catalog, "../data/product-catalog.xlsx");
+assert.deepEqual(agent.product_catalog, {
+  products: "../data/product-catalog.csv",
+  attributes: "../data/product-attributes.csv",
+});
 assert.equal(agent.creative_direction_selection, "../workflows/creative-direction-selection.md");
 assert.equal(agent.commerce_semantic_creative_rules, "../platforms/commerce-semantic-creative-rules.md");
 assert.ok(agent.workflow.includes("creative_direction_selection"), "核心 Agent 工作流缺少创意方向选择阶段");
@@ -76,8 +79,8 @@ assert.match(actions, /output\/\{平台\}-\{市场\}\/\{Listing标识\}/);
 assert.doesNotMatch(actions, /output\/\{目标平台\}\/\{产品类目\}\/\{产品名称\}/);
 
 const outputStructure = files["workflows/output-structure.md"];
-assert.match(outputStructure, /单个已匹配 SKU/);
-assert.match(outputStructure, /多个 SKU/);
+assert.match(outputStructure, /单个已匹配 SKU 且销售数量为 1/);
+assert.match(outputStructure, /销售数量大于 1 或包含多个 SKU/);
 assert.match(outputStructure, /未建档-\{简短商品名\}/);
 assert.match(outputStructure, /找品-\{简短方向\}/);
 assert.match(outputStructure, /商品名称、类目.*不再作为目录层级/);
@@ -106,14 +109,138 @@ assert.match(output, /创意策略来源：用户选择 \/ 自动选择 \/ 沿�
 assert.match(output, /证据锚点/);
 
 const allText = Object.values(files).join("\n");
-assert.doesNotMatch(allText, /product-catalog\.csv/);
+assert.doesNotMatch(allText, /product-catalog\.xlsx/);
 assert.doesNotMatch(allText, /每个启用 SKU/);
 
-const workbookUrl = new URL("../data/product-catalog.xlsx", import.meta.url);
-const workbook = await stat(workbookUrl);
-assert.ok(workbook.size > 10_000, "商品资料库工作簿不存在或内容异常");
-const signature = await readFile(workbookUrl);
-assert.equal(signature.subarray(0, 2).toString(), "PK", "商品资料库不是有效的 XLSX/ZIP 文件");
+const parseCsv = (text, fileName) => {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let quoted = false;
+  let line = 1;
+  let rowLine = 1;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    if (quoted) {
+      if (character === '"' && text[index + 1] === '"') {
+        field += '"';
+        index += 1;
+      } else if (character === '"') {
+        quoted = false;
+      } else {
+        field += character;
+        if (character === "\n") line += 1;
+      }
+      continue;
+    }
+
+    if (character === '"' && field === "") quoted = true;
+    else if (character === ",") {
+      row.push(field);
+      field = "";
+    } else if (character === "\n") {
+      row.push(field.replace(/\r$/, ""));
+      rows.push({ line: rowLine, values: row });
+      row = [];
+      field = "";
+      line += 1;
+      rowLine = line;
+    } else field += character;
+  }
+
+  assert.equal(quoted, false, `${fileName} 第 ${rowLine} 行存在未闭合的双引号`);
+  if (field !== "" || row.length > 0) {
+    row.push(field.replace(/\r$/, ""));
+    rows.push({ line: rowLine, values: row });
+  }
+  return rows;
+};
+
+const catalogHeaders = [
+  "SPU", "SKU", "商品名称", "品牌", "产品类目", "产品子类目", "产品类型", "包含内容", "型号", "颜色/款式",
+  "尺码/规格", "长度cm", "宽度cm", "高度cm", "净重g", "材质", "结构/表面工艺", "已确认功能", "商品特点", "适用对象",
+  "使用场景", "使用/护理说明", "定制内容", "定制位置", "定制工艺", "包装清单", "包装方式", "包装长度cm", "包装宽度cm", "包装高度cm",
+  "包装毛重g", "认证信息", "认证状态", "禁止/未确认声明", "资料来源", "资料更新时间", "备注",
+];
+const attributeHeaders = ["SKU", "属性组", "属性名称", "属性值", "单位", "值类型", "是否平台必需", "适用平台", "资料来源", "资料更新时间", "备注"];
+const catalogPath = resolve(root, "data/product-catalog.csv");
+const attributePath = resolve(root, "data/product-attributes.csv");
+await stat(resolve(root, "data/product-catalog.xlsx")).then(
+  () => assert.fail("商品资料库应只使用 CSV，不应继续保留 data/product-catalog.xlsx"),
+  () => undefined,
+);
+const catalogText = await readFile(catalogPath, "utf8");
+const attributeText = await readFile(attributePath, "utf8");
+assert.doesNotMatch(catalogText, /\uFFFD/, "data/product-catalog.csv 包含无效 UTF-8 字符");
+assert.doesNotMatch(attributeText, /\uFFFD/, "data/product-attributes.csv 包含无效 UTF-8 字符");
+const catalogRows = parseCsv(catalogText, "data/product-catalog.csv");
+const attributeRows = parseCsv(attributeText, "data/product-attributes.csv");
+assert.deepEqual(catalogRows[0]?.values, catalogHeaders, "data/product-catalog.csv 表头不符合约定");
+assert.deepEqual(attributeRows[0]?.values, attributeHeaders, "data/product-attributes.csv 表头不符合约定");
+
+const isNumber = (value) => value.trim() !== "" && Number.isFinite(Number(value)) && Number(value) >= 0;
+const isDate = (value) => {
+  if (value === "") return true;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+};
+const indexByHeader = (headers) => Object.fromEntries(headers.map((header, index) => [header, index]));
+const catalogIndex = indexByHeader(catalogHeaders);
+const attributeIndex = indexByHeader(attributeHeaders);
+const skuRows = new Map();
+
+for (const row of catalogRows.slice(1)) {
+  assert.equal(row.values.length, catalogHeaders.length, `data/product-catalog.csv 第 ${row.line} 行列数应为 ${catalogHeaders.length}`);
+  for (const field of ["SPU", "SKU", "商品名称", "产品类目", "产品类型"]) {
+    assert.notEqual(row.values[catalogIndex[field]].trim(), "", `data/product-catalog.csv 第 ${row.line} 行“${field}”不能为空`);
+  }
+  const sku = row.values[catalogIndex.SKU].trim();
+  const normalizedSku = sku.toLocaleLowerCase("en-US");
+  assert.equal(skuRows.has(normalizedSku), false, `data/product-catalog.csv 第 ${row.line} 行 SKU“${sku}”忽略大小写后重复`);
+  skuRows.set(normalizedSku, row.line);
+  assert.ok(["普货", "定制类"].includes(row.values[catalogIndex.产品类型]), `data/product-catalog.csv 第 ${row.line} 行“产品类型”只允许普货或定制类`);
+  assert.ok(["", "已取得", "不适用"].includes(row.values[catalogIndex.认证状态]), `data/product-catalog.csv 第 ${row.line} 行“认证状态”值无效`);
+  for (const field of ["长度cm", "宽度cm", "高度cm", "净重g", "包装长度cm", "包装宽度cm", "包装高度cm", "包装毛重g"]) {
+    const value = row.values[catalogIndex[field]].trim();
+    assert.ok(value === "" || isNumber(value), `data/product-catalog.csv 第 ${row.line} 行“${field}”只能填写大于或等于零的数字，当前值为“${value}”`);
+  }
+  const updatedAt = row.values[catalogIndex.资料更新时间].trim();
+  assert.ok(isDate(updatedAt), `data/product-catalog.csv 第 ${row.line} 行“资料更新时间”必须使用 yyyy-mm-dd`);
+  const source = row.values[catalogIndex.资料来源].trim();
+  if (source.startsWith("data/")) {
+    await stat(resolve(root, source)).catch(() => assert.fail(`data/product-catalog.csv 第 ${row.line} 行“资料来源”文件不存在：${source}`));
+  }
+}
+
+const attributeKeys = new Set();
+for (const row of attributeRows.slice(1)) {
+  assert.equal(row.values.length, attributeHeaders.length, `data/product-attributes.csv 第 ${row.line} 行列数应为 ${attributeHeaders.length}`);
+  const sku = row.values[attributeIndex.SKU].trim();
+  assert.notEqual(sku, "", `data/product-attributes.csv 第 ${row.line} 行“SKU”不能为空`);
+  assert.ok(skuRows.has(sku.toLocaleLowerCase("en-US")), `data/product-attributes.csv 第 ${row.line} 行 SKU“${sku}”不存在于商品主表`);
+  for (const field of ["属性组", "属性名称", "属性值", "值类型"]) {
+    assert.notEqual(row.values[attributeIndex[field]].trim(), "", `data/product-attributes.csv 第 ${row.line} 行“${field}”不能为空`);
+  }
+  const valueType = row.values[attributeIndex.值类型].trim();
+  assert.ok(["数字", "文本", "布尔值", "列表"].includes(valueType), `data/product-attributes.csv 第 ${row.line} 行“值类型”值无效`);
+  const required = row.values[attributeIndex.是否平台必需].trim();
+  assert.ok(["", "是", "否"].includes(required), `data/product-attributes.csv 第 ${row.line} 行“是否平台必需”只允许是、否或留空`);
+  if (valueType === "数字") {
+    const value = row.values[attributeIndex.属性值].trim();
+    assert.ok(isNumber(value), `data/product-attributes.csv 第 ${row.line} 行数字属性只能填写大于或等于零的数字，当前值为“${value}”`);
+  }
+  const updatedAt = row.values[attributeIndex.资料更新时间].trim();
+  assert.ok(isDate(updatedAt), `data/product-attributes.csv 第 ${row.line} 行“资料更新时间”必须使用 yyyy-mm-dd`);
+  const source = row.values[attributeIndex.资料来源].trim();
+  if (source.startsWith("data/")) {
+    await stat(resolve(root, source)).catch(() => assert.fail(`data/product-attributes.csv 第 ${row.line} 行“资料来源”文件不存在：${source}`));
+  }
+  const key = [sku.toLocaleLowerCase("en-US"), row.values[attributeIndex.属性组], row.values[attributeIndex.属性名称], row.values[attributeIndex.适用平台]].join("|");
+  assert.equal(attributeKeys.has(key), false, `data/product-attributes.csv 第 ${row.line} 行存在重复扩展属性`);
+  attributeKeys.add(key);
+}
 
 const markdownFiles = [];
 const collectMarkdown = async (directory) => {
@@ -135,4 +262,4 @@ for (const markdownPath of markdownFiles) {
   }
 }
 
-console.log("规则一致性检查通过：入口、动态输入、SKU、示例确认、创意方向、动作确认、16 章模板、Temu 套图、XLSX 和本地文档链接均一致。");
+console.log("规则一致性检查通过：入口、动态输入、SKU、CSV 商品资料、创意方向、动作确认、16 章模板、Temu 套图和本地文档链接均一致。");

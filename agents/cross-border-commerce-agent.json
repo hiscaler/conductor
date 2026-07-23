@@ -130,7 +130,10 @@
   ],
   "product_to_listing_workflow": "../workflows/product-to-listing.md",
   "creative_direction_selection": "../workflows/creative-direction-selection.md",
-  "product_catalog": "../data/product-catalog.xlsx",
+  "product_catalog": {
+    "products": "../data/product-catalog.csv",
+    "attributes": "../data/product-attributes.csv"
+  },
   "start_guide": "../workflows/start-guide.md",
   "action_menu": "../workflows/action-menu.md",
   "output_structure": "../workflows/output-structure.md",
