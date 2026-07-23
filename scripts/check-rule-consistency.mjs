@@ -27,6 +27,7 @@ const agent = JSON.parse(files["agents/cross-border-commerce-agent.json"]);
 assert.deepEqual(agent.inputs.required, [], "核心 Agent 不应预设一组统一必填字段");
 assert.equal(agent.product_catalog, "../data/product-catalog.xlsx");
 assert.equal(agent.creative_direction_selection, "../workflows/creative-direction-selection.md");
+assert.equal(agent.commerce_semantic_creative_rules, "../platforms/commerce-semantic-creative-rules.md");
 assert.ok(agent.workflow.includes("creative_direction_selection"), "核心 Agent 工作流缺少创意方向选择阶段");
 
 const start = files["workflows/start-guide.md"];
@@ -53,10 +54,19 @@ assert.match(creative, /不替代 `templates\/production-output\.md` 的 16 章�
 assert.match(creative, /输出 3-5 个.*创意方向/);
 assert.match(creative, /用户只回复数字或“自动选择”|用户回复 `1`/);
 assert.match(creative, /第 6 节“产品定位”/);
+assert.match(creative, /不展示菜单不等于没有创意策略/);
+assert.match(creative, /证据锚点/);
+assert.match(creative, /未请求图片或视频时|未请求的内容载体/);
+assert.match(creative, /多个数字时，不静默合并，也不默认采用第一个/);
 
 const semantic = files["platforms/commerce-semantic-creative-rules.md"];
 assert.match(semantic, /创意方向选择/);
 assert.match(semantic, /创意方向选择流程/);
+assert.match(semantic, /销售单位\/组合关系/);
+assert.match(semantic, /变体与定制边界/);
+assert.match(semantic, /图片只能直接确认可见的外观/);
+assert.match(semantic, /跳过菜单不代表正式产出可以缺少创意策略/);
+assert.match(semantic, /AI 生成图片是内容表达和场景模拟，不是商品事实/);
 
 const actions = files["workflows/action-menu.md"];
 assert.match(actions, /用户选择启动菜单或下一步动作即视为同意执行该动作/);
@@ -92,6 +102,8 @@ assert.match(output, /### 创意策略/);
 assert.match(output, /文案主线/);
 assert.match(output, /图片主线/);
 assert.match(output, /视频主线/);
+assert.match(output, /创意策略来源：用户选择 \/ 自动选择 \/ 沿用用户方向 \/ 系统默认 \/ 不适用/);
+assert.match(output, /证据锚点/);
 
 const allText = Object.values(files).join("\n");
 assert.doesNotMatch(allText, /product-catalog\.csv/);
