@@ -44,6 +44,9 @@ assert.match(start, /相同 SKU 自动合并数量/);
 assert.doesNotMatch(start, /分别生成.{0,12}组合销售/);
 assert.match(start, /创意方向选择/);
 assert.match(start, /用户只需回复一个数字/);
+assert.match(start, /收到确认后的商品资料后，我会先处理创意方向/);
+assert.match(start, /存在多个可执行方向时，提供 3-5 个方向供你选择/);
+assert.match(start, /非内容任务不显示创意菜单/);
 
 const rules = files["AGENTS.md"];
 assert.match(rules, /去除整个输入及每个组合项首尾空格/);
