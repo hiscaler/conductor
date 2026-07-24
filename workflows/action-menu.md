@@ -14,13 +14,13 @@
 
 如果运行环境不支持弹窗或选择器，才退回文本动作 ID 方式。
 
-所有产物必须遵守 [输出目录和文件命名规范](./output-structure.md)，统一保存到：
+所有产物必须遵守 [输出目录和文件命名规范](./output-structure.md)，同一轮统一保存到：
 
 ```text
-output/{平台}-{市场}/{Listing标识}/
+output/{平台}-{市场}/{Listing标识}[-vN]/
 ```
 
-正式执行完成后，完整 16 章生产报告自动保存，基础路径为 `output/{平台}-{市场}/{Listing标识}/上架/完整生产报告.md`，已有文件时创建新版本，不需要用户再选择“保存完整报告”。聊天默认只展示本轮相关结果和实际报告路径。
+正式执行前先分配 Listing 版本目录；完整 16 章生产报告自动保存为该目录下固定的 `上架/完整生产报告.md`，不需要用户再选择“保存完整报告”。聊天默认只展示本轮相关结果和实际报告路径。
 
 ## 动作字段
 
@@ -90,25 +90,25 @@ output/{平台}-{市场}/{Listing标识}/
 
 | 展示序号 | 动作 ID | 动作名称 | 说明 | 默认建议 | 是否需要确认 | 触发子 Agent | 预计产物 | 输出位置 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | `save_copy_assets` | 保存文案资产 | 将标题、描述、关键词、广告文案保存为 Markdown 或 JSON | 建议 | 否 | `copywriting-agent` | 文案文件 | `output/{平台}-{市场}/{Listing标识}/文案/文案资产.md` |
-| 2 | `generate_main_image` | 生成主图 | 根据套图脚本生成第 1 张主图 | 建议 | 否 | `visual-production-agent` | 主图文件、图片验收报告 | `output/{平台}-{市场}/{Listing标识}/图片/01-主图.png` |
-| 3 | `generate_full_image_set` | 生成整套图片 | 根据套图脚本逐张生成完整套图，一张图一个独立文件，不能用单张拼图代替 | 可选 | 否 | `visual-production-agent` | 多张图片、图片验收报告 | `output/{平台}-{市场}/{Listing标识}/图片/` |
-| 4 | `save_image_plan` | 保存套图脚本 | 将图片脚本和生成提示词保存为文件 | 建议 | 否 | `visual-production-agent` | 套图脚本文档 | `output/{平台}-{市场}/{Listing标识}/图片/套图脚本.md` |
-| 5 | `generate_missing_images` | 继续生成缺失图片 | 根据图片验收报告中的缺失图型逐张补齐图片 | 条件建议 | 否 | `visual-production-agent` | 缺失图片文件、更新后的图片验收报告 | `output/{平台}-{市场}/{Listing标识}/图片/` |
-| 6 | `generate_listing_package` | 生成上架包 | 汇总标题、描述、关键词、图片脚本、合规检查 | 建议 | 否 | `listing-strategy-agent` | 上架包文档 | `output/{平台}-{市场}/{Listing标识}/上架/上架包.md` |
-| 7 | `run_listing_qa` | 做上架前 QA | 检查 listing 字段、文案、图片、合规和缺失项 | 建议 | 否 | `listing-qa-agent` | QA 报告 | `output/{平台}-{市场}/{Listing标识}/上架/上架前QA报告.md` |
-| 8 | `research_competitors` | 补充竞品调研 | 基于用户提供的竞品链接或可用数据做竞品分析 | 条件建议 | 否 | `competitor-research-agent` | 竞品矩阵 | `output/{平台}-{市场}/{Listing标识}/竞品/竞品分析.md` |
-| 9 | `calculate_profit` | 利润测算 | 基于供应链公开报价、采购价、运费、平台费用和售价计算利润 | 条件建议 | 否 | `profit-agent` | 利润测算表 | `output/{平台}-{市场}/{Listing标识}/利润/利润测算.md` |
-| 10 | `review_compliance` | 合规风险复核 | 检查认证、材质、敏感词、侵权和类目风险 | 建议 | 否 | `compliance-agent` | 合规报告 | `output/{平台}-{市场}/{Listing标识}/合规/合规风险报告.md` |
-| 11 | `create_test_plan` | 制定测试计划 | 生成上架后的点击率、转化率、图片 A/B 和补货判断计划 | 可选 | 否 | `growth-review-agent` | 测试计划 | `output/{平台}-{市场}/{Listing标识}/测试/测试计划.md` |
-| 12 | `save_video_script` | 保存视频脚本 | 将短视频脚本、分镜、字幕/口播和视频提示词保存为文件 | 可选 | 否 | `visual-production-agent` | 视频脚本文档 | `output/{平台}-{市场}/{Listing标识}/视频/视频脚本.md` |
-| 13 | `generate_main_video` | 生成主视频 | 根据视频脚本生成第 1 条商品主视频 | 可选 | 否 | `visual-production-agent` | 主视频文件、视频验收报告 | `output/{平台}-{市场}/{Listing标识}/视频/01-主视频.mp4` |
-| 14 | `generate_video_set` | 生成视频组 | 根据视频脚本生成多条平台短视频 | 可选 | 否 | `visual-production-agent` | 多条视频、视频验收报告 | `output/{平台}-{市场}/{Listing标识}/视频/` |
+| 1 | `save_copy_assets` | 保存文案资产 | 将标题、描述、关键词、广告文案保存为 Markdown 或 JSON | 建议 | 否 | `copywriting-agent` | 文案文件 | `output/{平台}-{市场}/{Listing版本目录}/文案/文案资产.md` |
+| 2 | `generate_main_image` | 生成主图 | 根据套图脚本生成第 1 张主图 | 建议 | 否 | `visual-production-agent` | 主图文件、图片验收报告 | `output/{平台}-{市场}/{Listing版本目录}/图片/01-主图.png` |
+| 3 | `generate_full_image_set` | 生成整套图片 | 根据套图脚本逐张生成完整套图，一张图一个独立文件，不能用单张拼图代替 | 可选 | 否 | `visual-production-agent` | 多张图片、图片验收报告 | `output/{平台}-{市场}/{Listing版本目录}/图片/` |
+| 4 | `save_image_plan` | 保存套图脚本 | 将图片脚本和生成提示词保存为文件 | 建议 | 否 | `visual-production-agent` | 套图脚本文档 | `output/{平台}-{市场}/{Listing版本目录}/图片/套图脚本.md` |
+| 5 | `generate_missing_images` | 继续生成缺失图片 | 根据图片验收报告中的缺失图型逐张补齐图片 | 条件建议 | 否 | `visual-production-agent` | 缺失图片文件、更新后的图片验收报告 | `output/{平台}-{市场}/{Listing版本目录}/图片/` |
+| 6 | `generate_listing_package` | 生成上架包 | 汇总标题、描述、关键词、图片脚本、合规检查 | 建议 | 否 | `listing-strategy-agent` | 上架包文档 | `output/{平台}-{市场}/{Listing版本目录}/上架/上架包.md` |
+| 7 | `run_listing_qa` | 做上架前 QA | 检查 listing 字段、文案、图片、合规和缺失项 | 建议 | 否 | `listing-qa-agent` | QA 报告 | `output/{平台}-{市场}/{Listing版本目录}/上架/上架前QA报告.md` |
+| 8 | `research_competitors` | 补充竞品调研 | 基于用户提供的竞品链接或可用数据做竞品分析 | 条件建议 | 否 | `competitor-research-agent` | 竞品矩阵 | `output/{平台}-{市场}/{Listing版本目录}/竞品/竞品分析.md` |
+| 9 | `calculate_profit` | 利润测算 | 基于供应链公开报价、采购价、运费、平台费用和售价计算利润 | 条件建议 | 否 | `profit-agent` | 利润测算表 | `output/{平台}-{市场}/{Listing版本目录}/利润/利润测算.md` |
+| 10 | `review_compliance` | 合规风险复核 | 检查认证、材质、敏感词、侵权和类目风险 | 建议 | 否 | `compliance-agent` | 合规报告 | `output/{平台}-{市场}/{Listing版本目录}/合规/合规风险报告.md` |
+| 11 | `create_test_plan` | 制定测试计划 | 生成上架后的点击率、转化率、图片 A/B 和补货判断计划 | 可选 | 否 | `growth-review-agent` | 测试计划 | `output/{平台}-{市场}/{Listing版本目录}/测试/测试计划.md` |
+| 12 | `save_video_script` | 保存视频脚本 | 将短视频脚本、分镜、字幕/口播和视频提示词保存为文件 | 可选 | 否 | `visual-production-agent` | 视频脚本文档 | `output/{平台}-{市场}/{Listing版本目录}/视频/视频脚本.md` |
+| 13 | `generate_main_video` | 生成主视频 | 根据视频脚本生成第 1 条商品主视频 | 可选 | 否 | `visual-production-agent` | 主视频文件、视频验收报告 | `output/{平台}-{市场}/{Listing版本目录}/视频/01-主视频.mp4` |
+| 14 | `generate_video_set` | 生成视频组 | 根据视频脚本生成多条平台短视频 | 可选 | 否 | `visual-production-agent` | 多条视频、视频验收报告 | `output/{平台}-{市场}/{Listing版本目录}/视频/` |
 | 15 | `discover_trend_video_products` | 趋势与短视频找品 | 先按目标国家选择数据源和本地语言关键词，再基于趋势关键词、视频链接、字幕、评论、话题标签和画面线索提取候选商品机会 | 条件建议 | 否 | `trend-and-video-discovery-agent` | 目标市场数据源、候选商品清单、趋势/场景证据、初筛评分 | `output/{平台或待定}-{市场}/{找品标识}/找品/趋势与短视频找品.md` |
-| 16 | `research_market_and_reviews` | 研究热销榜与评论 | 根据目标市场和本地语言关键词读取平台热销榜、同类商品、详情页和可访问评论 | 条件建议 | 否 | `competitor-research-agent` | 数据来源记录、竞品矩阵、评论痛点、待验证机会 | `output/{平台}-{市场}/{Listing标识}/竞品/市场与评论研究.md` |
-| 17 | `regenerate_product_example` | 重新生成商品示例 | 保留商品名称、图片、平台和市场，重新生成包含营销建议与平台必需属性的完整可复制示例 | 条件建议 | 否 | `intake-agent`、`positioning-agent` | 完整商品示例、内部事实记录 | `output/{平台}-{市场}/{Listing标识}/商品资料示例.md` |
-| 18 | `research_supply_chain` | 供应链验证 | 从 1688、Alibaba、义乌购等可访问供应链平台查询 3-5 家候选供应商，并记录公开联系方式、店铺年限、销量/成交、评分、MOQ、价格和交期 | 建议 | 否 | `supply-chain-agent` | 供应商候选表、供应链风险、首批测试建议 | `output/{平台}-{市场}/{Listing标识}/供应链/供应商候选表.md` |
-| 19 | `view_full_production_report` | 查看完整生产报告 | 查看本 Listing 最新保存的 16 章完整报告 | 可选 | 否 | `listing-strategy-agent` | 完整生产报告 | `output/{平台}-{市场}/{Listing标识}/上架/完整生产报告.md` 或最新版本 |
+| 16 | `research_market_and_reviews` | 研究热销榜与评论 | 根据目标市场和本地语言关键词读取平台热销榜、同类商品、详情页和可访问评论 | 条件建议 | 否 | `competitor-research-agent` | 数据来源记录、竞品矩阵、评论痛点、待验证机会 | `output/{平台}-{市场}/{Listing版本目录}/竞品/市场与评论研究.md` |
+| 17 | `regenerate_product_example` | 重新生成商品示例 | 保留商品名称、图片、平台和市场，重新生成包含营销建议与平台必需属性的完整可复制示例 | 条件建议 | 否 | `intake-agent`、`positioning-agent` | 完整商品示例、内部事实记录 | `output/{平台}-{市场}/{Listing版本目录}/商品资料示例.md` |
+| 18 | `research_supply_chain` | 供应链验证 | 从 1688、Alibaba、义乌购等可访问供应链平台查询 3-5 家候选供应商，并记录公开联系方式、店铺年限、销量/成交、评分、MOQ、价格和交期 | 建议 | 否 | `supply-chain-agent` | 供应商候选表、供应链风险、首批测试建议 | `output/{平台}-{市场}/{Listing版本目录}/供应链/供应商候选表.md` |
+| 19 | `view_full_production_report` | 查看完整生产报告 | 查看本 Listing 最新版本目录中的 16 章完整报告 | 可选 | 否 | `listing-strategy-agent` | 完整生产报告 | `output/{平台}-{市场}/{Listing标识}[-vN]/上架/完整生产报告.md` |
 
 ## 核心 Agent 执行规则
 
@@ -116,6 +116,7 @@ output/{平台}-{市场}/{Listing标识}/
 - 如果用户选择多个动作，核心 Agent 按依赖顺序执行。
 - 如果动作依赖缺失信息，先输出阻塞项，不执行。
 - 如果动作会生成图片、写文件或覆盖已有文件，必须说明产物路径；不得覆盖已有文件，除非用户明确要求。
+- 正式生产批次的第一个写入动作执行前，必须把基础 Listing 目录传给 `node scripts/output-versioning.mjs output/{平台}-{市场}/{Listing标识}`，并记录脚本返回的 Listing 版本目录。同一批次的后续动作全部复用该目录，不得再次分配版本；只有用户重新生成同一 SKU 或开始新批次时才分配下一个目录。目录内文件名不得添加 `-vN`。
 - 只有方向、关键词、人群或视频链接时，下一步默认建议必须包含 `discover_trend_video_products`。
 - `generate_full_image_set` 必须按套图脚本逐张执行。图片生成工具一次只返回一张图时，必须循环调用直到完整图片清单全部完成；不能只生成主图或单张组合预览图。
 - 图片验收报告状态为“未完成”时，下一步默认建议必须包含 `generate_missing_images`。

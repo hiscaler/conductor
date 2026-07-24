@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "gen-icon": "node scripts/gen-icon.mjs",
-    "test": "node scripts/check-rule-consistency.mjs"
+    "test": "node scripts/check-output-versioning.mjs && node scripts/check-rule-consistency.mjs"
   },
   "devDependencies": {
     "sharp": "^0.34.2"

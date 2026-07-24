@@ -11,6 +11,7 @@ const files = Object.fromEntries(
     [
       "AGENTS.md",
       "README.md",
+      "agents/cross-border-commerce-agent.md",
       "workflows/start-guide.md",
       "workflows/creative-direction-selection.md",
       "workflows/action-menu.md",
@@ -37,7 +38,7 @@ assert.equal(agent.output_contract.chat_template_file, "../templates/chat-output
 assert.equal(agent.output_contract.chat_default, "relevant_only");
 assert.equal(
   agent.output_contract.full_report_output_path,
-  "output/{平台}-{市场}/{Listing标识}/上架/完整生产报告.md",
+  "output/{平台}-{市场}/{Listing版本目录}/上架/完整生产报告.md",
 );
 
 const start = files["workflows/start-guide.md"];
@@ -75,6 +76,15 @@ assert.match(rules, /两个 SKU 去除首尾空格并忽略大小写后相同时
 assert.match(rules, /用户未回传商品资料示例前，不进入正式/);
 assert.match(rules, /workflows\/creative-direction-selection\.md/);
 assert.match(rules, /商品示例回传后先生成具体创意方向/);
+assert.match(rules, /node scripts\/output-versioning\.mjs/);
+assert.match(rules, /本批次全部产物统一写入脚本返回的下一个 `\{Listing标识\}-vN\/` 目录/);
+assert.match(rules, /禁止给文案、图片、视频、脚本、验收报告或完整报告文件名添加 `-vN`/);
+assert.match(rules, /同一批次后续.*必须复用已分配目录/);
+
+const coreAgent = files["agents/cross-border-commerce-agent.md"];
+assert.match(coreAgent, /node scripts\/output-versioning\.mjs/);
+assert.match(coreAgent, /Listing 版本目录/);
+assert.match(coreAgent, /禁止给文件名添加 `-vN`/);
 
 const creative = files["workflows/creative-direction-selection.md"];
 assert.match(creative, /不替代 `templates\/production-output\.md` 的 16 章完整生产报告/);
@@ -101,6 +111,9 @@ const actions = files["workflows/action-menu.md"];
 assert.match(actions, /用户选择启动菜单或下一步动作即视为同意执行该动作/);
 assert.doesNotMatch(actions, /\| 是 \|/);
 assert.match(actions, /不得覆盖已有文件，除非用户明确要求/);
+assert.match(actions, /node scripts\/output-versioning\.mjs/);
+assert.match(actions, /脚本返回的 Listing 版本目录/);
+assert.match(actions, /同一批次的后续动作全部复用该目录/);
 assert.match(actions, /output\/\{平台\}-\{市场\}\/\{Listing标识\}/);
 assert.doesNotMatch(actions, /output\/\{目标平台\}\/\{产品类目\}\/\{产品名称\}/);
 
@@ -111,6 +124,10 @@ assert.match(outputStructure, /未建档-\{简短商品名\}/);
 assert.match(outputStructure, /找品-\{简短方向\}/);
 assert.match(outputStructure, /商品名称、类目.*不再作为目录层级/);
 assert.match(outputStructure, /上架\/完整生产报告\.md/);
+assert.match(outputStructure, /强制版本预检/);
+assert.match(outputStructure, /版本号只添加到 Listing 目录/);
+assert.match(outputStructure, /禁止创建 `完整生产报告-v2\.md`/);
+assert.match(outputStructure, /目录内.*文件名.*不得添加版本后缀/);
 
 const chatOutput = files["templates/chat-output.md"];
 for (const heading of ["本轮状态", "本轮产出", "缺失与风险", "已保存文件", "下一步动作"]) {

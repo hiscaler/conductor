@@ -101,7 +101,7 @@
     "chat_template_file": "../templates/chat-output.md",
     "strict": true,
     "chat_default": "relevant_only",
-    "full_report_output_path": "output/{平台}-{市场}/{Listing标识}/上架/完整生产报告.md",
+    "full_report_output_path": "output/{平台}-{市场}/{Listing版本目录}/上架/完整生产报告.md",
     "full_report_chat_triggers": [
       "complete_product_to_listing_workflow",
       "complete_listing_package",
@@ -111,7 +111,7 @@
     "rules": [
       "Startup guide exception: for greeting/help/menu inputs, output the numeric start guide from ../workflows/start-guide.md instead of the production template.",
       "By default, present only the current task status, relevant result, missing items and risks, saved files, and next actions in chat using ../templates/chat-output.md.",
-      "For each formal execution, generate the complete report using output/{平台}-{市场}/{Listing标识}/上架/完整生产报告.md as the base path and create a versioned file when it already exists.",
+      "For each formal execution, keep 上架/完整生产报告.md as a stable filename. Use output/{平台}-{市场}/{Listing标识}/ for the first run and allocate output/{平台}-{市场}/{Listing标识}-v2/, -v3/, and later Listing directories for subsequent runs.",
       "Preserve all headings and tables from the complete report template.",
       "Output complete report sections in the same order as the template.",
       "Use 未提供 or 待确认 for missing information.",
