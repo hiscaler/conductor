@@ -82,11 +82,16 @@ assert.match(rules, /禁止给文案、图片、视频、脚本、验收报告�
 assert.match(rules, /同一批次后续.*必须复用已分配目录/);
 assert.match(rules, /不得创建对应空目录/);
 assert.match(rules, /node scripts\/check-output-layout\.mjs/);
+assert.match(rules, /菜单 2“文案 \+ AI 商品图”只是示例/);
+assert.match(rules, /node scripts\/next-action-scope\.mjs/);
+assert.match(rules, /任一菜单都不得推荐其他菜单范围的动作/);
 
 const coreAgent = files["agents/cross-border-commerce-agent.md"];
 assert.match(coreAgent, /node scripts\/output-versioning\.mjs/);
 assert.match(coreAgent, /Listing 版本目录/);
 assert.match(coreAgent, /禁止给文件名添加 `-vN`/);
+assert.match(coreAgent, /菜单 2“文案 \+ AI 商品图”未完成时/);
+assert.doesNotMatch(coreAgent, /已生成图片时，默认至少包含/);
 
 const creative = files["workflows/creative-direction-selection.md"];
 assert.match(creative, /不替代 `templates\/production-output\.md` 的 16 章完整生产报告/);
@@ -117,6 +122,11 @@ assert.match(actions, /node scripts\/output-versioning\.mjs/);
 assert.match(actions, /脚本返回的 Listing 版本目录/);
 assert.match(actions, /同一批次的后续动作全部复用该目录/);
 assert.match(actions, /不得留下空目录/);
+assert.match(actions, /任务范围过滤（强制）/);
+assert.match(actions, /菜单 2 禁止默认出现/);
+assert.match(actions, /node scripts\/next-action-scope\.mjs/);
+assert.match(actions, /不得为了凑数量加入扩展任务/);
+assert.match(actions, /适用于全部启动菜单和自然语言单项任务/);
 assert.match(actions, /output\/\{平台\}-\{市场\}\/\{Listing标识\}/);
 assert.doesNotMatch(actions, /output\/\{目标平台\}\/\{产品类目\}\/\{产品名称\}/);
 
@@ -138,11 +148,14 @@ for (const heading of ["本轮状态", "本轮产出", "缺失与风险", "已�
 }
 assert.match(chatOutput, /不得展开与当前任务无关的章节/);
 assert.match(chatOutput, /完整生产报告\.md/);
+assert.match(chatOutput, /1-5 个本轮明确任务范围内/);
 
 const output = files["templates/production-output.md"];
 for (let i = 1; i <= 16; i += 1) {
   assert.match(output, new RegExp(`## ${i}\\.`), `正式输出模板缺少第 ${i} 章`);
 }
+assert.match(output, /菜单 2“文案 \+ AI 商品图”完成后/);
+assert.match(output, /只有 1 个合理动作时只提供 1 个/);
 for (const imageType of [
   "最终定制主图",
   "到手内容/包装图",
