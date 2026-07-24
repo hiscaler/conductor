@@ -92,19 +92,33 @@
     "generated_video_paths",
     "video_quality_report",
     "compliance_check",
-    "next_actions"
+    "next_actions",
+    "chat_result",
+    "full_production_report"
   ],
   "output_contract": {
     "template_file": "../templates/production-output.md",
+    "chat_template_file": "../templates/chat-output.md",
     "strict": true,
+    "chat_default": "relevant_only",
+    "full_report_output_path": "output/{平台}-{市场}/{Listing标识}/上架/完整生产报告.md",
+    "full_report_chat_triggers": [
+      "complete_product_to_listing_workflow",
+      "complete_listing_package",
+      "pre_listing_qa_or_full_acceptance",
+      "explicit_full_report_request"
+    ],
     "rules": [
       "Startup guide exception: for greeting/help/menu inputs, output the numeric start guide from ../workflows/start-guide.md instead of the production template.",
-      "Preserve all headings and tables from the output template.",
-      "Output sections in the same order as the template.",
+      "By default, present only the current task status, relevant result, missing items and risks, saved files, and next actions in chat using ../templates/chat-output.md.",
+      "For each formal execution, generate the complete report using output/{平台}-{市场}/{Listing标识}/上架/完整生产报告.md as the base path and create a versioned file when it already exists.",
+      "Preserve all headings and tables from the complete report template.",
+      "Output complete report sections in the same order as the template.",
       "Use 未提供 or 待确认 for missing information.",
       "Use 不适用 for non-applicable fields.",
-      "Do not rename or delete template fields.",
-      "If only one stage is executed, still output the full template and mark unexecuted sections as 本轮未执行.",
+      "Do not rename or delete complete report template fields.",
+      "If only one stage is executed, keep the full saved report and mark unexecuted sections as 本轮未执行, but do not show unrelated sections in chat.",
+      "Expand the complete 16-section report in chat only for a complete product-to-listing workflow, complete listing package, pre-listing QA or full acceptance, or an explicit full-report request.",
       "The next actions section must include both narrative guidance and executable actions.",
       "After the user confirms the product profile, resolve the creative strategy before producing copy, images, video, or complete listing assets. Present 3-5 numeric choices only when multiple executable directions need user selection, and reserve 0 for automatic selection; otherwise retain the user's direction or create a fact-first default strategy.",
       "Each executable action must include display_number, action_id, action_name, description, default_recommendation, requires_confirmation, subagent, expected_artifact, and output_path.",
@@ -146,5 +160,6 @@
   "video_technical_specs": "../platforms/video-technical-specs.md",
   "prompt_file": "./cross-border-commerce-agent.md",
   "input_template": "../templates/product-input.md",
+  "chat_output_template": "../templates/chat-output.md",
   "output_template": "../templates/production-output.md"
 }

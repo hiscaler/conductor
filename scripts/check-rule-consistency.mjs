@@ -16,6 +16,7 @@ const files = Object.fromEntries(
       "workflows/action-menu.md",
       "workflows/output-structure.md",
       "platforms/commerce-semantic-creative-rules.md",
+      "templates/chat-output.md",
       "templates/production-output.md",
       "docs/agent-testing.md",
       "agents/cross-border-commerce-agent.json",
@@ -32,6 +33,12 @@ assert.deepEqual(agent.product_catalog, {
 assert.equal(agent.creative_direction_selection, "../workflows/creative-direction-selection.md");
 assert.equal(agent.commerce_semantic_creative_rules, "../platforms/commerce-semantic-creative-rules.md");
 assert.ok(agent.workflow.includes("creative_direction_selection"), "核心 Agent 工作流缺少创意方向选择阶段");
+assert.equal(agent.output_contract.chat_template_file, "../templates/chat-output.md");
+assert.equal(agent.output_contract.chat_default, "relevant_only");
+assert.equal(
+  agent.output_contract.full_report_output_path,
+  "output/{平台}-{市场}/{Listing标识}/上架/完整生产报告.md",
+);
 
 const start = files["workflows/start-guide.md"];
 const readme = files["README.md"];
@@ -42,6 +49,8 @@ assert.match(readme, /Temu 定制类商品默认以 8 张独立图片为完成�
 assert.match(readme, /同时使用 `cm` 和 `inch`/);
 assert.match(readme, /供应链\//);
 assert.match(readme, /利润\//);
+assert.match(readme, /聊天结果.*默认只显示本轮相关内容/);
+assert.match(readme, /上架\/完整生产报告\.md/);
 for (const trigger of ["你好", "hello", "开始", "菜单", "帮助"]) {
   assert.match(start, new RegExp(`- ${trigger}`), `缺少启动词：${trigger}`);
 }
@@ -68,7 +77,7 @@ assert.match(rules, /workflows\/creative-direction-selection\.md/);
 assert.match(rules, /商品示例回传后先生成具体创意方向/);
 
 const creative = files["workflows/creative-direction-selection.md"];
-assert.match(creative, /不替代 `templates\/production-output\.md` 的 16 章正式产出/);
+assert.match(creative, /不替代 `templates\/production-output\.md` 的 16 章完整生产报告/);
 assert.match(creative, /输出 3-5 个.*创意方向/);
 assert.match(creative, /请输入创意编号，例如：1；如需系统自动选择，请输入：0/);
 assert.match(creative, /用户回复 `0` 时/);
@@ -101,6 +110,14 @@ assert.match(outputStructure, /销售数量大于 1 或包含多个 SKU/);
 assert.match(outputStructure, /未建档-\{简短商品名\}/);
 assert.match(outputStructure, /找品-\{简短方向\}/);
 assert.match(outputStructure, /商品名称、类目.*不再作为目录层级/);
+assert.match(outputStructure, /上架\/完整生产报告\.md/);
+
+const chatOutput = files["templates/chat-output.md"];
+for (const heading of ["本轮状态", "本轮产出", "缺失与风险", "已保存文件", "下一步动作"]) {
+  assert.match(chatOutput, new RegExp(`## \\d\\. ${heading}`), `聊天结果模板缺少：${heading}`);
+}
+assert.match(chatOutput, /不得展开与当前任务无关的章节/);
+assert.match(chatOutput, /完整生产报告\.md/);
 
 const output = files["templates/production-output.md"];
 for (let i = 1; i <= 16; i += 1) {
@@ -279,4 +296,4 @@ for (const markdownPath of markdownFiles) {
   }
 }
 
-console.log("规则一致性检查通过：入口、动态输入、SKU、CSV 商品资料、创意方向、动作确认、16 章模板、Temu 套图和本地文档链接均一致。");
+console.log("规则一致性检查通过：入口、动态输入、SKU、CSV 商品资料、创意方向、双层输出、16 章完整报告、动作确认、Temu 套图和本地文档链接均一致。");

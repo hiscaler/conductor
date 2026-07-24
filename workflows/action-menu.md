@@ -20,6 +20,8 @@
 output/{平台}-{市场}/{Listing标识}/
 ```
 
+正式执行完成后，完整 16 章生产报告自动保存，基础路径为 `output/{平台}-{市场}/{Listing标识}/上架/完整生产报告.md`，已有文件时创建新版本，不需要用户再选择“保存完整报告”。聊天默认只展示本轮相关结果和实际报告路径。
+
 ## 动作字段
 
 每个动作必须包含：
@@ -106,6 +108,7 @@ output/{平台}-{市场}/{Listing标识}/
 | 16 | `research_market_and_reviews` | 研究热销榜与评论 | 根据目标市场和本地语言关键词读取平台热销榜、同类商品、详情页和可访问评论 | 条件建议 | 否 | `competitor-research-agent` | 数据来源记录、竞品矩阵、评论痛点、待验证机会 | `output/{平台}-{市场}/{Listing标识}/竞品/市场与评论研究.md` |
 | 17 | `regenerate_product_example` | 重新生成商品示例 | 保留商品名称、图片、平台和市场，重新生成包含营销建议与平台必需属性的完整可复制示例 | 条件建议 | 否 | `intake-agent`、`positioning-agent` | 完整商品示例、内部事实记录 | `output/{平台}-{市场}/{Listing标识}/商品资料示例.md` |
 | 18 | `research_supply_chain` | 供应链验证 | 从 1688、Alibaba、义乌购等可访问供应链平台查询 3-5 家候选供应商，并记录公开联系方式、店铺年限、销量/成交、评分、MOQ、价格和交期 | 建议 | 否 | `supply-chain-agent` | 供应商候选表、供应链风险、首批测试建议 | `output/{平台}-{市场}/{Listing标识}/供应链/供应商候选表.md` |
+| 19 | `view_full_production_report` | 查看完整生产报告 | 查看本 Listing 最新保存的 16 章完整报告 | 可选 | 否 | `listing-strategy-agent` | 完整生产报告 | `output/{平台}-{市场}/{Listing标识}/上架/完整生产报告.md` 或最新版本 |
 
 ## 核心 Agent 执行规则
 
