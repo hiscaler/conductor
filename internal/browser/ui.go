@@ -403,6 +403,7 @@ const indexHTML = `<!doctype html>
     .file-list { width:100%; border-collapse:collapse; table-layout:fixed; }
     .file-list col.type { width:4.5rem; }
     .file-list col.size { width:5rem; }
+    .file-list col.row-actions { width:5.5rem; }
     .file-list th, .file-list td {
       border:1px solid rgb(51 65 85); padding:9px 10px; vertical-align:middle; text-align:left;
     }
@@ -498,6 +499,9 @@ const indexHTML = `<!doctype html>
       position:absolute; right:12px; top:12px;
       display:flex; align-items:center; gap:8px;
     }
+    .preview-actions.in-header {
+      position:static;
+    }
     .preview-action {
       border:1px solid rgb(71 85 105 / 0.7); border-radius:8px;
       background:rgb(2 6 23 / 0.82); color:rgb(226 232 240);
@@ -510,6 +514,12 @@ const indexHTML = `<!doctype html>
     .preview-action.danger:hover {
       color:rgb(255 255 255); background:rgb(185 28 28 / 0.7);
       border-color:rgb(252 165 165 / 0.45);
+    }
+    .file-list .row-actions {
+      width:5.5rem; text-align:right; white-space:nowrap;
+    }
+    .file-list .row-actions .preview-action {
+      padding:4px 8px; font-size:11px; background:transparent;
     }
     .lightbox-stage {
       position:relative; display:flex; align-items:center; justify-content:center;
@@ -840,22 +850,35 @@ function renderDirContent(data) {
       + renderFileList(others);
   }
   if (!body) body = "<div class='text-slate-500'>空目录</div>";
+  const canDelete = !!(data.path);
+  const titleRow = "<div class='mb-1 flex items-center justify-between gap-3 flex-wrap'>"
+    + "<h1 class='m-0 text-xl font-semibold tracking-tight'>" + esc(data.name || "output") + "</h1>"
+    + (canDelete
+      ? "<div class='preview-actions in-header'>"
+        + "<button type='button' class='preview-action danger' onclick='deleteDirectory(\"" + escJS(data.path) + "\",\"" + escJS(data.name) + "\")'>删除目录</button>"
+        + "</div>"
+      : "")
+    + "</div>";
   document.getElementById("content").innerHTML = contentShell(
-    contentHeader(data, "<h1 class='m-0 text-xl font-semibold tracking-tight'>" + esc(data.name || "output") + "</h1>"),
+    contentHeader(data, titleRow),
     body
   );
 }
 
 // renderFileList 以带边框表格展示目录中的非图片项。
 function renderFileList(items) {
-  const rows = items.map(n =>
-    "<tr class='file-row' onclick='openPath(\"" + escJS(n.path) + "\")'>"
-    + "<td class='name'>" + iconFor(n.type) + " " + esc(n.name) + "</td>"
-    + "<td class='type'>" + esc(typeLabel(n.type)) + "</td>"
-    + "<td class='size'>" + esc(formatSize(n.size || 0) || "—") + "</td></tr>"
-  ).join("");
-  return "<table class='file-list'><colgroup><col class='name'><col class='type'><col class='size'></colgroup>"
-    + "<thead><tr><th class='name'>名称</th><th class='type'>类型</th><th class='size'>大小</th></tr></thead><tbody>"
+  const rows = items.map(n => {
+    const actions = n.type === "dir"
+      ? "<button type='button' class='preview-action danger' onclick='event.stopPropagation(); deleteDirectory(\"" + escJS(n.path) + "\",\"" + escJS(n.name) + "\")'>删除</button>"
+      : "—";
+    return "<tr class='file-row' onclick='openPath(\"" + escJS(n.path) + "\")'>"
+      + "<td class='name'>" + iconFor(n.type) + " " + esc(n.name) + "</td>"
+      + "<td class='type'>" + esc(typeLabel(n.type)) + "</td>"
+      + "<td class='size'>" + esc(formatSize(n.size || 0) || "—") + "</td>"
+      + "<td class='row-actions'>" + actions + "</td></tr>";
+  }).join("");
+  return "<table class='file-list'><colgroup><col class='name'><col class='type'><col class='size'><col class='row-actions'></colgroup>"
+    + "<thead><tr><th class='name'>名称</th><th class='type'>类型</th><th class='size'>大小</th><th class='row-actions'>操作</th></tr></thead><tbody>"
     + rows + "</tbody></table>";
 }
 
@@ -990,6 +1013,30 @@ async function deleteLightboxImage(event) {
   const item = galleryImages[galleryIndex];
   if (!item) return;
   await deleteImage(item.path, item.name, { keepLightbox: true });
+}
+
+// deleteDirectory 确认后递归删除 output 内的子目录，并打开其父目录。
+async function deleteDirectory(path, name) {
+  const rel = String(path || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+  if (!rel) {
+    window.alert("不能删除 output 根目录。");
+    return;
+  }
+  const label = name || rel.split("/").pop() || rel;
+  if (!window.confirm("确认删除该目录及其全部内容？此操作不可恢复。\n\n" + label)) return;
+
+  const res = await fetch("/api/file?path=" + encodeURIComponent(rel), { method: "DELETE" });
+  let payload = null;
+  try { payload = await res.json(); } catch (_) {}
+  if (!res.ok) {
+    const msg = (payload && payload.error) ? payload.error : ("删除失败（" + res.status + "）");
+    window.alert(msg);
+    return;
+  }
+  const parent = (payload && payload.parent != null) ? payload.parent : parentPath(rel);
+  closeLightbox();
+  await loadTree();
+  await openPath(parent);
 }
 
 // sameRelPath 比较相对路径，忽略首尾斜杠与反斜杠差异。

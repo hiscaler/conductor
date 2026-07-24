@@ -78,7 +78,7 @@ func (s *server) tree(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, root)
 }
 
-// file 按方法分发：GET 预览元数据，DELETE 删除图片文件。
+// file 按方法分发：GET 预览元数据，DELETE 删除图片文件或子目录。
 func (s *server) file(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet, "":
@@ -142,7 +142,7 @@ func (s *server) getFile(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, out)
 }
 
-// deleteFile 删除 output 根目录内的图片文件；目录与非图片一律拒绝。
+// deleteFile 删除 output 根目录内的图片文件，或 output 下的非根子目录（含子内容）。
 func (s *server) deleteFile(w http.ResponseWriter, r *http.Request) {
 	rel := r.URL.Query().Get("path")
 	full, err := s.clean(rel)
@@ -159,19 +159,32 @@ func (s *server) deleteFile(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err, http.StatusInternalServerError)
 		return
 	}
+
+	slashRel := filepath.ToSlash(strings.Trim(filepath.ToSlash(rel), "/"))
 	if info.IsDir() {
-		writeError(w, errors.New("refusing to delete directory"), http.StatusBadRequest)
-		return
+		if slashRel == "" || full == s.root {
+			writeError(w, errors.New("refusing to delete output root"), http.StatusBadRequest)
+			return
+		}
+		if err := os.RemoveAll(full); err != nil {
+			writeError(w, err, http.StatusInternalServerError)
+			return
+		}
+	} else {
+		if kindFor(full) != "image" {
+			writeError(w, errors.New("only image files or directories can be deleted"), http.StatusBadRequest)
+			return
+		}
+		if err := os.Remove(full); err != nil {
+			writeError(w, err, http.StatusInternalServerError)
+			return
+		}
 	}
-	if kindFor(full) != "image" {
-		writeError(w, errors.New("only image files can be deleted"), http.StatusBadRequest)
-		return
+
+	deletedType := "file"
+	if info.IsDir() {
+		deletedType = "dir"
 	}
-	if err := os.Remove(full); err != nil {
-		writeError(w, err, http.StatusInternalServerError)
-		return
-	}
-	slashRel := filepath.ToSlash(rel)
 	parent := path.Dir(slashRel)
 	if parent == "." {
 		parent = ""
@@ -180,6 +193,7 @@ func (s *server) deleteFile(w http.ResponseWriter, r *http.Request) {
 		"ok":     true,
 		"path":   slashRel,
 		"parent": parent,
+		"type":   deletedType,
 	})
 }
 
