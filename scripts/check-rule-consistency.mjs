@@ -34,6 +34,14 @@ assert.equal(agent.commerce_semantic_creative_rules, "../platforms/commerce-sema
 assert.ok(agent.workflow.includes("creative_direction_selection"), "核心 Agent 工作流缺少创意方向选择阶段");
 
 const start = files["workflows/start-guide.md"];
+const readme = files["README.md"];
+assert.match(readme, /选择创意（需要时） → 正式生产/);
+assert.match(readme, /请输入创意编号，例如：1；如需系统自动选择，请输入：0/);
+assert.match(readme, /`0` 只在最近一次显示的是创意方向菜单时表示自动选择/);
+assert.match(readme, /Temu 定制类商品默认以 8 张独立图片为完成标准/);
+assert.match(readme, /同时使用 `cm` 和 `inch`/);
+assert.match(readme, /供应链\//);
+assert.match(readme, /利润\//);
 for (const trigger of ["你好", "hello", "开始", "菜单", "帮助"]) {
   assert.match(start, new RegExp(`- ${trigger}`), `缺少启动词：${trigger}`);
 }
