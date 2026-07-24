@@ -44,7 +44,10 @@ assert.match(start, /相同 SKU 自动合并数量/);
 assert.doesNotMatch(start, /分别生成.{0,12}组合销售/);
 assert.match(start, /创意方向选择/);
 assert.match(start, /用户只需回复一个数字/);
-assert.match(start, /收到确认后的商品资料后，我会先处理创意方向/);
+assert.match(start, /创意确定后，再按所选任务正式生成文案、图片或视频/);
+assert.match(start, /不得笼统写成与当前任务无关的全部产物/);
+assert.match(start, /你修改并回传商品资料后，我会先生成具体创意方向/);
+assert.match(start, /收到确认后的商品资料后，我会先生成具体创意方向并形成创意策略/);
 assert.match(start, /存在多个可执行方向时，提供 3-5 个方向供你选择/);
 assert.match(start, /非内容任务不显示创意菜单/);
 
@@ -54,6 +57,7 @@ assert.match(rules, /英文字母不区分大小写/);
 assert.match(rules, /两个 SKU 去除首尾空格并忽略大小写后相同时/);
 assert.match(rules, /用户未回传商品资料示例前，不进入正式/);
 assert.match(rules, /workflows\/creative-direction-selection\.md/);
+assert.match(rules, /商品示例回传后先生成具体创意方向/);
 
 const creative = files["workflows/creative-direction-selection.md"];
 assert.match(creative, /不替代 `templates\/production-output\.md` 的 16 章正式产出/);
