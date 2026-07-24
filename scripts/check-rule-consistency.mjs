@@ -80,6 +80,8 @@ assert.match(rules, /node scripts\/output-versioning\.mjs/);
 assert.match(rules, /本批次全部产物统一写入脚本返回的下一个 `\{Listing标识\}-vN\/` 目录/);
 assert.match(rules, /禁止给文案、图片、视频、脚本、验收报告或完整报告文件名添加 `-vN`/);
 assert.match(rules, /同一批次后续.*必须复用已分配目录/);
+assert.match(rules, /不得创建对应空目录/);
+assert.match(rules, /node scripts\/check-output-layout\.mjs/);
 
 const coreAgent = files["agents/cross-border-commerce-agent.md"];
 assert.match(coreAgent, /node scripts\/output-versioning\.mjs/);
@@ -114,6 +116,7 @@ assert.match(actions, /不得覆盖已有文件，除非用户明确要求/);
 assert.match(actions, /node scripts\/output-versioning\.mjs/);
 assert.match(actions, /脚本返回的 Listing 版本目录/);
 assert.match(actions, /同一批次的后续动作全部复用该目录/);
+assert.match(actions, /不得留下空目录/);
 assert.match(actions, /output\/\{平台\}-\{市场\}\/\{Listing标识\}/);
 assert.doesNotMatch(actions, /output\/\{目标平台\}\/\{产品类目\}\/\{产品名称\}/);
 
