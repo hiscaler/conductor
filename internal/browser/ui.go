@@ -5,7 +5,7 @@ const indexHTML = `<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Conductor 浏览器</title>
+  <title>Conductor 物料浏览器</title>
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -554,7 +554,7 @@ const indexHTML = `<!doctype html>
       <img src="/assets/coor-logo.svg" alt="Coor">
       <div class="brand-copy">
         <strong>Conductor</strong>
-        <span>跨境电商智能编排与交付预览</span>
+        <span>物料浏览器 · 浏览与验收 output 产出</span>
       </div>
     </div>
     <nav class="header-actions" aria-label="工具">
@@ -590,7 +590,7 @@ const indexHTML = `<!doctype html>
   <div class="app-footer-inner">
     <div class="footer-brand">
       <strong>Conductor</strong>
-      <p>面向跨境电商的 AI 选品到上架工作流。本页用于浏览与验收 <code>output/</code> 中的文案、图片与视频成果。</p>
+      <p>面向跨境电商的 AI 选品到上架工作流。本页用于浏览与验收 <code>output/</code> 中的文案、图片与视频等物料。</p>
     </div>
     <div class="footer-col">
       <h3>产品</h3>

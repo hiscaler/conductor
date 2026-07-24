@@ -42,7 +42,7 @@ type server struct {
 	root string
 }
 
-// NewHandler 创建浏览 output 目录的 HTTP 处理器，可供桌面 WebView 或纯 HTTP 模式复用。
+// NewHandler 创建物料浏览器的 HTTP 处理器，可供桌面 WebView 或纯 HTTP 模式复用。
 func NewHandler(root string) http.Handler {
 	mux := http.NewServeMux()
 	s := &server{root: root}
@@ -56,7 +56,7 @@ func NewHandler(root string) http.Handler {
 	return mux
 }
 
-// index 返回单页文件浏览器界面。
+// index 返回单页物料浏览器界面。
 func (s *server) index(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)

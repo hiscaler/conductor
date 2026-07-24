@@ -1,8 +1,8 @@
-# Conductor 浏览器桌面端开发说明
+# Conductor 物料浏览器桌面端开发说明
 
-本文说明如何在本地开发、调试和构建 Conductor 浏览器桌面端。
+本文说明如何在本地开发、调试和构建 Conductor 物料浏览器桌面端。
 
-普通用户使用方式见 [README.md](../README.md#conductor-浏览器桌面端)。
+普通用户使用方式见 [README.md](../README.md#conductor-物料浏览器桌面端)。
 
 ## 环境要求
 
@@ -73,7 +73,7 @@ Copy-Item build/bin/Conductor.exe .\Conductor.exe
 
 ```text
 main.go                 桌面 / -web 入口
-internal/browser/       成果浏览 HTTP UI 与 API
+internal/browser/       物料浏览器 HTTP UI 与 API
 wails.json              Wails 应用配置
 frontend/               Wails 前端占位（页面由 Go Handler 提供）
 assets/                 logo / favicon
