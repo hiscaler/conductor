@@ -16,6 +16,8 @@ const files = Object.fromEntries(
       "workflows/creative-direction-selection.md",
       "workflows/action-menu.md",
       "workflows/output-structure.md",
+      "platforms/market-data-sources.md",
+      "platforms/platform-profiles.md",
       "platforms/commerce-semantic-creative-rules.md",
       "templates/chat-output.md",
       "templates/production-output.md",
@@ -114,6 +116,31 @@ assert.match(semantic, /图片只能直接确认可见的外观/);
 assert.match(semantic, /跳过菜单不代表正式产出可以缺少创意策略/);
 assert.match(semantic, /AI 生成图片是内容表达和场景模拟，不是商品事实/);
 
+const platformProfiles = files["platforms/platform-profiles.md"];
+assert.match(platformProfiles, /商品描述限制：每个段落最多 `500` 个字符/);
+assert.match(platformProfiles, /字母、数字、空格和标点符号均计入/);
+assert.match(platformProfiles, /完整句子边界拆段/);
+assert.match(platformProfiles, /\[条件修饰词\].*\[核心品类词\]/);
+assert.match(platformProfiles, /自身商品事实 > Temu 后台搜索词/);
+for (const platformTitleRule of [
+  "Amazon Brand Analytics",
+  "Shopify 站内搜索词",
+  "Etsy Shop Stats",
+  "TikTok Shop 后台搜索",
+  "eBay Product Research/Terapeak",
+  "AliExpress 后台搜索词",
+  "Walmart Seller Center/Search Insights",
+]) {
+  assert.match(platformProfiles, new RegExp(platformTitleRule.replace("/", "\\/")), `缺少平台标题数据规则：${platformTitleRule}`);
+}
+assert.match(platformProfiles, /标题结构按本文件对应平台规则执行/);
+
+const marketSources = files["platforms/market-data-sources.md"];
+assert.match(marketSources, /## 标题关键词数据链/);
+assert.match(marketSources, /自身已确认商品事实[\s\S]*目标平台后台搜索词/);
+assert.match(marketSources, /Google Trends.*不能单独证明目标平台流量/);
+assert.match(marketSources, /每个进入最终标题的主要关键词必须记录/);
+
 const actions = files["workflows/action-menu.md"];
 assert.match(actions, /用户选择启动菜单或下一步动作即视为同意执行该动作/);
 assert.doesNotMatch(actions, /\| 是 \|/);
@@ -174,6 +201,19 @@ assert.match(output, /图片主线/);
 assert.match(output, /视频主线/);
 assert.match(output, /创意策略来源：用户选择 \/ 自动选择 \/ 沿用用户方向 \/ 系统默认 \/ 不适用/);
 assert.match(output, /证据锚点/);
+assert.match(output, /#### Temu 描述段落验收/);
+assert.match(output, /字符数（含空格和标点）/);
+assert.match(output, /### 标题关键词证据/);
+assert.match(output, /查询入口\/关键词/);
+
+assert.match(rules, /node scripts\/temu-description-limit\.mjs/);
+assert.match(rules, /生成标题前必须.*建立标题关键词数据链/);
+assert.match(coreAgent, /每个段落最多 `500` 个字符/);
+assert.match(coreAgent, /先建立关键词候选池，再确定词序/);
+assert.match(coreAgent, /所有平台都必须执行标题关键词数据链/);
+assert.match(coreAgent, /多平台任务分别研究、分别组词并分别输出/);
+assert.match(readme, /Temu 商品描述每段最多 `500` 个字符/);
+assert.match(readme, /最终采用的主要关键词必须记录来源和使用位置/);
 
 const allText = Object.values(files).join("\n");
 assert.doesNotMatch(allText, /product-catalog\.xlsx/);
@@ -329,4 +369,4 @@ for (const markdownPath of markdownFiles) {
   }
 }
 
-console.log("规则一致性检查通过：入口、动态输入、SKU、CSV 商品资料、创意方向、双层输出、16 章完整报告、动作确认、Temu 套图和本地文档链接均一致。");
+console.log("规则一致性检查通过：入口、动态输入、SKU、CSV 商品资料、创意方向、跨平台标题数据链、双层输出、16 章完整报告、动作确认、Temu 描述与套图、本地文档链接均一致。");
