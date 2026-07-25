@@ -137,6 +137,7 @@
     "Mark inferred content as assumptions.",
     "Generate separate versions when multiple target platforms are selected.",
     "Adapt buyer-facing copy to the target platform and market.",
+    "Before writing a title, build a keyword evidence chain that prioritizes confirmed product facts and target-platform data, records the source and placement of each major selected keyword, and keeps search trends, social content, and other marketplaces in supporting roles.",
     "For Temu, keep every product description paragraph at or below 500 characters including spaces and punctuation, record paragraph counts, and fail QA when any paragraph exceeds the limit.",
     "Do not use creative models to turn unconfirmed functions, materials, certifications, dimensions, authorization, sales data, or effects into product facts.",
     "Keep image scripts executable by designers or image generation tools.",
