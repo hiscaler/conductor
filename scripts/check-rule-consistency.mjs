@@ -16,6 +16,7 @@ const files = Object.fromEntries(
       "workflows/creative-direction-selection.md",
       "workflows/action-menu.md",
       "workflows/output-structure.md",
+      "platforms/platform-profiles.md",
       "platforms/commerce-semantic-creative-rules.md",
       "templates/chat-output.md",
       "templates/production-output.md",
@@ -114,6 +115,11 @@ assert.match(semantic, /图片只能直接确认可见的外观/);
 assert.match(semantic, /跳过菜单不代表正式产出可以缺少创意策略/);
 assert.match(semantic, /AI 生成图片是内容表达和场景模拟，不是商品事实/);
 
+const platformProfiles = files["platforms/platform-profiles.md"];
+assert.match(platformProfiles, /商品描述限制：每个段落最多 `500` 个字符/);
+assert.match(platformProfiles, /字母、数字、空格和标点符号均计入/);
+assert.match(platformProfiles, /完整句子边界拆段/);
+
 const actions = files["workflows/action-menu.md"];
 assert.match(actions, /用户选择启动菜单或下一步动作即视为同意执行该动作/);
 assert.doesNotMatch(actions, /\| 是 \|/);
@@ -174,6 +180,12 @@ assert.match(output, /图片主线/);
 assert.match(output, /视频主线/);
 assert.match(output, /创意策略来源：用户选择 \/ 自动选择 \/ 沿用用户方向 \/ 系统默认 \/ 不适用/);
 assert.match(output, /证据锚点/);
+assert.match(output, /#### Temu 描述段落验收/);
+assert.match(output, /字符数（含空格和标点）/);
+
+assert.match(rules, /node scripts\/temu-description-limit\.mjs/);
+assert.match(coreAgent, /每个段落最多 `500` 个字符/);
+assert.match(readme, /Temu 商品描述每段最多 `500` 个字符/);
 
 const allText = Object.values(files).join("\n");
 assert.doesNotMatch(allText, /product-catalog\.xlsx/);
@@ -329,4 +341,4 @@ for (const markdownPath of markdownFiles) {
   }
 }
 
-console.log("规则一致性检查通过：入口、动态输入、SKU、CSV 商品资料、创意方向、双层输出、16 章完整报告、动作确认、Temu 套图和本地文档链接均一致。");
+console.log("规则一致性检查通过：入口、动态输入、SKU、CSV 商品资料、创意方向、双层输出、16 章完整报告、动作确认、Temu 描述与套图、本地文档链接均一致。");

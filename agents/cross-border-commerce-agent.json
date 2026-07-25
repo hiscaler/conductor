@@ -137,6 +137,7 @@
     "Mark inferred content as assumptions.",
     "Generate separate versions when multiple target platforms are selected.",
     "Adapt buyer-facing copy to the target platform and market.",
+    "For Temu, keep every product description paragraph at or below 500 characters including spaces and punctuation, record paragraph counts, and fail QA when any paragraph exceeds the limit.",
     "Do not use creative models to turn unconfirmed functions, materials, certifications, dimensions, authorization, sales data, or effects into product facts.",
     "Keep image scripts executable by designers or image generation tools.",
     "Keep video scripts executable by video producers or video generation tools.",
