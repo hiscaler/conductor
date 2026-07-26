@@ -22,9 +22,11 @@ const files = Object.fromEntries(
       "platforms/commerce-semantic-creative-rules.md",
       "platforms/image-set-rules.md",
       "templates/chat-output.md",
+      "templates/product-input.md",
       "templates/production-output.md",
       "docs/agent-testing.md",
       "agents/cross-border-commerce-agent.json",
+      "package.json",
     ].map(async (path) => [path, await read(path)]),
   ),
 );
@@ -215,16 +217,30 @@ assert.match(output, /与定制母版不一致/);
 assert.match(output, /按“商品结构 \+ 定制位置 \+ 输入类型 \+ 定制工艺”归组/);
 assert.match(output, /只选择一个视觉清晰的代表商品演示一次/);
 assert.match(output, /不得把 `Text`、`Image` 等输入类型分别指向两个同类型组件/);
+assert.match(output, /只有 `必选` 和 `可选` 才进入定制母版/);
+assert.match(output, /服务为 `不提供` 时不得登记定制母版或生成定制操作示意图/);
 assert.match(coreAgent, /不得固定套用某一组示例词/);
 assert.match(coreAgent, /示例只能在建立本套“定制母版”时选择一次/);
 assert.match(coreAgent, /定制类组合商品还必须记录组合内定制关系/);
+assert.match(coreAgent, /商品是否具备定制能力，以及本 Listing 是否由卖家提供定制服务/);
+assert.match(coreAgent, /只询问 `1\. 不提供定制`、`2\. 必须定制`、`3\. 定制可选`/);
 assert.match(files["agents/visual-production-agent.md"], /支持任意文字时用 `Add Your Text`/);
 assert.match(files["agents/visual-production-agent.md"], /接受照片、插画或图案等广义图片时用 `Upload Your Image`/);
 assert.match(files["agents/visual-production-agent.md"], /必须先生成并验收最终定制主图/);
 assert.match(files["agents/visual-production-agent.md"], /默认一套图只展示一个定制母版/);
 assert.match(files["agents/visual-production-agent.md"], /同组组件只选择一个视觉清晰的代表商品演示一次/);
 assert.match(files["agents/visual-production-agent.md"], /不得使用 `Upload Your Image` 指向没有图片内容的空白区域/);
+assert.match(files["agents/visual-production-agent.md"], /商品具备定制能力只描述物理或生产能力/);
+assert.match(files["agents/visual-production-agent.md"], /卖家定制服务为 `待确认`：暂停定制资产生产/);
 assert.match(files["platforms/image-set-rules.md"], /姓名专用字段可写 `Add Your Name`，自由文字字段写 `Add Your Text`/);
+assert.match(files["platforms/image-set-rules.md"], /商品具备定制能力不等于本 Listing 启用卖家定制/);
+
+const productInput = files["templates/product-input.md"];
+for (const field of ["商品具备定制能力", "卖家定制服务", "非卖家定制定位", "默认到手状态"]) {
+  assert.match(productInput, new RegExp(field), `产品输入模板缺少定制流程字段：${field}`);
+}
+assert.match(files["workflows/start-guide.md"], /不得把普通成品和 DIY 空白基底拆成同级选项|不再放入同级菜单/);
+assert.match(files["package.json"], /check-customization-flow\.mjs/);
 
 assert.match(rules, /node scripts\/temu-description-limit\.mjs/);
 assert.match(rules, /姓名定制、自由文字、照片和广义图片应分别按上下文选择/);
@@ -232,6 +248,8 @@ assert.match(rules, /先生成并验收主图，再把主图中的最终定制�
 assert.match(rules, /不得逐张独立随机生成新的定制方案/);
 assert.match(rules, /组合内定制关系/);
 assert.match(rules, /同一类型.*只选择其中一个代表商品演示一次/);
+assert.match(rules, /商品“具备定制能力”和“本 Listing 是否启用卖家定制服务”必须分开记录/);
+assert.match(rules, /不得把普通成品和 DIY 空白基底拆成同级选项/);
 assert.match(rules, /生成标题前必须.*建立标题关键词数据链/);
 assert.match(coreAgent, /每个段落最多 `500` 个字符/);
 assert.match(coreAgent, /先建立关键词候选池，再确定词序/);
@@ -239,6 +257,7 @@ assert.match(coreAgent, /所有平台都必须执行标题关键词数据链/);
 assert.match(coreAgent, /多平台任务分别研究、分别组词并分别输出/);
 assert.match(readme, /Temu 商品描述每段最多 `500` 个字符/);
 assert.match(readme, /最终采用的主要关键词必须记录来源和使用位置/);
+assert.match(readme, /商品定制能力与本 Listing 的卖家定制服务分开判断/);
 
 const allText = Object.values(files).join("\n");
 assert.doesNotMatch(allText, /product-catalog\.xlsx/);
