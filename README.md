@@ -152,7 +152,7 @@ hello
 
 收到最低必要信息后，指挥家会在可访问范围内自动完成商品识别和市场研究，并生成一份已经填写好的商品示例。
 
-如果经常处理相同商品，可以在 [商品资料库](./data/README.md) 中维护 `product-catalog.csv` 和 `product-attributes.csv`，并配合按 `SPU/SKU` 分类的白底图库。CSV 可以直接通过 Git 查看逐行变化；Agent 每次读取时自动检查表头、SKU、数字、日期、属性关联和资料路径。输入单个 SKU 时，系统自动读取对应资料和图片；输入多个 SKU 时，系统合并各 SKU 的资料、数量和图库，生成一个组合 listing 示例。
+如果经常处理相同商品，可以在 [商品资料库](./data/README.md) 中维护 `product-catalog.csv` 和 `product-attributes.csv`，并配合按 `SPU/SKU` 分类的白底图库。CSV 可以直接通过 Git 查看逐行变化；Agent 每次读取时自动检查表头、SKU、数字、日期、属性关联，以及按 SPU/SKU 推导的图库目录和主图冲突。商品主表不填写图片路径。输入单个 SKU 时，系统自动读取对应资料和图片；输入多个 SKU 时，系统合并各 SKU 的资料、数量和图库，生成一个组合 listing 示例。
 
 示例通常包含：
 

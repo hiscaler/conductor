@@ -312,7 +312,7 @@ const catalogHeaders = [
   "SPU", "SKU", "商品名称", "品牌", "产品类目", "产品子类目", "产品类型", "包含内容", "型号", "颜色/款式",
   "尺码/规格", "长度cm", "宽度cm", "高度cm", "净重g", "材质", "结构/表面工艺", "已确认功能", "商品特点", "适用对象",
   "使用场景", "使用/护理说明", "定制内容", "定制位置", "定制工艺", "包装清单", "包装方式", "包装长度cm", "包装宽度cm", "包装高度cm",
-  "包装毛重g", "认证信息", "认证状态", "禁止/未确认声明", "资料来源", "资料更新时间", "备注",
+  "包装毛重g", "认证信息", "认证状态", "禁止/未确认声明", "资料更新时间", "备注",
 ];
 const attributeHeaders = ["SKU", "属性组", "属性名称", "属性值", "单位", "值类型", "是否平台必需", "适用平台", "资料来源", "资料更新时间", "备注"];
 const catalogPath = resolve(root, "data/product-catalog.csv");
@@ -348,6 +348,9 @@ for (const row of catalogRows.slice(1)) {
     assert.notEqual(row.values[catalogIndex[field]].trim(), "", `data/product-catalog.csv 第 ${row.line} 行“${field}”不能为空`);
   }
   const sku = row.values[catalogIndex.SKU].trim();
+  const spu = row.values[catalogIndex.SPU].trim();
+  assert.doesNotMatch(spu, /(?:^|[\\/])\.\.(?:[\\/]|$)|[\\/]/, `data/product-catalog.csv 第 ${row.line} 行 SPU 不得包含路径字符`);
+  assert.doesNotMatch(sku, /(?:^|[\\/])\.\.(?:[\\/]|$)|[\\/]/, `data/product-catalog.csv 第 ${row.line} 行 SKU 不得包含路径字符`);
   const normalizedSku = sku.toLocaleLowerCase("en-US");
   assert.equal(skuRows.has(normalizedSku), false, `data/product-catalog.csv 第 ${row.line} 行 SKU“${sku}”忽略大小写后重复`);
   skuRows.set(normalizedSku, row.line);
@@ -359,10 +362,11 @@ for (const row of catalogRows.slice(1)) {
   }
   const updatedAt = row.values[catalogIndex.资料更新时间].trim();
   assert.ok(isDate(updatedAt), `data/product-catalog.csv 第 ${row.line} 行“资料更新时间”必须使用 yyyy-mm-dd`);
-  const source = row.values[catalogIndex.资料来源].trim();
-  if (source.startsWith("data/")) {
-    await stat(resolve(root, source)).catch(() => assert.fail(`data/product-catalog.csv 第 ${row.line} 行“资料来源”文件不存在：${source}`));
-  }
+  const productImageDirectory = resolve(root, "data", "products", spu, sku);
+  const productImageFiles = await readdir(productImageDirectory).catch(() => []);
+  const mainImages = productImageFiles.filter((file) => /^main\.(?:png|jpe?g|webp)$/i.test(file));
+  assert.notEqual(mainImages.length, 0, `data/product-catalog.csv 第 ${row.line} 行无法按 SPU/SKU 找到主白底图：data/products/${spu}/${sku}/main.{png|jpg|jpeg|webp}`);
+  assert.equal(mainImages.length, 1, `data/product-catalog.csv 第 ${row.line} 行主白底图扩展名冲突：${mainImages.join(", ")}`);
 }
 
 const attributeKeys = new Set();

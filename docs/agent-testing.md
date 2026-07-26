@@ -30,7 +30,7 @@ npm test
 - 创意方向选择流程文档存在，并被主规则、启动向导和 README 引用。
 - 聊天简版模板包含状态、相关产出、风险、文件和下一步动作，完整生产报告仍包含 16 个章节。
 - Temu 定制类默认 8 张图的图型保持完整。
-- `product-catalog.csv` 和 `product-attributes.csv` 存在，表头、列数、SKU、数字、日期、允许值、属性关联和本地资料路径通过校验。
+- `product-catalog.csv` 和 `product-attributes.csv` 存在，表头、列数、SKU、数字、日期、允许值和属性关联通过校验；商品主图由 SPU/SKU 自动定位并检查缺失与扩展名冲突。
 - Markdown 中引用的本地规则和文档链接能够找到目标文件。
 
 也可以单独运行定制流程检查：
