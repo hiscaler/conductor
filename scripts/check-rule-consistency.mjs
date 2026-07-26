@@ -312,7 +312,7 @@ const catalogHeaders = [
   "SPU", "SKU", "商品名称", "品牌", "产品类目", "产品子类目", "产品类型", "包含内容", "型号", "颜色/款式",
   "尺码/规格", "长度cm", "宽度cm", "高度cm", "净重g", "材质", "结构/表面工艺", "已确认功能", "商品特点", "适用对象",
   "使用场景", "使用/护理说明", "定制内容", "定制位置", "定制工艺", "包装清单", "包装方式", "包装长度cm", "包装宽度cm", "包装高度cm",
-  "包装毛重g", "认证信息", "认证状态", "禁止/未确认声明", "资料更新时间", "备注",
+  "包装毛重g", "风险/禁用声明", "资料更新时间", "备注",
 ];
 const attributeHeaders = ["SKU", "属性组", "属性名称", "属性值", "单位", "值类型", "是否平台必需", "适用平台", "资料来源", "资料更新时间", "备注"];
 const catalogPath = resolve(root, "data/product-catalog.csv");
@@ -325,6 +325,8 @@ const catalogText = await readFile(catalogPath, "utf8");
 const attributeText = await readFile(attributePath, "utf8");
 assert.doesNotMatch(catalogText, /\uFFFD/, "data/product-catalog.csv 包含无效 UTF-8 字符");
 assert.doesNotMatch(attributeText, /\uFFFD/, "data/product-attributes.csv 包含无效 UTF-8 字符");
+assert.doesNotMatch(catalogText.split(/\r?\n/, 1)[0], /认证信息|认证状态|禁止\/未确认声明/, "data/product-catalog.csv 不应恢复旧认证字段");
+assert.match(catalogText.split(/\r?\n/, 1)[0], /风险\/禁用声明/, "data/product-catalog.csv 缺少“风险/禁用声明”字段");
 const catalogRows = parseCsv(catalogText, "data/product-catalog.csv");
 const attributeRows = parseCsv(attributeText, "data/product-attributes.csv");
 assert.deepEqual(catalogRows[0]?.values, catalogHeaders, "data/product-catalog.csv 表头不符合约定");
@@ -355,7 +357,6 @@ for (const row of catalogRows.slice(1)) {
   assert.equal(skuRows.has(normalizedSku), false, `data/product-catalog.csv 第 ${row.line} 行 SKU“${sku}”忽略大小写后重复`);
   skuRows.set(normalizedSku, row.line);
   assert.ok(["普货", "定制类"].includes(row.values[catalogIndex.产品类型]), `data/product-catalog.csv 第 ${row.line} 行“产品类型”只允许普货或定制类`);
-  assert.ok(["", "已取得", "不适用"].includes(row.values[catalogIndex.认证状态]), `data/product-catalog.csv 第 ${row.line} 行“认证状态”值无效`);
   for (const field of ["长度cm", "宽度cm", "高度cm", "净重g", "包装长度cm", "包装宽度cm", "包装高度cm", "包装毛重g"]) {
     const value = row.values[catalogIndex[field]].trim();
     assert.ok(value === "" || isNumber(value), `data/product-catalog.csv 第 ${row.line} 行“${field}”只能填写大于或等于零的数字，当前值为“${value}”`);
