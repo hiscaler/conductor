@@ -49,7 +49,16 @@ assert.equal(
 
 const start = files["workflows/start-guide.md"];
 const readme = files["README.md"];
-assert.match(readme, /选择创意（需要时） → 回传自动商品示例 → 正式生产/);
+assert.match(readme, /## 协作路径/);
+for (let menu = 1; menu <= 13; menu += 1) {
+  assert.match(readme, new RegExp(`\\| ${menu} \\|`), `README 缺少菜单 ${menu} 的协作路径`);
+}
+assert.match(readme, /组合选择会合并对应路径、复用已有资料并去除重复步骤/);
+assert.match(readme, /## 如何开始/);
+assert.match(readme, /所有任务共用以下入口/);
+assert.match(readme, /## 内容生产任务示例/);
+assert.match(readme, /以下以已有商品生成文案、图片或视频为例/);
+assert.doesNotMatch(readme, /## 使用流程/);
 assert.match(readme, /创意菜单输入一个方向编号；输入 `0` 由系统自动选择/);
 assert.match(readme, /`0` 只在最近一次显示的是创意菜单时表示自动选择/);
 assert.match(readme, /供应链\//);
