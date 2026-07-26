@@ -96,6 +96,9 @@ assert.match(rules, /只影响单张图片的事实不足时，仅暂停对应�
 assert.match(rules, /不得作为买家可见文字、徽章或图标进入商品图/);
 assert.match(rules, /暂停图片必须记录图片序号、图片类型、暂停原因、最低补充资料/);
 assert.match(rules, /目标图片文件尚不存在时继续写入原 Listing 版本目录/);
+assert.match(rules, /16 个编号章节之前生成 `问题速览`/);
+assert.match(rules, /issue-\{两位章节号\}-\{两位问题序号\}/);
+assert.match(rules, /node scripts\/check-report-anchors\.mjs <报告路径>/);
 
 const coreAgent = files["agents/cross-border-commerce-agent.md"];
 assert.match(coreAgent, /node scripts\/output-versioning\.mjs/);
@@ -235,6 +238,11 @@ assert.match(output, /包装形式未确认但实际到手内容已确认时/);
 assert.match(output, /相关单图必须判定为“不可用”/);
 assert.match(output, /暂停图片另附断点记录/);
 assert.match(output, /恢复目标 Listing 版本目录/);
+assert.match(output, /<a id="issue-summary"><\/a>/);
+assert.match(output, /## 问题速览/);
+assert.match(output, /`🔴【阻塞】`、`🟠【高风险】`、`🟡【待确认】`/);
+assert.match(output, /\[查看详情\]\(#issue-02-01\)/);
+assert.match(output, /\[返回问题速览\]\(#issue-summary\)/);
 assert.match(output, /只有 `必选` 和 `可选` 才进入定制母版/);
 assert.match(output, /服务为 `不提供` 时不得登记定制母版或生成定制操作示意图/);
 assert.match(coreAgent, /不得固定套用某一组示例词/);
@@ -255,6 +263,7 @@ assert.match(files["agents/visual-production-agent.md"], /暂停该图，继续�
 assert.match(files["agents/visual-production-agent.md"], /包装形式未确认但实际到手内容已确认时/);
 assert.match(files["agents/visual-production-agent.md"], /暂停与恢复/);
 assert.match(files["agents/visual-production-agent.md"], /复用当前商品档案、创意策略、套图脚本和已完成图片/);
+assert.match(files["agents/visual-production-agent.md"], /issue-image-\{两位图片序号\}/);
 assert.match(files["agents/visual-production-agent.md"], /商品具备定制能力只描述物理或生产能力/);
 assert.match(files["agents/visual-production-agent.md"], /卖家定制服务为 `待确认`：暂停定制资产生产/);
 assert.match(files["platforms/image-set-rules.md"], /姓名专用字段可写 `Add Your Name`，自由文字字段写 `Add Your Text`/);
@@ -266,6 +275,7 @@ for (const field of ["商品具备定制能力", "卖家定制服务", "非卖�
 }
 assert.match(files["workflows/start-guide.md"], /不得把普通成品和 DIY 空白基底拆成同级选项|不再放入同级菜单/);
 assert.match(files["package.json"], /check-customization-flow\.mjs/);
+assert.match(files["package.json"], /check-report-anchors\.mjs tests\/fixtures\/report-anchor-valid\.md/);
 
 assert.match(rules, /node scripts\/temu-description-limit\.mjs/);
 assert.match(rules, /姓名定制、自由文字、照片和广义图片应分别按上下文选择/);
