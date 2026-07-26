@@ -12,6 +12,7 @@ const files = Object.fromEntries(
       "AGENTS.md",
       "README.md",
       "agents/cross-border-commerce-agent.md",
+      "agents/visual-production-agent.md",
       "workflows/start-guide.md",
       "workflows/creative-direction-selection.md",
       "workflows/action-menu.md",
@@ -19,6 +20,7 @@ const files = Object.fromEntries(
       "platforms/market-data-sources.md",
       "platforms/platform-profiles.md",
       "platforms/commerce-semantic-creative-rules.md",
+      "platforms/image-set-rules.md",
       "templates/chat-output.md",
       "templates/production-output.md",
       "docs/agent-testing.md",
@@ -205,8 +207,15 @@ assert.match(output, /#### Temu 描述段落验收/);
 assert.match(output, /字符数（含空格和标点）/);
 assert.match(output, /### 标题关键词证据/);
 assert.match(output, /查询入口\/关键词/);
+assert.match(output, /在 `Name` 与 `Text`、`Photo` 与 `Image` 之间按上下文确定/);
+assert.match(output, /标签与实际定制字段不符/);
+assert.match(coreAgent, /不得固定套用某一组示例词/);
+assert.match(files["agents/visual-production-agent.md"], /支持任意文字时用 `Add Your Text`/);
+assert.match(files["agents/visual-production-agent.md"], /接受照片、插画或图案等广义图片时用 `Upload Your Image`/);
+assert.match(files["platforms/image-set-rules.md"], /姓名专用字段可写 `Add Your Name`，自由文字字段写 `Add Your Text`/);
 
 assert.match(rules, /node scripts\/temu-description-limit\.mjs/);
+assert.match(rules, /姓名定制、自由文字、照片和广义图片应分别按上下文选择/);
 assert.match(rules, /生成标题前必须.*建立标题关键词数据链/);
 assert.match(coreAgent, /每个段落最多 `500` 个字符/);
 assert.match(coreAgent, /先建立关键词候选池，再确定词序/);
