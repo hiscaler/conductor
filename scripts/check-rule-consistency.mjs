@@ -49,7 +49,12 @@ assert.equal(
 
 const start = files["workflows/start-guide.md"];
 const readme = files["README.md"];
-assert.match(readme, /## 协作路径/);
+assert.match(readme, /!\[Conductor 多场景协作：指挥家按任务类型分流\]\(\.\/assets\/conductor-workflow\.png\)/);
+assert.doesNotMatch(readme, /想法 → 找品 → 平台 → 内容 → 验收 → 复盘/);
+assert.doesNotMatch(readme, /## 协作路径/);
+assert.match(readme, /## 你可以用它做什么/);
+assert.match(readme, /## Conductor 如何工作/);
+assert.match(readme, /## 不同任务如何执行/);
 for (let menu = 1; menu <= 13; menu += 1) {
   assert.match(readme, new RegExp(`\\| ${menu} \\|`), `README 缺少菜单 ${menu} 的协作路径`);
 }
@@ -57,7 +62,7 @@ assert.match(readme, /组合选择会合并对应路径、复用已有资料并�
 assert.match(readme, /## 如何开始/);
 assert.match(readme, /所有任务共用以下入口/);
 assert.match(readme, /## 内容生产任务示例/);
-assert.match(readme, /以下以已有商品生成文案、图片或视频为例/);
+assert.match(readme, /以下仅说明已有商品生成文案、图片或视频的交互/);
 assert.doesNotMatch(readme, /## 使用流程/);
 assert.match(readme, /创意菜单输入一个方向编号；输入 `0` 由系统自动选择/);
 assert.match(readme, /`0` 只在最近一次显示的是创意菜单时表示自动选择/);
@@ -68,6 +73,18 @@ assert.match(readme, /上架\/完整生产报告\.md/);
 assert.doesNotMatch(readme, /CSV 可以直接通过 Git 查看逐行变化/);
 assert.doesNotMatch(readme, /商品主表不填写图片路径/);
 assert.doesNotMatch(readme, /Agent 每次读取时自动检查表头/);
+const readmeCanDoIndex = readme.indexOf("## 你可以用它做什么");
+const readmeHowIndex = readme.indexOf("## Conductor 如何工作");
+const readmeImageIndex = readme.indexOf("![Conductor 多场景协作");
+const readmeStartIndex = readme.indexOf("## 如何开始");
+const readmePathsIndex = readme.indexOf("## 不同任务如何执行");
+assert.ok(
+  readmeCanDoIndex < readmeHowIndex &&
+    readmeHowIndex < readmeImageIndex &&
+    readmeImageIndex < readmeStartIndex &&
+    readmeStartIndex < readmePathsIndex,
+  "README 阅读顺序应为：能做什么 → 如何工作 → 总览图 → 如何开始 → 任务路径",
+);
 for (const trigger of ["你好", "hello", "开始", "菜单", "帮助"]) {
   assert.match(start, new RegExp(`- ${trigger}`), `缺少启动词：${trigger}`);
 }
