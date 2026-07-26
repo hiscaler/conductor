@@ -76,6 +76,8 @@ assert.match(start, /创意确定后，我会生成与该方向一致的完整�
 assert.match(start, /存在多个可靠方向时，会提供 3-5 个方向供你输入数字选择/);
 assert.match(start, /非内容任务不显示创意菜单/);
 assert.doesNotMatch(start, /商品示例回传后先生成具体创意方向/);
+assert.match(start, /回复“重新选择创意”重新查看上一轮候选/);
+assert.match(start, /回复“重新生成创意”废弃上一批候选并重新研究/);
 
 const rules = files["AGENTS.md"];
 assert.match(rules, /去除整个输入及每个组合项首尾空格/);
@@ -85,6 +87,9 @@ assert.match(rules, /用户未回传商品资料示例前，不进入正式/);
 assert.match(rules, /workflows\/creative-direction-selection\.md/);
 assert.match(rules, /内容生产任务在研究完成后先按 .*形成创意策略/);
 assert.match(rules, /用户未回传商品资料示例前，不进入正式.*回传后.*先判断修改是否使已选创意失效/);
+assert.match(rules, /`重新选择创意` 表示原样重新展示上一轮候选菜单/);
+assert.match(rules, /`重新生成创意` 表示废弃上一轮候选/);
+assert.match(rules, /不支持 `改选创意 3` 等额外语法/);
 assert.match(rules, /node scripts\/output-versioning\.mjs/);
 assert.match(rules, /本批次全部产物统一写入脚本返回的下一个 `\{Listing标识\}-vN\/` 目录/);
 assert.match(rules, /禁止给文案、图片、视频、脚本、验收报告或完整报告文件名添加 `-vN`/);
@@ -136,6 +141,10 @@ assert.match(creative, /商品事实匹配度 \| 25%/);
 assert.match(creative, /市场热度与内容信号 \| 15%/);
 assert.match(creative, /已获得加权分 ÷ 已获得维度权重 × 100/);
 assert.match(creative, /不得把“未获取”解释为“没有热度”/);
+assert.match(creative, /用户回复 `重新选择创意` 时，原样重新展示最近一轮候选菜单/);
+assert.match(creative, /用户回复 `重新生成创意` 时，废弃最近一轮候选及当前选择/);
+assert.match(creative, /与上一轮方向做跨批次语义去重/);
+assert.match(creative, /任一入口触发后都暂停示例确认和正式生产/);
 
 const semantic = files["platforms/commerce-semantic-creative-rules.md"];
 assert.match(semantic, /创意方向选择/);
