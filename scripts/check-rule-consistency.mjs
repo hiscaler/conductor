@@ -128,6 +128,11 @@ assert.match(creative, /不少于计划展示数量两倍的内部候选/);
 assert.match(creative, /至少必须在“目标人群、主要购买动机、核心场景、视觉叙事”中有两项实质不同/);
 assert.match(creative, /无法得到至少 3 个通过差异性门禁的可靠方向时，不强行凑数/);
 assert.doesNotMatch(creative, /每日专属感|送礼表达|照片记忆|Make Every Sip Feel Like Yours/);
+assert.match(creative, /## 候选评分模型/);
+assert.match(creative, /商品事实匹配度 \| 25%/);
+assert.match(creative, /市场热度与内容信号 \| 15%/);
+assert.match(creative, /已获得加权分 ÷ 已获得维度权重 × 100/);
+assert.match(creative, /不得把“未获取”解释为“没有热度”/);
 
 const semantic = files["platforms/commerce-semantic-creative-rules.md"];
 assert.match(semantic, /创意方向选择/);
@@ -139,6 +144,8 @@ assert.match(semantic, /跳过菜单不代表正式产出可以缺少创意策�
 assert.match(semantic, /AI 生成图片是内容表达和场景模拟，不是商品事实/);
 assert.match(semantic, /不得从固定的“日常、礼赠、照片、节日”分类直接填充菜单/);
 assert.match(semantic, /只换方向名称、颜色词、节日名称或钩子视为语义重复/);
+assert.match(semantic, /七项加权评分/);
+assert.match(semantic, /按可用权重归一化总分并同时展示证据覆盖率/);
 
 const platformProfiles = files["platforms/platform-profiles.md"];
 assert.match(platformProfiles, /商品描述限制：每个段落最多 `500` 个字符/);
@@ -164,6 +171,9 @@ assert.match(marketSources, /## 标题关键词数据链/);
 assert.match(marketSources, /自身已确认商品事实[\s\S]*目标平台后台搜索词/);
 assert.match(marketSources, /Google Trends.*不能单独证明目标平台流量/);
 assert.match(marketSources, /每个进入最终标题的主要关键词必须记录/);
+assert.match(marketSources, /## 创意方向热度证据/);
+assert.match(marketSources, /目标平台直接信号、搜索趋势信号、内容热度信号或其他平台补充信号/);
+assert.match(marketSources, /不把未获取解释为没有需求/);
 
 const actions = files["workflows/action-menu.md"];
 assert.match(actions, /用户选择启动菜单或下一步动作即视为同意执行该动作/);
@@ -233,6 +243,10 @@ assert.match(output, /证据锚点/);
 assert.match(output, /主差异轴/);
 assert.match(output, /视觉叙事/);
 assert.match(output, /可靠方向少于 3 个时不强行填表/);
+assert.match(output, /创意候选评分方法：七项加权评分/);
+assert.match(output, /热度数据获取状态：已获取 \/ 部分获取 \/ 未获取 \/ 不适用/);
+assert.match(output, /归一化总分/);
+assert.match(output, /市场热度证据另表记录/);
 assert.match(output, /#### Temu 描述段落验收/);
 assert.match(output, /字符数（含空格和标点）/);
 assert.match(output, /### 标题关键词证据/);
