@@ -91,6 +91,11 @@ assert.match(rules, /node scripts\/check-output-layout\.mjs/);
 assert.match(rules, /菜单 2“文案 \+ AI 商品图”只是示例/);
 assert.match(rules, /node scripts\/next-action-scope\.mjs/);
 assert.match(rules, /任一菜单都不得推荐其他菜单范围的动作/);
+assert.match(rules, /图片生产前执行资料充足性门禁/);
+assert.match(rules, /只影响单张图片的事实不足时，仅暂停对应图片/);
+assert.match(rules, /不得作为买家可见文字、徽章或图标进入商品图/);
+assert.match(rules, /暂停图片必须记录图片序号、图片类型、暂停原因、最低补充资料/);
+assert.match(rules, /目标图片文件尚不存在时继续写入原 Listing 版本目录/);
 
 const coreAgent = files["agents/cross-border-commerce-agent.md"];
 assert.match(coreAgent, /node scripts\/output-versioning\.mjs/);
@@ -157,6 +162,9 @@ assert.match(actions, /任务范围过滤（强制）/);
 assert.match(actions, /菜单 2 禁止默认出现/);
 assert.match(actions, /node scripts\/next-action-scope\.mjs/);
 assert.match(actions, /不得为了凑数量加入扩展任务/);
+assert.match(actions, /只处理记录为“暂停\/未生成”且目标文件尚不存在的图片/);
+assert.match(actions, /用户直接回复暂停记录所需资料，等同于选择 `generate_missing_images`/);
+assert.match(actions, /不包含覆盖任何已存在图片/);
 assert.match(actions, /适用于全部启动菜单和自然语言单项任务/);
 assert.match(actions, /output\/\{平台\}-\{市场\}\/\{Listing标识\}/);
 assert.doesNotMatch(actions, /output\/\{目标平台\}\/\{产品类目\}\/\{产品名称\}/);
@@ -172,6 +180,8 @@ assert.match(outputStructure, /强制版本预检/);
 assert.match(outputStructure, /版本号只添加到 Listing 目录/);
 assert.match(outputStructure, /禁止创建 `完整生产报告-v2\.md`/);
 assert.match(outputStructure, /目录内.*文件名.*不得添加版本后缀/);
+assert.match(outputStructure, /属于同一批次断点续做/);
+assert.match(outputStructure, /不得仅凭“最新目录”猜测/);
 
 const chatOutput = files["templates/chat-output.md"];
 for (const heading of ["本轮状态", "本轮产出", "缺失与风险", "已保存文件", "下一步动作"]) {
@@ -220,6 +230,11 @@ assert.match(output, /不得把 `Text`、`Image` 等输入类型分别指向两�
 assert.match(output, /尺寸参考物按条件启用/);
 assert.match(output, /`Size Reference`/);
 assert.match(output, /`Per Item` 与实际套装数量/);
+assert.match(output, /图片生产前执行资料充足性门禁/);
+assert.match(output, /包装形式未确认但实际到手内容已确认时/);
+assert.match(output, /相关单图必须判定为“不可用”/);
+assert.match(output, /暂停图片另附断点记录/);
+assert.match(output, /恢复目标 Listing 版本目录/);
 assert.match(output, /只有 `必选` 和 `可选` 才进入定制母版/);
 assert.match(output, /服务为 `不提供` 时不得登记定制母版或生成定制操作示意图/);
 assert.match(coreAgent, /不得固定套用某一组示例词/);
@@ -235,6 +250,11 @@ assert.match(files["agents/visual-production-agent.md"], /同组组件只选择�
 assert.match(files["agents/visual-production-agent.md"], /不得使用 `Upload Your Image` 指向没有图片内容的空白区域/);
 assert.match(files["agents/visual-production-agent.md"], /生成尺寸图前判断是否需要参考物/);
 assert.match(files["agents/visual-production-agent.md"], /比例失真或可能被误认作到手内容时判定为不可用/);
+assert.match(files["agents/visual-production-agent.md"], /资料充足性门禁/);
+assert.match(files["agents/visual-production-agent.md"], /暂停该图，继续生成其他事实充分的图片/);
+assert.match(files["agents/visual-production-agent.md"], /包装形式未确认但实际到手内容已确认时/);
+assert.match(files["agents/visual-production-agent.md"], /暂停与恢复/);
+assert.match(files["agents/visual-production-agent.md"], /复用当前商品档案、创意策略、套图脚本和已完成图片/);
 assert.match(files["agents/visual-production-agent.md"], /商品具备定制能力只描述物理或生产能力/);
 assert.match(files["agents/visual-production-agent.md"], /卖家定制服务为 `待确认`：暂停定制资产生产/);
 assert.match(files["platforms/image-set-rules.md"], /姓名专用字段可写 `Add Your Name`，自由文字字段写 `Add Your Text`/);

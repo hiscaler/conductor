@@ -139,7 +139,7 @@ output/{平台}-{市场}/{Listing标识}[-vN]/
 | 2 | `generate_main_image` | 生成主图 | 根据套图脚本生成第 1 张主图 | 建议 | 否 | `visual-production-agent` | 主图文件、图片验收报告 | `output/{平台}-{市场}/{Listing版本目录}/图片/01-主图.png` |
 | 3 | `generate_full_image_set` | 生成整套图片 | 根据套图脚本逐张生成完整套图，一张图一个独立文件，不能用单张拼图代替 | 可选 | 否 | `visual-production-agent` | 多张图片、图片验收报告 | `output/{平台}-{市场}/{Listing版本目录}/图片/` |
 | 4 | `save_image_plan` | 保存套图脚本 | 将图片脚本和生成提示词保存为文件 | 建议 | 否 | `visual-production-agent` | 套图脚本文档 | `output/{平台}-{市场}/{Listing版本目录}/图片/套图脚本.md` |
-| 5 | `generate_missing_images` | 继续生成缺失图片 | 根据图片验收报告中的缺失图型逐张补齐图片 | 条件建议 | 否 | `visual-production-agent` | 缺失图片文件、更新后的图片验收报告 | `output/{平台}-{市场}/{Listing版本目录}/图片/` |
+| 5 | `generate_missing_images` | 继续生成缺失图片 | 读取暂停记录；资料已补齐时只生成尚不存在的暂停图片，并更新原未完成批次的脚本、验收报告和完整报告 | 条件建议 | 否 | `visual-production-agent` | 缺失图片文件、更新后的套图脚本、图片验收报告和完整生产报告 | `output/{平台}-{市场}/{Listing版本目录}/图片/` |
 | 6 | `generate_listing_package` | 生成上架包 | 汇总标题、描述、关键词、图片脚本、合规检查 | 建议 | 否 | `listing-strategy-agent` | 上架包文档 | `output/{平台}-{市场}/{Listing版本目录}/上架/上架包.md` |
 | 7 | `run_listing_qa` | 做上架前 QA | 检查 listing 字段、文案、图片、合规和缺失项 | 建议 | 否 | `listing-qa-agent` | QA 报告 | `output/{平台}-{市场}/{Listing版本目录}/上架/上架前QA报告.md` |
 | 8 | `research_competitors` | 补充竞品调研 | 基于用户提供的竞品链接或可用数据做竞品分析 | 条件建议 | 否 | `competitor-research-agent` | 竞品矩阵 | `output/{平台}-{市场}/{Listing版本目录}/竞品/竞品分析.md` |
@@ -179,6 +179,10 @@ output/{平台}-{市场}/{Listing标识}[-vN]/
 - 只有方向、关键词、人群或视频链接时，下一步默认建议必须包含 `discover_trend_video_products`。
 - `generate_full_image_set` 必须按套图脚本逐张执行。图片生成工具一次只返回一张图时，必须循环调用直到完整图片清单全部完成；不能只生成主图或单张组合预览图。
 - 图片验收报告状态为“未完成”时，下一步默认建议必须包含 `generate_missing_images`。
+- `generate_missing_images` 只处理记录为“暂停/未生成”且目标文件尚不存在的图片。动作执行前必须展示图片序号、暂停原因、最低补充资料、恢复目标 Listing 版本目录和预定文件路径；资料仍缺失时先索取最低必要值，不生成占位图。
+- 用户直接回复暂停记录所需资料，等同于选择 `generate_missing_images`，无需再次要求选择动作；系统复用当前商品档案、创意策略和套图脚本。
+- 同一未完成批次的断点续做写入原版本目录，不重新分配版本；动作授权包含新增缺失图片以及更新该版本的套图脚本、图片验收报告和完整生产报告，但不包含覆盖任何已存在图片。
+- 商品身份、外观、SKU/变体、销售数量或核心组件变化时，不执行断点续做，改为新生产批次；目标图片文件已经存在但不可用时使用 `regenerate_selected_images`，默认创建新版本，除非用户明确授权替换准确路径。
 - 如果动作执行失败，必须返回失败原因、已完成产物和下一步建议。
 
 ## 常见依赖
