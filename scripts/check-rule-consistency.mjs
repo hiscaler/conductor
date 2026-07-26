@@ -50,14 +50,15 @@ assert.equal(
 const start = files["workflows/start-guide.md"];
 const readme = files["README.md"];
 assert.match(readme, /选择创意（需要时） → 回传自动商品示例 → 正式生产/);
-assert.match(readme, /请输入创意编号，例如：1；如需系统自动选择，请输入：0/);
-assert.match(readme, /`0` 只在最近一次显示的是创意方向菜单时表示自动选择/);
-assert.match(readme, /Temu 定制类商品默认以 8 张独立图片为完成标准/);
-assert.match(readme, /同时使用 `cm` 和 `inch`/);
+assert.match(readme, /创意菜单输入一个方向编号；输入 `0` 由系统自动选择/);
+assert.match(readme, /`0` 只在最近一次显示的是创意菜单时表示自动选择/);
 assert.match(readme, /供应链\//);
 assert.match(readme, /利润\//);
 assert.match(readme, /聊天结果.*默认只显示本轮相关内容/);
 assert.match(readme, /上架\/完整生产报告\.md/);
+assert.doesNotMatch(readme, /CSV 可以直接通过 Git 查看逐行变化/);
+assert.doesNotMatch(readme, /商品主表不填写图片路径/);
+assert.doesNotMatch(readme, /Agent 每次读取时自动检查表头/);
 for (const trigger of ["你好", "hello", "开始", "菜单", "帮助"]) {
   assert.match(start, new RegExp(`- ${trigger}`), `缺少启动词：${trigger}`);
 }
@@ -341,8 +342,6 @@ assert.match(coreAgent, /每个段落最多 `500` 个字符/);
 assert.match(coreAgent, /先建立关键词候选池，再确定词序/);
 assert.match(coreAgent, /所有平台都必须执行标题关键词数据链/);
 assert.match(coreAgent, /多平台任务分别研究、分别组词并分别输出/);
-assert.match(readme, /Temu 商品描述每段最多 `500` 个字符/);
-assert.match(readme, /最终采用的主要关键词必须记录来源和使用位置/);
 assert.match(readme, /商品定制能力与本 Listing 的卖家定制服务分开判断/);
 
 const allText = Object.values(files).join("\n");
