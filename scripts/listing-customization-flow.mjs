@@ -18,6 +18,15 @@ export const NON_SELLER_POSITIONING = Object.freeze({
   PENDING: "pending",
 });
 
+const labeledSellerServiceValues = new Map([
+  ["不提供", SELLER_CUSTOMIZATION_SERVICE.NOT_OFFERED],
+  ["不提供定制", SELLER_CUSTOMIZATION_SERVICE.NOT_OFFERED],
+  ["必选", SELLER_CUSTOMIZATION_SERVICE.REQUIRED],
+  ["必须定制", SELLER_CUSTOMIZATION_SERVICE.REQUIRED],
+  ["可选", SELLER_CUSTOMIZATION_SERVICE.OPTIONAL],
+  ["定制可选", SELLER_CUSTOMIZATION_SERVICE.OPTIONAL],
+]);
+
 const clarificationChoices = Object.freeze([
   "1. 不提供定制",
   "2. 必须定制",
@@ -40,8 +49,48 @@ const result = ({
   defaultDeliveryState,
   clarificationRequired,
   clarificationChoices: clarificationRequired ? [...clarificationChoices] : [],
+  allowProductExampleGeneration: !clarificationRequired && conflict === null,
   conflict,
 });
+
+export function inferSellerCustomizationService(input = "") {
+  const text = String(input).trim();
+  if (!text) {
+    return SELLER_CUSTOMIZATION_SERVICE.PENDING;
+  }
+
+  const labeledMatch = text.match(
+    /卖家定制服务\s*[：:]\s*(不提供定制|不提供|必须定制|必选|定制可选|可选)(?:\s|$)/,
+  );
+  if (labeledMatch) {
+    return labeledSellerServiceValues.get(labeledMatch[1]);
+  }
+
+  const candidates = new Set();
+  if (
+    /(?:本\s*Listing|当前\s*Listing|本商品)\s*(?:不提供|不启用|关闭)\s*(?:卖家)?定制/i.test(text) ||
+    /卖家\s*(?:不提供|不承接)\s*定制/.test(text) ||
+    /(?:按空白基底销售|买家自行定制)/.test(text)
+  ) {
+    candidates.add(SELLER_CUSTOMIZATION_SERVICE.NOT_OFFERED);
+  }
+  if (
+    /(?:本\s*Listing|当前\s*Listing|本商品)\s*(?:必须定制|定制必选)/i.test(text) ||
+    /卖家定制\s*(?:必须|为必选)/.test(text)
+  ) {
+    candidates.add(SELLER_CUSTOMIZATION_SERVICE.REQUIRED);
+  }
+  if (
+    /(?:本\s*Listing|当前\s*Listing|本商品)\s*(?:定制可选|可选定制)/i.test(text) ||
+    /(?:可选择定制或不定制|卖家定制\s*可选)/.test(text)
+  ) {
+    candidates.add(SELLER_CUSTOMIZATION_SERVICE.OPTIONAL);
+  }
+
+  return candidates.size === 1
+    ? [...candidates][0]
+    : SELLER_CUSTOMIZATION_SERVICE.PENDING;
+}
 
 export function resolveListingCustomizationFlow({
   capability = CUSTOMIZATION_CAPABILITY.UNKNOWN,

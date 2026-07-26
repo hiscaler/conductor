@@ -99,6 +99,11 @@ assert.match(rules, /目标图片文件尚不存在时继续写入原 Listing �
 assert.match(rules, /16 个编号章节之前生成 `问题速览`/);
 assert.match(rules, /issue-\{两位章节号\}-\{两位问题序号\}/);
 assert.match(rules, /node scripts\/check-report-anchors\.mjs <报告路径>/);
+assert.match(rules, /卖家定制服务确认是自动商品资料示例的前置门禁/);
+assert.match(rules, /当前回复只能显示上述三项数字菜单/);
+assert.match(rules, /不得同时生成或展示商品资料示例/);
+assert.match(rules, /必须直接归一化并跳过三项菜单/);
+assert.match(rules, /只说明商品能力，不能据此推断卖家服务为必选或可选/);
 
 const coreAgent = files["agents/cross-border-commerce-agent.md"];
 assert.match(coreAgent, /node scripts\/output-versioning\.mjs/);
@@ -250,6 +255,9 @@ assert.match(coreAgent, /示例只能在建立本套“定制母版”时选择�
 assert.match(coreAgent, /定制类组合商品还必须记录组合内定制关系/);
 assert.match(coreAgent, /商品是否具备定制能力，以及本 Listing 是否由卖家提供定制服务/);
 assert.match(coreAgent, /只询问 `1\. 不提供定制`、`2\. 必须定制`、`3\. 定制可选`/);
+assert.match(coreAgent, /定制服务选择是自动商品资料示例的前置门禁/);
+assert.match(coreAgent, /不得在同一回复中附带自动商品资料示例/);
+assert.match(coreAgent, /直接归一化并跳过菜单/);
 assert.match(files["agents/visual-production-agent.md"], /支持任意文字时用 `Add Your Text`/);
 assert.match(files["agents/visual-production-agent.md"], /接受照片、插画或图案等广义图片时用 `Upload Your Image`/);
 assert.match(files["agents/visual-production-agent.md"], /必须先生成并验收最终定制主图/);
@@ -274,6 +282,11 @@ for (const field of ["商品具备定制能力", "卖家定制服务", "非卖�
   assert.match(productInput, new RegExp(field), `产品输入模板缺少定制流程字段：${field}`);
 }
 assert.match(files["workflows/start-guide.md"], /不得把普通成品和 DIY 空白基底拆成同级选项|不再放入同级菜单/);
+assert.match(files["workflows/start-guide.md"], /当前回复只能显示一次纯数字选择/);
+assert.match(files["workflows/start-guide.md"], /不得要求用户把定制选项数字和商品资料一起回传/);
+assert.match(files["workflows/start-guide.md"], /收到数字选择并写入当前 Listing 后才继续生成/);
+assert.match(files["workflows/start-guide.md"], /直接归一化并跳过菜单/);
+assert.match(files["workflows/start-guide.md"], /只表示商品能力，不能代替 Listing 服务选择/);
 assert.match(files["package.json"], /check-customization-flow\.mjs/);
 assert.match(files["package.json"], /check-report-anchors\.mjs tests\/fixtures\/report-anchor-valid\.md/);
 
