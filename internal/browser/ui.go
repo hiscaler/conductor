@@ -322,6 +322,9 @@ const indexHTML = `<!doctype html>
       display:block; width:100%; max-width:100%; height:auto;
       border-radius:12px; background:rgb(15 23 42);
     }
+    .markdown a[id]:empty { display:block; height:0; overflow:hidden; scroll-margin-top:18px; }
+    .markdown a[href^="#"] { color:rgb(125 211 252); text-decoration:underline; text-underline-offset:2px; }
+    .markdown a[href^="#"]:hover { color:rgb(186 230 253); }
     .header-actions {
       display:flex; align-items:center; gap:4px;
       font-size:14px; letter-spacing:0.01em;
@@ -1239,6 +1242,7 @@ function renderMarkdown(src) {
     if (line.startsWith("### ")) { if (inList) { out.push("</ul>"); inList = false; } out.push(headingBlock("h3", 3, line.slice(4), headings)); }
     else if (line.startsWith("## ")) { if (inList) { out.push("</ul>"); inList = false; } out.push(headingBlock("h2", 2, line.slice(3), headings)); }
     else if (line.startsWith("# ")) { if (inList) { out.push("</ul>"); inList = false; } out.push(headingBlock("h1", 1, line.slice(2), headings)); }
+    else if (isEscapedEmptyAnchorLine(line)) { if (inList) { out.push("</ul>"); inList = false; } out.push(restoreEmptyAnchors(line.trim())); }
     else if (line.startsWith("- ")) { if (!inList) { out.push("<ul>"); inList = true; } out.push(copyBlock("li", line.slice(2))); }
     else if (line.trim() === "") { if (inList) { out.push("</ul>"); inList = false; } }
     else if (line.includes("|")) { if (inList) { out.push("</ul>"); inList = false; } out.push(copyBlock("p", line)); }
@@ -1515,14 +1519,35 @@ function decodeEntities(s) {
   return el.value;
 }
 
+// isEscapedEmptyAnchorLine 判断一行是否仅为转义后的空锚点标签。
+function isEscapedEmptyAnchorLine(line) {
+  return /^&lt;a\s+id=&quot;[a-zA-Z][\w.:-]*&quot;\s*&gt;\s*&lt;\/a&gt;\s*$/.test(String(line || "").trim());
+}
+
+// restoreEmptyAnchors 将安全的空锚点从转义文本还原为真实 HTML。
+function restoreEmptyAnchors(s) {
+  return String(s || "").replace(
+    /&lt;a\s+id=&quot;([a-zA-Z][\w.:-]*)&quot;\s*&gt;\s*&lt;\/a&gt;/g,
+    '<a id="$1"></a>'
+  );
+}
+
+// renderHashLink 仅允许页内哈希链接，避免把任意 URL 注入预览。
+function renderHashLink(text, href) {
+  const target = decodeEntities(href || "").trim();
+  if (!/^#[a-zA-Z][\w.:-]*$/.test(target)) return "[" + text + "](" + href + ")";
+  return '<a href="' + escAttr(target) + '">' + text + "</a>";
+}
+
 // inline 渲染生成文档中常见的行内 Markdown 标记。
 function inline(s) {
   const tick = String.fromCharCode(96);
   const codePattern = new RegExp(tick + "([^" + tick + "]+)" + tick, "g");
-  return s
+  return restoreEmptyAnchors(s)
     .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) =>
       "<img class='inline-md-image' src='" + escAttr(resolveMarkdownImageSrc(src)) + "' alt='" + alt + "' loading='lazy'>"
     )
+    .replace(/\[([^\]]+)\]\((#[^)]+)\)/g, (_, text, href) => renderHashLink(text, href))
     .replace(codePattern, "<code>$1</code>")
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
 }
