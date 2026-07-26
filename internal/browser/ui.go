@@ -236,12 +236,17 @@ const indexHTML = `<!doctype html>
     .toc-body a {
       position:relative; border-radius:8px;
       padding:7px 10px 7px 12px;
-      font-size:12.5px; line-height:1.4; color:rgb(148 163 184);
+      font-size:12.5px; line-height:1.35; color:rgb(148 163 184);
       text-decoration:none;
       border-left:2px solid transparent;
       transition:color .12s ease, background .12s ease, border-color .12s ease;
-      overflow:hidden; text-overflow:ellipsis;
+      display:flex; align-items:center;
+      box-sizing:border-box; min-height:32px;
+    }
+    .toc-body a .toc-label {
       display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+      overflow:hidden; text-overflow:ellipsis;
+      min-width:0; width:100%;
     }
     .toc-body a:hover {
       background:rgb(56 189 248 / 0.08); color:rgb(226 232 240);
@@ -252,7 +257,7 @@ const indexHTML = `<!doctype html>
       border-left-color:rgb(56 189 248);
     }
     .toc-body a.level-1 {
-      margin-top:6px; padding-top:8px; padding-bottom:8px;
+      margin-top:6px; padding-top:8px; padding-bottom:8px; min-height:36px;
       font-size:13px; font-weight:600; color:rgb(241 245 249);
     }
     .toc-body a.level-1:first-child { margin-top:0; }
@@ -1291,12 +1296,23 @@ function headingBlock(tag, level, text, headings) {
   return "<" + tag + " id='" + id + "' data-level='" + level + "' class='copyable'>" + inline(text) + "<button class='copy-btn' onclick='copySection(event)'>复制</button></" + tag + ">";
 }
 
+// stripMarkdownNoise 去掉标题中的 HTML / 行内标记，供目录显示。
+function stripMarkdownNoise(s) {
+  const tick = String.fromCharCode(96);
+  return String(s || "")
+    .replace(/<[^>]+>/g, "")
+    .replace(new RegExp("[*_" + tick + "]", "g"), "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 // renderToc 生成可折叠目录；宽屏固定在内容区外，窄屏进入内容区顶部。
 function renderToc(headings) {
   if (!headings.length) return "";
   const links = headings.map(h => {
     const level = h.level === 1 ? "level-1" : h.level === 2 ? "level-2" : "level-3";
-    return "<a class='" + level + "' href='#" + h.id + "' title='" + escAttr(h.text) + "'>" + esc(h.text) + "</a>";
+    const label = stripMarkdownNoise(h.text);
+    return "<a class='" + level + "' href='#" + h.id + "' title='" + escAttr(label) + "'><span class='toc-label'>" + esc(label) + "</span></a>";
   }).join("");
   return "<aside class='toc-dock' id='tocDock'>"
     + "<div class='toc-head'>"
