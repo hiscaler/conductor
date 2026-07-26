@@ -254,7 +254,7 @@ assert.match(coreAgent, /不得固定套用某一组示例词/);
 assert.match(coreAgent, /示例只能在建立本套“定制母版”时选择一次/);
 assert.match(coreAgent, /定制类组合商品还必须记录组合内定制关系/);
 assert.match(coreAgent, /商品是否具备定制能力，以及本 Listing 是否由卖家提供定制服务/);
-assert.match(coreAgent, /只询问 `1\. 不提供定制`、`2\. 必须定制`、`3\. 定制可选`/);
+assert.match(coreAgent, /只询问 `1\. 不提供定制`、`2\. 提供定制，买家必须提交定制内容`、`3\. 提供定制，买家可以选择是否定制`/);
 assert.match(coreAgent, /定制服务选择是自动商品资料示例的前置门禁/);
 assert.match(coreAgent, /不得在同一回复中附带自动商品资料示例/);
 assert.match(coreAgent, /直接归一化并跳过菜单/);

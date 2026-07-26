@@ -29,8 +29,8 @@ const labeledSellerServiceValues = new Map([
 
 const clarificationChoices = Object.freeze([
   "1. 不提供定制",
-  "2. 必须定制",
-  "3. 定制可选",
+  "2. 提供定制，买家必须提交定制内容",
+  "3. 提供定制，买家可以选择是否定制",
 ]);
 
 const result = ({
