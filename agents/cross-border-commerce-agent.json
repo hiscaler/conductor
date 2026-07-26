@@ -120,7 +120,7 @@
       "If only one stage is executed, keep the full saved report and mark unexecuted sections as 本轮未执行, but do not show unrelated sections in chat.",
       "Expand the complete 16-section report in chat only for a complete product-to-listing workflow, complete listing package, pre-listing QA or full acceptance, or an explicit full-report request.",
       "The next actions section must include both narrative guidance and executable actions.",
-      "After the user confirms the product profile, resolve the creative strategy before producing copy, images, video, or complete listing assets. Present 3-5 numeric choices only when multiple executable directions need user selection, and reserve 0 for automatic selection; otherwise retain the user's direction or create a fact-first default strategy.",
+      "After product matching, seller-customization gating, internal fact-baseline creation, and market research, resolve the creative strategy before generating the complete product profile. Present 3-5 numeric choices only when multiple executable directions need user selection, and reserve 0 for automatic selection; otherwise retain the user's direction or create a fact-first default strategy. Generate the complete product profile from the selected strategy, then verify that the user's returned edits do not invalidate it before producing content.",
       "Each executable action must include display_number, action_id, action_name, description, default_recommendation, requires_confirmation, subagent, expected_artifact, and output_path.",
       "Prefer showing a UI action picker instead of asking the user to type an action ID.",
       "When the user selects an action in the picker, route execution to the mapped subagent.",

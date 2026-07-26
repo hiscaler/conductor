@@ -49,7 +49,7 @@ assert.equal(
 
 const start = files["workflows/start-guide.md"];
 const readme = files["README.md"];
-assert.match(readme, /选择创意（需要时） → 正式生产/);
+assert.match(readme, /选择创意（需要时） → 回传自动商品示例 → 正式生产/);
 assert.match(readme, /请输入创意编号，例如：1；如需系统自动选择，请输入：0/);
 assert.match(readme, /`0` 只在最近一次显示的是创意方向菜单时表示自动选择/);
 assert.match(readme, /Temu 定制类商品默认以 8 张独立图片为完成标准/);
@@ -68,12 +68,14 @@ assert.match(start, /相同 SKU 自动合并数量/);
 assert.doesNotMatch(start, /分别生成.{0,12}组合销售/);
 assert.match(start, /创意方向选择/);
 assert.match(start, /输入 `0` 表示系统自动选择/);
-assert.match(start, /创意确定后，再按所选任务正式生成文案、图片或视频/);
+assert.match(start, /创意确定后，我会生成与该方向一致的完整商品资料示例/);
+assert.match(start, /示例确认后，再按所选任务正式生成文案、图片或视频/);
 assert.match(start, /不得笼统写成与当前任务无关的全部产物/);
-assert.match(start, /你修改并回传商品资料后，我会先生成具体创意方向/);
-assert.match(start, /收到确认后的商品资料后，我会先生成具体创意方向并形成创意策略/);
-assert.match(start, /存在多个可执行方向时，提供 3-5 个方向供你选择/);
+assert.match(start, /随后建立内部事实底稿并研究目标市场、评论和热度，再生成具体创意方向/);
+assert.match(start, /创意确定后，我会生成与该方向一致的完整商品资料示例/);
+assert.match(start, /存在多个可靠方向时，会提供 3-5 个方向供你输入数字选择/);
 assert.match(start, /非内容任务不显示创意菜单/);
+assert.doesNotMatch(start, /商品示例回传后先生成具体创意方向/);
 
 const rules = files["AGENTS.md"];
 assert.match(rules, /去除整个输入及每个组合项首尾空格/);
@@ -81,7 +83,8 @@ assert.match(rules, /英文字母不区分大小写/);
 assert.match(rules, /两个 SKU 去除首尾空格并忽略大小写后相同时/);
 assert.match(rules, /用户未回传商品资料示例前，不进入正式/);
 assert.match(rules, /workflows\/creative-direction-selection\.md/);
-assert.match(rules, /商品示例回传后先生成具体创意方向/);
+assert.match(rules, /内容生产任务在研究完成后先按 .*形成创意策略/);
+assert.match(rules, /用户未回传商品资料示例前，不进入正式.*回传后.*先判断修改是否使已选创意失效/);
 assert.match(rules, /node scripts\/output-versioning\.mjs/);
 assert.match(rules, /本批次全部产物统一写入脚本返回的下一个 `\{Listing标识\}-vN\/` 目录/);
 assert.match(rules, /禁止给文案、图片、视频、脚本、验收报告或完整报告文件名添加 `-vN`/);
@@ -99,7 +102,7 @@ assert.match(rules, /目标图片文件尚不存在时继续写入原 Listing �
 assert.match(rules, /16 个编号章节之前生成 `问题速览`/);
 assert.match(rules, /issue-\{两位章节号\}-\{两位问题序号\}/);
 assert.match(rules, /node scripts\/check-report-anchors\.mjs <报告路径>/);
-assert.match(rules, /卖家定制服务确认是自动商品资料示例的前置门禁/);
+assert.match(rules, /卖家定制服务确认是创意方向和自动商品资料示例的共同前置门禁/);
 assert.match(rules, /当前回复只能显示上述三项数字菜单/);
 assert.match(rules, /不得同时生成或展示商品资料示例/);
 assert.match(rules, /必须直接归一化并跳过三项菜单/);
@@ -279,7 +282,7 @@ assert.match(coreAgent, /示例只能在建立本套“定制母版”时选择�
 assert.match(coreAgent, /定制类组合商品还必须记录组合内定制关系/);
 assert.match(coreAgent, /商品是否具备定制能力，以及本 Listing 是否由卖家提供定制服务/);
 assert.match(coreAgent, /只询问 `1\. 不提供定制`、`2\. 提供定制，买家必须提交定制内容`、`3\. 提供定制，买家可以选择是否定制`/);
-assert.match(coreAgent, /定制服务选择是自动商品资料示例的前置门禁/);
+assert.match(coreAgent, /定制服务选择是创意方向和自动商品资料示例的共同前置门禁/);
 assert.match(coreAgent, /不得在同一回复中附带自动商品资料示例/);
 assert.match(coreAgent, /直接归一化并跳过菜单/);
 assert.match(files["agents/visual-production-agent.md"], /支持任意文字时用 `Add Your Text`/);
@@ -308,7 +311,7 @@ for (const field of ["商品具备定制能力", "卖家定制服务", "非卖�
 assert.match(files["workflows/start-guide.md"], /不得把普通成品和 DIY 空白基底拆成同级选项|不再放入同级菜单/);
 assert.match(files["workflows/start-guide.md"], /当前回复只能显示一次纯数字选择/);
 assert.match(files["workflows/start-guide.md"], /不得要求用户把定制选项数字和商品资料一起回传/);
-assert.match(files["workflows/start-guide.md"], /收到数字选择并写入当前 Listing 后才继续生成/);
+assert.match(files["workflows/start-guide.md"], /收到数字选择并写入当前 Listing 后才继续/);
 assert.match(files["workflows/start-guide.md"], /直接归一化并跳过菜单/);
 assert.match(files["workflows/start-guide.md"], /只表示商品能力，不能代替 Listing 服务选择/);
 assert.match(files["package.json"], /check-customization-flow\.mjs/);
