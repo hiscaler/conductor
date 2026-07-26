@@ -217,6 +217,9 @@ assert.match(output, /与定制母版不一致/);
 assert.match(output, /按“商品结构 \+ 定制位置 \+ 输入类型 \+ 定制工艺”归组/);
 assert.match(output, /只选择一个视觉清晰的代表商品演示一次/);
 assert.match(output, /不得把 `Text`、`Image` 等输入类型分别指向两个同类型组件/);
+assert.match(output, /尺寸参考物按条件启用/);
+assert.match(output, /`Size Reference`/);
+assert.match(output, /`Per Item` 与实际套装数量/);
 assert.match(output, /只有 `必选` 和 `可选` 才进入定制母版/);
 assert.match(output, /服务为 `不提供` 时不得登记定制母版或生成定制操作示意图/);
 assert.match(coreAgent, /不得固定套用某一组示例词/);
@@ -230,6 +233,8 @@ assert.match(files["agents/visual-production-agent.md"], /必须先生成并验�
 assert.match(files["agents/visual-production-agent.md"], /默认一套图只展示一个定制母版/);
 assert.match(files["agents/visual-production-agent.md"], /同组组件只选择一个视觉清晰的代表商品演示一次/);
 assert.match(files["agents/visual-production-agent.md"], /不得使用 `Upload Your Image` 指向没有图片内容的空白区域/);
+assert.match(files["agents/visual-production-agent.md"], /生成尺寸图前判断是否需要参考物/);
+assert.match(files["agents/visual-production-agent.md"], /比例失真或可能被误认作到手内容时判定为不可用/);
 assert.match(files["agents/visual-production-agent.md"], /商品具备定制能力只描述物理或生产能力/);
 assert.match(files["agents/visual-production-agent.md"], /卖家定制服务为 `待确认`：暂停定制资产生产/);
 assert.match(files["platforms/image-set-rules.md"], /姓名专用字段可写 `Add Your Name`，自由文字字段写 `Add Your Text`/);
@@ -248,6 +253,8 @@ assert.match(rules, /先生成并验收主图，再把主图中的最终定制�
 assert.match(rules, /不得逐张独立随机生成新的定制方案/);
 assert.match(rules, /组合内定制关系/);
 assert.match(rules, /同一类型.*只选择其中一个代表商品演示一次/);
+assert.match(rules, /只有商品大小难以直观判断、其他场景图未提供可靠尺度感且存在稳定参照时/);
+assert.match(rules, /`Dimensions Shown Per Item`/);
 assert.match(rules, /商品“具备定制能力”和“本 Listing 是否启用卖家定制服务”必须分开记录/);
 assert.match(rules, /不得把普通成品和 DIY 空白基底拆成同级选项/);
 assert.match(rules, /生成标题前必须.*建立标题关键词数据链/);
