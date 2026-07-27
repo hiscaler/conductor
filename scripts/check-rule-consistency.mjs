@@ -12,7 +12,9 @@ const files = Object.fromEntries(
       "AGENTS.md",
       "README.md",
       "agents/cross-border-commerce-agent.md",
+      "agents/subagents.md",
       "agents/visual-production-agent.md",
+      "workflows/product-to-listing.md",
       "workflows/start-guide.md",
       "workflows/creative-direction-selection.md",
       "workflows/action-menu.md",
@@ -105,6 +107,11 @@ assert.match(start, /非内容任务不显示创意菜单/);
 assert.doesNotMatch(start, /商品示例回传后先生成具体创意方向/);
 assert.match(start, /回复“重新选择创意”重新查看上一轮候选/);
 assert.match(start, /回复“重新生成创意”废弃上一批候选并重新研究/);
+assert.match(start, /数据复盘必须绑定实际线上 Listing/);
+assert.match(start, /商品名称、SKU 或以前生成的商品资料不能替代实际商品详情链接/);
+assert.match(start, /缺少有效商品详情链接时，只提供可复制的补充资料模板并暂停/);
+assert.match(start, /商品链接：请替换为实际商品详情页链接（必填）/);
+assert.match(start, /复盘时间范围：2026-07-01 至 2026-07-24/);
 
 const rules = files["AGENTS.md"];
 assert.match(rules, /去除整个输入及每个组合项首尾空格/);
@@ -139,6 +146,10 @@ assert.match(rules, /当前回复只能显示上述三项数字菜单/);
 assert.match(rules, /不得同时生成或展示商品资料示例/);
 assert.match(rules, /必须直接归一化并跳过三项菜单/);
 assert.match(rules, /只说明商品能力，不能据此推断卖家服务为必选或可选/);
+assert.match(rules, /已上架数据复盘必须先取得实际商品详情链接、复盘时间范围和运营数据/);
+assert.match(rules, /商品名称只能辅助识别，不能替代链接/);
+assert.match(rules, /未通过门禁时只索取缺失资料，不得进入复盘、生成报告或分配输出目录/);
+assert.match(rules, /`平台商品-\{平台商品ID\}`/);
 
 const coreAgent = files["agents/cross-border-commerce-agent.md"];
 assert.match(coreAgent, /node scripts\/output-versioning\.mjs/);
@@ -146,6 +157,9 @@ assert.match(coreAgent, /Listing 版本目录/);
 assert.match(coreAgent, /禁止给文件名添加 `-vN`/);
 assert.match(coreAgent, /菜单 2“文案 \+ AI 商品图”未完成时/);
 assert.doesNotMatch(coreAgent, /已生成图片时，默认至少包含/);
+assert.match(coreAgent, /已上架数据复盘要求实际商品详情链接、复盘时间范围和运营数据/);
+assert.match(coreAgent, /不得按商品名称或历史产物推测线上状态/);
+assert.match(coreAgent, /链接门禁未通过时暂停复盘，不生成正式产物/);
 
 const creative = files["workflows/creative-direction-selection.md"];
 assert.match(creative, /不替代 `templates\/production-output\.md` 的 16 章完整生产报告/);
@@ -246,6 +260,20 @@ assert.match(outputStructure, /禁止创建 `完整生产报告-v2\.md`/);
 assert.match(outputStructure, /目录内.*文件名.*不得添加版本后缀/);
 assert.match(outputStructure, /属于同一批次断点续做/);
 assert.match(outputStructure, /不得仅凭“最新目录”猜测/);
+assert.match(outputStructure, /已上架复盘无法匹配 SKU/);
+assert.match(outputStructure, /平台商品-\{平台商品ID\}/);
+assert.match(outputStructure, /不得退回使用 `未建档-\{简短商品名\}` 开始复盘/);
+assert.match(outputStructure, /未通过时不得调用版本分配器、创建 Listing 目录/);
+
+const subagents = files["agents/subagents.md"];
+assert.match(subagents, /验证实际商品链接与当前线上页面/);
+assert.match(subagents, /只有商品名称时先由 `intake-agent` 索取 Listing 身份依据/);
+assert.match(subagents, /已上架复盘缺少有效商品详情链接/);
+
+const productWorkflow = files["workflows/product-to-listing.md"];
+assert.match(productWorkflow, /复盘必须先绑定实际线上 Listing/);
+assert.match(productWorkflow, /缺少有效 Listing 身份时只索取资料，不进入分析，不创建完整报告或输出目录/);
+assert.match(productWorkflow, /链接只能支持线上内容核验，不能替代未提供的后台指标/);
 
 const chatOutput = files["templates/chat-output.md"];
 for (const heading of ["本轮状态", "本轮产出", "缺失与风险", "已保存文件", "下一步动作"]) {
@@ -350,6 +378,16 @@ assert.match(files["workflows/start-guide.md"], /不得要求用户把定制选�
 assert.match(files["workflows/start-guide.md"], /收到数字选择并写入当前 Listing 后才继续/);
 assert.match(files["workflows/start-guide.md"], /直接归一化并跳过菜单/);
 assert.match(files["workflows/start-guide.md"], /只表示商品能力，不能代替 Listing 服务选择/);
+assert.match(productInput, /## 已上架数据复盘的最小输入/);
+assert.match(productInput, /商品名称不能替代链接/);
+assert.match(productInput, /只提供商品名称、SKU 或运营数据时/);
+assert.match(readme, /数据复盘不能只按商品名称执行/);
+assert.match(readme, /缺少有效 Listing 身份时，Conductor 只提示补充资料/);
+assert.ok(agent.workflow.includes("live_listing_validation"), "核心 Agent 工作流缺少线上 Listing 验证阶段");
+assert.ok(agent.workflow.includes("growth_review"), "核心 Agent 工作流缺少数据复盘阶段");
+assert.ok(agent.inputs.optional.includes("live_listing_url"), "核心 Agent 输入缺少实际 Listing 链接");
+assert.ok(agent.inputs.optional.includes("review_date_range"), "核心 Agent 输入缺少复盘时间范围");
+assert.ok(agent.inputs.optional.includes("seller_backend_metrics_or_export"), "核心 Agent 输入缺少后台运营数据");
 assert.match(files["package.json"], /check-customization-flow\.mjs/);
 assert.match(files["package.json"], /check-report-anchors\.mjs tests\/fixtures\/report-anchor-valid\.md/);
 
@@ -529,4 +567,4 @@ for (const markdownPath of markdownFiles) {
   }
 }
 
-console.log("规则一致性检查通过：入口、动态输入、SKU、CSV 商品资料、创意方向、跨平台标题数据链、双层输出、16 章完整报告、动作确认、Temu 描述与套图、本地文档链接均一致。");
+console.log("规则一致性检查通过：入口、动态输入、已上架复盘门禁、SKU、CSV 商品资料、创意方向、跨平台标题数据链、双层输出、16 章完整报告、动作确认、Temu 描述与套图、本地文档链接均一致。");
