@@ -6,27 +6,28 @@
 
 ## 设计约束（已对齐）
 
-- content-package 是**新增**契约，导出时**不得改变 Agent 已产出的内容**，也**不得触发新的内容生产**；只有用户明确指定时才生成中性基础文案，否则相应字段标记为「未生成」。
-- 字段结构**不绑定具体平台**，平台差异一律放进 `platform_overrides`。
-- 字段键默认使用**中文**，与 `data/product-catalog.csv` 列名和 `platforms/image-set-rules.md` 图型名一一对应，减少映射层；另附英文对照表供中台落库。
+- content-package 是**新增**契约，导出时**不得改变 Agent 已产出的内容**，也**不得触发新的内容生产**；从已有文案资产组装 `copywriting`，不另起空占位当成品。
+- 字段结构**不绑定具体平台 API**；默认按单平台包落盘，上品文案放 `copywriting`，平台差异（图集等）放 `platform_overrides`。
+- 字段键默认使用**中文**，与 `data/product-catalog.csv` 列名和 `platforms/image-set-rules.md` 图型名一一对应；另附英文对照表供中台落库。上架文案对象英文键为 **`copywriting`**（不用 `copyright`）。
 - 中性内容与平台覆盖都由 Conductor 产出；接口字段（类目 ID、属性码、API 报文）由中台在推送时组装。
 
 ## 顶层结构
 
 ```text
 content-package
-├── 信封            envelope
+├── 元数据          metadata
 ├── 商品事实        product_facts   （中性，逐条带状态）
 ├── 中性基础内容    base_content
 │   ├── 语义素材    semantics
-│   └── 基础文案    copy            （默认未生成）
+│   └── 上架文案    copywriting     （单平台包的上品正文，必填）
 ├── 平台覆盖[]      platform_overrides
 ├── 媒体[]          media           （实体文件，按 id 引用）
 └── 门禁与风险      gates
 ```
 
-## 1. 信封 envelope
+## 1. 元数据 metadata
 
+包头元数据（说明这是哪一包、谁的货、面向哪、内容层状态），不放标题/描述等正文。
 - `schema_version`：契约版本
 - `package_id`：内容包标识
 - `generated_at`：生成时间
@@ -36,21 +37,42 @@ content-package
 - `sales_unit`：销售单位与组合形态（单件 / 多件 / 套装 / 混色 / 混款）
 - `product_name`：商品名称（业务文本）
 - `suggested_category`：建议类目（业务文本，**非**平台类目 ID）
-- `target_platforms[]`：本包已含覆盖的平台与市场，可为空
-- `content_status`：内容层自评（`ready` / `partial` / `blocked`），**不是**刊登判定
+- `content_platform` / `content_market`：本包 `copywriting` 与套图实际按哪个平台-市场生产（与落盘目录一致）
+- `recommended_platforms[]`：推荐可推送的平台与市场列表（仅建议，**不强制**中台照单全推）
+- `content_status`：内容层自评（`ready` / `partial` / `blocked`）；仅 `ready` 可发送到中台
 - `blocked_reasons[]`：内容层受阻原因
+
+说明：
+
+- `recommended_platforms` **只是推荐标记**；中台决定实际推送到哪些平台，也可推到列表外的平台。
+- Conductor **不因**推荐了多个平台，就必须预生成多套 `platform_overrides.copywriting`。
+- 本包正文与图集按 `content_platform`/`content_market` 生产；中台推到其他平台时，自行做内容适配或接口映射（超出本包已提供内容的部分由中台负责）。
 
 ## 2. 商品事实 product_facts
 
-逐条记录，键对齐 `data/product-catalog.csv` 的列：
+逐条记录，**`key` 必须与 `data/product-catalog.csv` 当前表头完全一致**，不得缩写或改名。
+
+当前主表表头（以仓库 CSV 为准，变更时同步本契约）：
+
+```text
+SPU, SKU, 商品名称, 品牌, 产品类目, 产品子类目, 产品类型, 包含内容, 型号,
+颜色/款式, 尺码/规格, 长度cm, 宽度cm, 高度cm, 净重g, 材质, 结构/表面工艺,
+已确认功能, 商品特点, 适用对象, 使用场景, 使用/护理说明,
+定制内容, 定制位置, 定制工艺,
+包装清单, 包装方式, 包装长度cm, 包装宽度cm, 包装高度cm, 包装毛重g,
+风险/禁用声明, 资料更新时间, 备注
+```
+
+注意：正确键名是 `颜色/款式`、`材质`、`风险/禁用声明` 等，**不是**口语缩写「颜色」「认证信息」。主表若无某列（例如当前无独立「认证信息」列），不得在 product_facts 里虚构该 key。
 
 ```json
-{ "key": "净重g", "value": "400", "unit": "g", "status": "confirmed", "source": "catalog" }
+{ "key": "颜色/款式", "value": "白色杯身、红色内胆、红色把手", "status": "confirmed", "source": "catalog" }
 ```
 
 - `status`：`confirmed` / `unconfirmed` / `missing`
 - `source`：`catalog` / `user` / `supplier` / `image` / `market_suggestion`
-- 建议分组：外观、尺寸重量、材质工艺、已确认功能、定制（内容/位置/工艺）、包装（清单/方式/尺寸/毛重）、认证（信息/状态）、使用护理、禁止或未确认声明、适用对象与场景
+- `unit`：**可选**。键名已含单位时（如 `净重g`、`长度cm`）**不写** `unit`
+- 品类专属参数走 `product-attributes.csv` → `extended_attributes[]`，不塞进主表列
 - `market_suggestion` 永不等于已确认事实；中台不得直接映射为平台属性值。
 
 ## 3. 中性基础内容 base_content
@@ -60,26 +82,31 @@ content-package
 - `selling_points[]`、`use_scenarios[]`、`purchase_motivations[]`、`target_audience[]`
 - 每条带 `status`（`confirmed` / `unconfirmed`）
 
-### 3.2 基础文案 copy
+### 3.2 上架文案 copywriting
 
-- `title`、`description`、`keywords[]`
-- `generation_status`：`generated` / `not_generated`
-- **默认 `not_generated`**：导出动作不触发生成，也不改写 Agent 已产出内容；仅当用户明确要求「生成中性基础文案」时才填充。
+字段名使用 **`copywriting`**（不要用 `copyright`，后者表示版权）。中文说明为「上架文案」。
+
+- `title`、`bullets[]`、`description`、`keywords[]`（以及有则给的 `search_keywords[]` / `backend_keywords[]` / `ad_copy[]`）
+- **单平台包（默认）**：此处为本包目标平台的**成品上品文案**，上品必填；导出时从 Agent 已产出文案组装，不另起一套空占位。
+- **多平台同包（例外）**：顶层 `copywriting` 可为共享草稿或省略正文，各平台成品文案改放 `platform_overrides[].copywriting`（见 §4）。
+- `generation_status`：`generated` / `not_generated`；单平台上品路径下应为 `generated` 且正文非空，否则 `content_status` 不得为 `ready`。
 
 ## 4. 平台覆盖 platform_overrides[]
 
-每项对应一个平台 + 市场，只表达**内容差异**：
+每项对应一个平台 + 市场。
 
-- `platform` / `market` / `locale`
-- `title`
-- `bullets[]`（要点结构随平台变化，例如 Amazon 5 条、Temu 规格卖点）
-- `long_description`
-- `search_keywords[]` / `backend_keywords[]` / `ad_copy[]`（有则给，无则省略，不编造）
-- `image_set`：
-  - `expected_count`、`actual_count`、`missing_roles[]`、`status`（`已完成` / `未完成`）
-  - `images[]`：`{ role, media_id }`
-- `video_set`：`{ media_id, duration, has_voiceover, has_burned_subtitles, status }`
-- `content_notes[]`：该平台内容规则导致的限制与风险
+**单平台包（默认，与 `output/{平台}-{市场}/` 落盘一致）：**
+
+- 只表达**非文案**差异，**不含** title / bullets / description / keywords
+- 允许字段：
+  - `platform` / `market` / `locale`
+  - `image_set`：`expected_count`、`actual_count`、`missing_roles[]`、`status`（`已完成` / `未完成`），`images[]`：`{ role, media_id }`
+  - `video_set`：`{ media_id, duration, has_voiceover, has_burned_subtitles, status }`
+  - `content_notes[]`：该平台内容规则导致的限制与风险
+
+**多平台同包（例外）：**
+
+- 可增加 `copywriting` 对象承载该平台成品文案；合并时以覆盖为准，顶层 `copywriting` 仅作共享草稿。
 
 覆盖片段**不含**平台类目 ID、属性码、接口字段名或 API 报文。
 
@@ -115,32 +142,33 @@ content-package
 
 ## 8. 中英字段对照（供中台落库）
 
-顶层与信封：
+顶层与元数据：
 
-- 信封 = `envelope`
+- 元数据 = `metadata`
+- `recommended_platforms` = 推荐平台列表（非强制推送清单）
 - 商品事实 = `product_facts`
 - 中性基础内容 = `base_content`
 - 语义素材 = `semantics`
-- 基础文案 = `copy`
+- 上架文案 = `copywriting`
 - 平台覆盖 = `platform_overrides`
 - 媒体 = `media`
 - 门禁与风险 = `gates`
 
-商品事实常用键（对齐 CSV 列）：
+商品事实常用键（**必须与 CSV 表头一致**，下列仅为英文对照）：
 
-- 颜色/款式 = `color_variant`
+- 颜色/款式 = `color_style`
 - 尺码/规格 = `size_spec`
 - 长度cm / 宽度cm / 高度cm = `length_cm` / `width_cm` / `height_cm`
 - 净重g / 包装毛重g = `net_weight_g` / `gross_weight_g`
 - 材质 = `material`
 - 结构/表面工艺 = `structure_finish`
 - 已确认功能 = `confirmed_features`
+- 商品特点 = `product_features`
 - 定制内容 / 定制位置 / 定制工艺 = `custom_content` / `custom_position` / `custom_process`
 - 包装清单 / 包装方式 = `packing_list` / `packing_method`
-- 认证信息 / 认证状态 = `certification` / `certification_status`
-- 使用/护理说明 = `care_instructions`
-- 禁止/未确认声明 = `prohibited_or_unconfirmed`
+- 风险/禁用声明 = `risk_or_prohibited_claims`
 - 适用对象 / 使用场景 = `target_audience` / `use_scenarios`
+- 资料更新时间 = `data_updated_at`
 
 图型 role 常用值（对齐 image-set-rules）：
 
@@ -159,17 +187,17 @@ content-package
 
 以下为 Conductor 侧建议默认值，不是最终决议。讨论时直接改本节或打回未决。
 
-### 9.1 product_facts：全列输出 + 空值显式标记
+### 9.1 product_facts：按当前 CSV 表头全列输出
 
-**建议：主表 37 列全部输出**，空值仍占一行，`status=missing`，`value` 为空字符串。
+**建议：`product-catalog.csv` 当前全部列都输出**（现为 34 列，以文件表头为准），空值仍占一行，`status=missing`，`value` 为空字符串。
 
 理由：
 
-- 中台一眼能看出「缺什么」，不会把「字段未传」和「字段值为空」搞混。
-- 与 CSV 列一一对应，导出逻辑简单，不需要再维护「关键列白名单」。
-- 扩展属性表（`product-attributes.csv`）另开数组 `extended_attributes[]`，按 SKU 挂载，不混进主表 37 列。
+- `key` 与表头逐字一致（如 `颜色/款式`，不是「颜色」）。
+- 中台能区分「缺列」与「值为空」。
+- CSV 增删列时，以仓库主表为唯一真相，本契约跟随更新。
 
-可选后续优化（不进 v0.1）：中台若嫌包大，可在接收端过滤 `missing`，Conductor 侧仍全量输出。
+扩展属性表（`product-attributes.csv`）另开数组 `extended_attributes[]`，按 SKU 挂载，不混进主表列。
 
 ### 9.2 sales_unit：结构化对象，对齐现有归一化规则
 
@@ -198,7 +226,7 @@ content-package
 | `混色装` / `混款装` | 必须同时写清组合是固定还是随机 |
 | `待确认` | 如「N 件套」无法判断同款多件还是多组件时使用，不得当成可刊登事实 |
 
-数量归一化规则沿用现有文档：`3个装`、`三个装`、`3-pack`、`pack of 3` 等一律 `销售数量=3`。信封里的 `skus[].qty` 与 `sales_unit.销售数量` 必须一致；不一致时 `content_status=blocked`，原因写入 `blocked_reasons`。
+数量归一化规则沿用现有文档：`3个装`、`三个装`、`3-pack`、`pack of 3` 等一律 `销售数量=3`。`metadata` 里的 `skus[].qty` 与 `sales_unit.销售数量` 必须一致；不一致时 `content_status=blocked`，原因写入 `blocked_reasons`。
 
 ### 9.3 media_id：稳定、可读、与文件解耦
 
@@ -247,31 +275,42 @@ output/{平台}-{市场}/{Listing版本目录}/上架/content-package.json
 
 ### 10.1 content_status 取值
 
-| 值 | 含义 | 中台建议行为 |
+| 值 | 含义 | 是否可发送到中台 |
 | --- | --- | --- |
-| `ready` | 内容层自评可提交给中台做推送准备 | 可进入「待推送」队列 |
-| `partial` | 有可用内容，但缺非阻断项（如基础文案未生成、某平台覆盖未做） | **保存并锁定推送**，允许补齐后再推 |
-| `blocked` | 存在阻断项（事实冲突、必备图未完成且本轮声称已完成、高风险未确认） | **保存并锁定推送**，必须人工或 Conductor 更新后再推 |
+| `ready` | 上品所需内容已齐备（见下方 ready 门禁） | **可以发送** |
+| `partial` | 有可用内容但未齐（如图集未完成、copywriting 未齐） | **不可发送**；仅留在 Conductor 本地 |
+| `blocked` | 存在阻断项（事实冲突、高风险未确认等） | **不可发送**；仅留在 Conductor 本地 |
 
-**建议：中台一律接收并保存**，用状态锁定推送，而不是拒收。拒收会导致 Conductor 与中台对账困难。
+**已确认规则：只有全部准备妥当后才可发送到中台。**  
+`partial` / `blocked` 包不传中台、不入库草稿；在 Conductor 侧补齐并变为 `ready` 后再导出/推送。
+
+**首期 ready 门禁（已确认）：**
+
+- 必备：`copywriting` 正文齐（title / bullets / description 等按平台规则）
+- 必备：约定套图齐（`image_set.status=已完成`，无缺失必出图型）
+- 不强制：视频（无视频不挡 ready；若本轮声称已生成视频则须通过视频门禁）
+- 仍须：无 `blocked` 级事实冲突；上品必填的 `confirmed` 事实可用
+
+中台若仍收到非 ready 包（异常路径），应拒收并返回明确错误，便于对账；正常路径下 Conductor 不得发出此类包。
 
 ### 10.2 blocked_reasons / needs_human_confirmation 示例
 
 - `SKU数量与销售单位不一致`
 - `Temu定制类套图未完成（缺尺寸规格图）`
-- `认证信息未确认`
+- `风险/禁用声明中含未确认项且未在文案中规避`
 - `存在 market_suggestion 被误写为 confirmed`（若导出校验发现）
 - `视频缺口播或烧录字幕`
+- `copywriting 未生成或正文为空`
 
 ### 10.3 责任边界
 
 | 检查项 | Conductor | 中台 |
 | --- | --- | --- |
-| 事实分级、套图完成门禁、内容缺失 | 写入 `gates` / `content_status` | 读取后决定是否允许推送 |
-| 平台类目/属性是否填得上、API 必填 | 不负责 | 推送时校验 |
+| 事实分级、套图完成门禁、文案是否齐备 | 写入 `gates` / `content_status`；**非 ready 不发送** | 可做二次校验；收到非 ready 则拒收 |
+| 平台类目/属性是否填得上、API 必填 | 不负责 | 推送平台时校验 |
 | 账号、限流、媒体上传失败 | 不负责 | 负责并回写结果（回写策略见 R5） |
 
-最终「能不能登上某平台」永远是中台在推送当下裁定；Conductor 的 `content_status` 只是内容层自评输入。
+最终「能不能登上某平台」仍由中台在推送当下裁定；Conductor 的 `ready` 只表示**内容包已齐、允许交给中台**。
 
 ## 11. R4 预写：图片 / 视频如何传到中台（草案，供讨论）
 
