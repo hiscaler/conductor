@@ -289,27 +289,27 @@ const indexHTML = `<!doctype html>
         max-height:min(40vh, 320px); overflow:auto;
       }
     }
-    .copyable { position:relative; padding-right:42px; }
-    .copy-btn {
-      position:absolute; right:0; top:0.1em; border:0; background:transparent;
-      color:rgb(100 116 139); border-radius:4px; padding:2px 6px; font-size:12px; opacity:0; cursor:pointer;
-    }
-    .copyable:hover .copy-btn { opacity:1; }
-    .copy-btn:hover { color:rgb(125 211 252); background:rgb(148 163 184 / 0.08); }
-    .markdown h1, .markdown h2, .markdown h3 { line-height:1.25; scroll-margin-top:18px; }
+    .markdown h1, .markdown h2, .markdown h3 { line-height:1.25; scroll-margin-top:18px; position:relative; }
     .markdown h1 { font-size:24px; font-weight:700; color:rgb(248 250 252); border-bottom:1px solid rgb(51 65 85 / 0.7); padding-bottom:8px; margin:0 0 0.85em; }
     .markdown h2 { font-size:21px; font-weight:700; color:rgb(241 245 249); border-bottom:1px solid rgb(51 65 85 / 0.55); padding-bottom:8px; margin:2.2em 0 0.9em; }
     .markdown h3 { font-size:14px; font-weight:600; color:rgb(125 211 252); letter-spacing:0.02em; margin:1.5em 0 0.55em; padding:0; background:transparent; border:0; }
-    .markdown h3.copyable { padding-right:52px; }
+    .markdown h1.copyable, .markdown h2.copyable, .markdown h3.copyable { padding-right:52px; }
+    .markdown .copy-btn {
+      position:absolute; right:0; top:0.15em; border:0; background:transparent;
+      color:rgb(100 116 139); border-radius:4px; padding:2px 6px; font-size:12px; opacity:0; cursor:pointer;
+    }
+    .markdown h1 .copy-btn, .markdown h2 .copy-btn { top:0.35em; }
+    .markdown h1:hover .copy-btn, .markdown h2:hover .copy-btn, .markdown h3:hover .copy-btn { opacity:1; }
+    .markdown .copy-btn:hover { color:rgb(125 211 252); background:rgb(148 163 184 / 0.08); }
     .markdown p, .markdown li { color:rgb(203 213 225); font-size:15px; line-height:1.75; }
-    .markdown p { margin:0 0 0.9em; padding:0; padding-right:42px; background:transparent; border:0; }
+    .markdown p { margin:0 0 0.9em; padding:0; background:transparent; border:0; }
     .markdown h3 + p, .markdown h3 + ul, .markdown h3 + pre, .markdown h3 + table { margin-top:0; }
     .markdown ul { margin:0 0 0.9em; padding:0 0 0 1.25em; background:transparent; border:0; }
-    .markdown li { margin:0.3em 0; padding-right:42px; }
+    .markdown li { margin:0.3em 0; }
     .markdown code { background:rgb(30 41 59 / 0.7); padding:1px 5px; border-radius:4px; color:rgb(226 232 240); }
     .markdown pre {
       white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere;
-      margin:0 0 0.9em; padding:12px 0; padding-right:42px;
+      margin:0 0 0.9em; padding:12px 0;
       background:transparent; border:0; border-top:1px solid rgb(51 65 85 / 0.45); border-bottom:1px solid rgb(51 65 85 / 0.45);
       color:rgb(226 232 240);
     }
@@ -1293,7 +1293,8 @@ function resolveMarkdownImageSrc(src) {
 function headingBlock(tag, level, text, headings) {
   const id = "heading-" + headings.length;
   headings.push({ id, level, text: decodeEntities(text) });
-  return "<" + tag + " id='" + id + "' data-level='" + level + "' class='copyable'>" + inline(text) + "<button class='copy-btn' onclick='copySection(event)'>复制</button></" + tag + ">";
+  return "<" + tag + " id='" + id + "' data-level='" + level + "' class='copyable'>" + inline(text)
+    + "<button type='button' class='copy-btn' onclick='copySection(event)'>复制</button></" + tag + ">";
 }
 
 // stripMarkdownNoise 去掉标题中的 HTML / 行内标记，供目录显示。
@@ -1418,10 +1419,9 @@ function initTocScrollSpy() {
   updateFromScroll();
 }
 
-// copyBlock 为 Markdown 块包裹复制按钮。
+// copyBlock 渲染 Markdown 文本块（段落、列表项、代码块）。
 function copyBlock(tag, text) {
-  const value = decodeEntities(text);
-  return "<" + tag + " class='copyable'>" + inline(text) + "<button class='copy-btn' onclick='copyText(event,\"" + escJS(value) + "\")'>复制</button></" + tag + ">";
+  return "<" + tag + ">" + inline(text) + "</" + tag + ">";
 }
 
 // copySection 复制标题下直到同级或更高级标题前的全部内容。
@@ -1458,6 +1458,7 @@ function blockText(el) {
     ).join("\n");
   }
   if (clone.tagName === "PRE") return clone.textContent.replace(/\s+$/, "");
+  if (clone.tagName === "FIGURE") return "";
   return clone.textContent.replace(/\s+/g, " ").trim();
 }
 
