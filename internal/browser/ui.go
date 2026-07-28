@@ -430,11 +430,26 @@ const indexHTML = `<!doctype html>
       min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
       font-size:12px; color:rgb(100 116 139); background:transparent; padding:0;
     }
-    .path-bar button {
-      flex-shrink:0; border:0; background:transparent; padding:0;
-      color:rgb(56 189 248); font:inherit; font-size:12px; cursor:pointer;
+    .path-actions.compact {
+      flex-shrink:0; display:inline-flex; align-items:stretch;
+      border:1px solid rgb(71 85 105 / 0.7); border-radius:8px; overflow:hidden;
+      background:rgb(2 6 23 / 0.82);
     }
-    .path-bar button:hover { color:rgb(125 211 252); }
+    .path-actions.compact > button {
+      margin:0; border:0; border-radius:0; border-right:1px solid rgb(71 85 105 / 0.55);
+      background:transparent; color:rgb(226 232 240);
+      padding:5px 10px; font:inherit; font-size:12px; line-height:1.2; cursor:pointer;
+      white-space:nowrap;
+      transition:color .15s ease, background .15s ease;
+    }
+    .path-actions.compact > button:last-child { border-right:0; }
+    .path-actions.compact > button:hover {
+      color:rgb(186 230 253); background:rgb(30 41 59 / 0.85);
+    }
+    .path-actions.compact > button.danger { color:rgb(254 202 202); }
+    .path-actions.compact > button.danger:hover {
+      color:rgb(255 255 255); background:rgb(185 28 28 / 0.7);
+    }
     .gallery-card .meta {
       padding:0 10px 10px; min-width:0;
     }
@@ -553,6 +568,42 @@ const indexHTML = `<!doctype html>
     .lightbox-nav.prev { left:12px; }
     .lightbox-nav.next { right:12px; }
     .lightbox-nav:disabled { opacity:.28; cursor:default; pointer-events:none; }
+    .confirm-dialog {
+      position:fixed; inset:0; z-index:60;
+      display:flex; align-items:center; justify-content:center;
+      background:rgb(2 6 23 / 0.72); padding:24px;
+    }
+    .confirm-dialog[hidden] { display:none; }
+    .confirm-card {
+      width:min(420px, 100%);
+      border:1px solid rgb(71 85 105 / 0.8); border-radius:14px;
+      background:rgb(15 23 42); box-shadow:0 24px 60px rgb(0 0 0 / 0.45);
+      padding:20px 20px 16px; color:rgb(226 232 240);
+    }
+    .confirm-card h2 {
+      margin:0 0 8px; font-size:16px; font-weight:600; color:rgb(248 250 252);
+    }
+    .confirm-card p {
+      margin:0; font-size:13px; line-height:1.55; color:rgb(148 163 184);
+      white-space:pre-wrap; word-break:break-word;
+    }
+    .confirm-card .confirm-target {
+      margin-top:10px; padding:8px 10px; border-radius:8px;
+      background:rgb(2 6 23 / 0.65); border:1px solid rgb(51 65 85 / 0.8);
+      color:rgb(226 232 240); font-size:13px; font-weight:500;
+    }
+    .confirm-actions {
+      display:flex; justify-content:flex-end; gap:8px; margin-top:18px;
+    }
+    .confirm-actions button {
+      border-radius:8px; padding:7px 12px; font:inherit; font-size:13px; cursor:pointer;
+      border:1px solid rgb(71 85 105 / 0.8); background:rgb(30 41 59); color:rgb(226 232 240);
+    }
+    .confirm-actions button:hover { border-color:rgb(100 116 139); }
+    .confirm-actions button.danger {
+      background:rgb(185 28 28 / 0.85); border-color:rgb(248 113 113 / 0.45); color:rgb(255 255 255);
+    }
+    .confirm-actions button.danger:hover { background:rgb(220 38 38 / 0.95); }
   </style>
 </head>
 <body class="text-slate-100">
@@ -638,6 +689,17 @@ const indexHTML = `<!doctype html>
     </div>
   </div>
 </div>
+<div id="confirmDialog" class="confirm-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="confirmTitle" onclick="settleConfirm(false)">
+  <div class="confirm-card" onclick="event.stopPropagation()">
+    <h2 id="confirmTitle">确认删除</h2>
+    <p id="confirmMessage"></p>
+    <div id="confirmTarget" class="confirm-target" hidden></div>
+    <div class="confirm-actions">
+      <button type="button" id="confirmCancelBtn" onclick="event.stopPropagation(); settleConfirm(false)">取消</button>
+      <button type="button" class="danger" id="confirmOkBtn" onclick="event.stopPropagation(); settleConfirm(true)">确认删除</button>
+    </div>
+  </div>
+</div>
 <script>
 let activePath = "";
 let refreshTimer = null;
@@ -647,6 +709,7 @@ let galleryIndex = -1;
 let markdownAssetMode = "output"; // output: /raw ; doc: /doc-asset（README）
 let markdownBasePath = "";
 let rootName = "output";
+let confirmResolver = null;
 
 // openReadme 加载项目 README，作为用户使用说明预览。
 async function openReadme() {
@@ -858,15 +921,8 @@ function renderDirContent(data) {
       + renderFileList(others);
   }
   if (!body) body = "<div class='text-slate-500'>空目录</div>";
-  const canDelete = !!(data.path);
-  const titleRow = "<div class='mb-1 flex items-center justify-between gap-3 flex-wrap'>"
-    + "<h1 class='m-0 text-xl font-semibold tracking-tight'>" + esc(data.name || "output") + "</h1>"
-    + (canDelete
-      ? "<div class='preview-actions in-header'>"
-        + "<button type='button' class='preview-action danger' onclick='deleteDirectory(\"" + escJS(data.path) + "\",\"" + escJS(data.name) + "\")'>删除目录</button>"
-        + "</div>"
-      : "")
-    + "</div>";
+  const titleRow = "<div class='mb-1'><h1 class='m-0 text-xl font-semibold tracking-tight'>"
+    + esc(data.name || "output") + "</h1></div>";
   document.getElementById("content").innerHTML = contentShell(
     contentHeader(data, titleRow),
     body
@@ -1031,9 +1087,18 @@ async function deleteDirectory(path, name) {
     return;
   }
   const label = name || rel.split("/").pop() || rel;
-  if (!window.confirm("确认删除该目录及其全部内容？此操作不可恢复。\n\n" + label)) return;
+  const ok = await askConfirm({
+    title: "确认删除目录",
+    message: "将永久删除该目录及其全部内容，此操作不可恢复。",
+    target: label,
+    confirmLabel: "确认删除"
+  });
+  if (!ok) return;
 
-  const res = await fetch("/api/file?path=" + encodeURIComponent(rel), { method: "DELETE" });
+  const res = await fetch("/api/file?path=" + encodeURIComponent(rel) + "&confirm=1", {
+    method: "DELETE",
+    headers: { "X-Confirm-Delete": "1" }
+  });
   let payload = null;
   try { payload = await res.json(); } catch (_) {}
   if (!res.ok) {
@@ -1057,7 +1122,13 @@ function sameRelPath(a, b) {
 async function deleteImage(path, name, options) {
   const keepLightbox = !!(options && options.keepLightbox);
   const label = name || String(path || "").split("/").pop() || path;
-  if (!window.confirm("确认删除该图片？此操作不可恢复。\n\n" + label)) return;
+  const ok = await askConfirm({
+    title: "确认删除图片",
+    message: "将永久删除该图片，此操作不可恢复。",
+    target: label,
+    confirmLabel: "确认删除"
+  });
+  if (!ok) return;
 
   const parent = parentPath(path);
   let siblings;
@@ -1076,7 +1147,10 @@ async function deleteImage(path, name, options) {
     else if (idx - 1 >= 0) nextPath = siblings[idx - 1].path; // 已是最后一张则前一张
   }
 
-  const res = await fetch("/api/file?path=" + encodeURIComponent(path || ""), { method: "DELETE" });
+  const res = await fetch("/api/file?path=" + encodeURIComponent(path || "") + "&confirm=1", {
+    method: "DELETE",
+    headers: { "X-Confirm-Delete": "1" }
+  });
   let payload = null;
   try { payload = await res.json(); } catch (_) {}
   if (!res.ok) {
@@ -1136,6 +1210,14 @@ async function refreshGalleryImages(parent) {
 }
 
 document.addEventListener("keydown", event => {
+  const confirmBox = document.getElementById("confirmDialog");
+  if (confirmBox && !confirmBox.hidden) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      settleConfirm(false);
+    }
+    return;
+  }
   const box = document.getElementById("lightbox");
   if (!box || box.hidden) return;
   if (event.key === "Escape") closeLightbox();
@@ -1143,16 +1225,91 @@ document.addEventListener("keydown", event => {
   else if (event.key === "ArrowRight") galleryStep(1);
 });
 
-// renderPathBar 显示可复制的本地绝对路径，便于在访达/资源管理器中定位。
+// askConfirm 显示页面内确认框（不依赖浏览器原生 confirm，避免被拦截后静默通过/失败）。
+function askConfirm(options) {
+  const opts = options || {};
+  const box = document.getElementById("confirmDialog");
+  const titleEl = document.getElementById("confirmTitle");
+  const msgEl = document.getElementById("confirmMessage");
+  const targetEl = document.getElementById("confirmTarget");
+  const okBtn = document.getElementById("confirmOkBtn");
+  const cancelBtn = document.getElementById("confirmCancelBtn");
+  if (!box || !titleEl || !msgEl || !okBtn || !cancelBtn) return Promise.resolve(false);
+
+  // 若已有未完成确认，先取消旧的，避免 Promise 永久挂起。
+  if (confirmResolver) settleConfirm(false);
+
+  titleEl.textContent = opts.title || "请确认";
+  msgEl.textContent = opts.message || "";
+  if (opts.target) {
+    targetEl.hidden = false;
+    targetEl.textContent = opts.target;
+  } else {
+    targetEl.hidden = true;
+    targetEl.textContent = "";
+  }
+  okBtn.textContent = opts.confirmLabel || "确认";
+  box.hidden = false;
+  setTimeout(() => { try { okBtn.focus(); } catch (_) {} }, 0);
+
+  return new Promise(resolve => {
+    confirmResolver = resolve;
+  });
+}
+
+// settleConfirm 关闭确认框并返回用户选择。
+function settleConfirm(ok) {
+  const box = document.getElementById("confirmDialog");
+  const resolve = confirmResolver;
+  confirmResolver = null;
+  if (box) box.hidden = true;
+  if (resolve) resolve(!!ok);
+}
+
+// renderPathBar 显示本地绝对路径，右侧为 Compact 按钮组（删除/复制/打开）。
 function renderPathBar(data) {
   const abs = data.absPath || "";
   if (!abs) return "";
   const folderPath = data.type === "dir" ? abs : abs.replace(/[/\\][^/\\]+$/, "") || abs;
   const showPath = data.type === "dir" ? abs : folderPath;
+  const rel = (data && data.path != null) ? data.path : "";
+  // README 位于 output 外，打开文件夹 API 只允许 output 内路径。
+  const canOpen = activePath !== "__readme__";
+  const canDeleteDir = data.type === "dir" && !!rel;
+  const actions = "<div class='path-actions compact' role='group' aria-label='路径操作'>"
+    + (canDeleteDir
+      ? "<button type='button' class='danger' onclick='event.stopPropagation(); deleteDirectory(\"" + escJS(rel) + "\",\"" + escJS(data.name || "") + "\")'>删除目录</button>"
+      : "")
+    + "<button type='button' onclick='event.stopPropagation(); copyText(event,\"" + escJS(showPath) + "\")'>复制路径</button>"
+    + (canOpen
+      ? "<button type='button' onclick='event.stopPropagation(); openFolder(event,\"" + escJS(rel) + "\")'>打开文件夹</button>"
+      : "")
+    + "</div>";
   return "<div class='path-bar'>"
     + "<code title='" + escAttr(showPath) + "'>" + esc(showPath) + "</code>"
-    + "<button type='button' onclick='copyText(event,\"" + escJS(showPath) + "\")'>复制路径</button>"
+    + actions
     + "</div>";
+}
+
+// openFolder 请求本地服务在操作系统文件管理器中打开对应目录。
+async function openFolder(event, relPath) {
+  event.stopPropagation();
+  const btn = event.currentTarget;
+  try {
+    btn.disabled = true;
+    const res = await fetch("/api/open-folder?path=" + encodeURIComponent(relPath || ""), { method: "POST" });
+    if (!res.ok) {
+      flashCopied(btn, "打开失败");
+      console.error(await res.text());
+      return;
+    }
+    flashCopied(btn, "已打开");
+  } catch (err) {
+    flashCopied(btn, "打开失败");
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // renderMarkdownPreview 渲染 Markdown 正文；目录默认浮在内容区外，窄屏时进入内容区。

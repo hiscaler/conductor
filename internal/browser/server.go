@@ -42,6 +42,9 @@ type server struct {
 	root string
 }
 
+// openFolderImpl 在文件管理器中打开目录；测试可替换以避免真正拉起系统程序。
+var openFolderImpl = openInFileManager
+
 // NewHandler 创建物料浏览器的 HTTP 处理器，可供桌面 WebView 或纯 HTTP 模式复用。
 func NewHandler(root string) http.Handler {
 	mux := http.NewServeMux()
@@ -49,6 +52,7 @@ func NewHandler(root string) http.Handler {
 	mux.HandleFunc("/", s.index)
 	mux.HandleFunc("/api/tree", s.tree)
 	mux.HandleFunc("/api/file", s.file)
+	mux.HandleFunc("/api/open-folder", s.openFolder)
 	mux.HandleFunc("/api/readme", s.readme)
 	mux.HandleFunc("/raw", s.raw)
 	mux.HandleFunc("/doc-asset", s.docAsset)
@@ -143,7 +147,12 @@ func (s *server) getFile(w http.ResponseWriter, r *http.Request) {
 }
 
 // deleteFile 删除 output 根目录内的图片文件，或 output 下的非根子目录（含子内容）。
+// 必须显式确认（请求头 X-Confirm-Delete: 1 或 query confirm=1），防止误删。
 func (s *server) deleteFile(w http.ResponseWriter, r *http.Request) {
+	if !deleteConfirmed(r) {
+		writeError(w, errors.New("missing delete confirmation"), http.StatusBadRequest)
+		return
+	}
 	rel := r.URL.Query().Get("path")
 	full, err := s.clean(rel)
 	if err != nil {
@@ -195,6 +204,48 @@ func (s *server) deleteFile(w http.ResponseWriter, r *http.Request) {
 		"parent": parent,
 		"type":   deletedType,
 	})
+}
+
+// openFolder 在操作系统文件管理器中打开路径对应目录（文件则打开其所在目录）。
+// 仅允许 output 根目录内的相对路径，防止逃逸。
+func (s *server) openFolder(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
+		writeError(w, errors.New("method not allowed"), http.StatusMethodNotAllowed)
+		return
+	}
+	rel := r.URL.Query().Get("path")
+	full, err := s.clean(rel)
+	if err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	folder, err := revealFolderPath(full)
+	if err != nil {
+		if os.IsNotExist(err) {
+			writeError(w, errors.New("path not found"), http.StatusNotFound)
+			return
+		}
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	// 先回响应再拉起文件管理器，避免 explorer/open 启动慢拖住按钮反馈。
+	go func(target string) {
+		_ = openFolderImpl(target)
+	}(folder)
+	writeJSON(w, map[string]any{
+		"ok":     true,
+		"folder": folder,
+	})
+}
+
+// deleteConfirmed 检查删除请求是否已通过前端确认门禁。
+// 同时接受 header 与 query，避免部分 WebView 丢弃自定义请求头。
+func deleteConfirmed(r *http.Request) bool {
+	if r.Header.Get("X-Confirm-Delete") == "1" {
+		return true
+	}
+	return r.URL.Query().Get("confirm") == "1"
 }
 
 // readme 返回项目 README.md，方便用户在浏览器内查看使用说明。
