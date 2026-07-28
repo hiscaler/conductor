@@ -373,13 +373,25 @@ assert.match(files["platforms/image-set-rules.md"], /姓名专用字段可写 `A
 assert.match(files["platforms/image-set-rules.md"], /商品具备定制能力不等于本 Listing 启用卖家定制/);
 assert.match(files["platforms/image-set-rules.md"], /两者都是 Temu 独立必备图型/);
 assert.match(files["platforms/image-set-rules.md"], /定制类商品默认 `9 张`/);
+assert.match(files["platforms/image-set-rules.md"], /场景对比图（选填）/);
+assert.match(files["platforms/image-set-rules.md"], /未启用场景对比图不影响套图完成状态/);
+assert.match(files["platforms/image-set-rules.md"], /不得替换主图、到手内容\/包装图、定制操作示意图、尺寸规格图、尺寸对比图或日常使用场景图/);
 assert.match(files["platforms/image-technical-specs.md"], /尺寸规格图和尺寸对比图均为独立必备图/);
+assert.match(files["platforms/image-technical-specs.md"], /场景对比图为选填增强图，不计入必备图型/);
 assert.match(coreAgent, /Temu 定制类商品默认 `应生成图片数=9`/);
 assert.match(coreAgent, /尺寸对比图通过真实比例验收/);
+assert.match(coreAgent, /场景对比图按选填增强图处理/);
+assert.match(coreAgent, /未启用场景对比图不影响完成状态/);
 assert.match(files["agents/visual-production-agent.md"], /`应生成图片数` 默认为 9/);
+assert.match(files["agents/visual-production-agent.md"], /Temu 场景对比图是选填的使用效果增强图/);
+assert.match(files["agents/visual-production-agent.md"], /不增加固定完成数量/);
 assert.match(files["docs/agent-testing.md"], /Temu 定制类默认 9 张图/);
 assert.match(files["docs/agent-testing.md"], /尺寸对比图与尺寸规格图为两个独立文件/);
+assert.match(files["docs/agent-testing.md"], /场景对比图为条件式选填/);
+assert.match(output, /#### Temu 场景对比图决策/);
+assert.match(output, /未启用场景对比图不得列为缺失图片/);
 assert.match(rules, /Temu 另将“尺寸对比图”作为独立必备图型/);
+assert.match(rules, /Temu 后台标注的“场景对比图”按选填增强图处理/);
 
 const productInput = files["templates/product-input.md"];
 for (const field of ["商品具备定制能力", "卖家定制服务", "非卖家定制定位", "默认到手状态"]) {
