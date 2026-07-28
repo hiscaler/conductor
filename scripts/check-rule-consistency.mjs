@@ -23,6 +23,7 @@ const files = Object.fromEntries(
       "platforms/platform-profiles.md",
       "platforms/commerce-semantic-creative-rules.md",
       "platforms/image-set-rules.md",
+      "platforms/image-technical-specs.md",
       "templates/chat-output.md",
       "templates/product-input.md",
       "templates/production-output.md",
@@ -294,6 +295,7 @@ for (const imageType of [
   "到手内容/包装图",
   "定制操作示意图",
   "尺寸规格图",
+  "尺寸对比图",
   "细节放大图",
   "日常使用场景图",
   "情绪/礼赠场景图",
@@ -326,7 +328,8 @@ assert.match(output, /与定制母版不一致/);
 assert.match(output, /按“商品结构 \+ 定制位置 \+ 输入类型 \+ 定制工艺”归组/);
 assert.match(output, /只选择一个视觉清晰的代表商品演示一次/);
 assert.match(output, /不得把 `Text`、`Image` 等输入类型分别指向两个同类型组件/);
-assert.match(output, /尺寸参考物按条件启用/);
+assert.match(output, /尺寸规格图和尺寸对比图必须分开处理/);
+assert.match(output, /Temu 两张均为独立必备图/);
 assert.match(output, /`Size Reference`/);
 assert.match(output, /`Per Item` 与实际套装数量/);
 assert.match(output, /图片生产前执行资料充足性门禁/);
@@ -355,7 +358,8 @@ assert.match(files["agents/visual-production-agent.md"], /必须先生成并验�
 assert.match(files["agents/visual-production-agent.md"], /默认一套图只展示一个定制母版/);
 assert.match(files["agents/visual-production-agent.md"], /同组组件只选择一个视觉清晰的代表商品演示一次/);
 assert.match(files["agents/visual-production-agent.md"], /不得使用 `Upload Your Image` 指向没有图片内容的空白区域/);
-assert.match(files["agents/visual-production-agent.md"], /生成尺寸图前判断是否需要参考物/);
+assert.match(files["agents/visual-production-agent.md"], /尺寸规格图和尺寸对比图是两个独立图型/);
+assert.match(files["agents/visual-production-agent.md"], /Temu 两张均为必备图/);
 assert.match(files["agents/visual-production-agent.md"], /比例失真或可能被误认作到手内容时判定为不可用/);
 assert.match(files["agents/visual-production-agent.md"], /资料充足性门禁/);
 assert.match(files["agents/visual-production-agent.md"], /暂停该图，继续生成其他事实充分的图片/);
@@ -367,6 +371,15 @@ assert.match(files["agents/visual-production-agent.md"], /商品具备定制能�
 assert.match(files["agents/visual-production-agent.md"], /卖家定制服务为 `待确认`：暂停定制资产生产/);
 assert.match(files["platforms/image-set-rules.md"], /姓名专用字段可写 `Add Your Name`，自由文字字段写 `Add Your Text`/);
 assert.match(files["platforms/image-set-rules.md"], /商品具备定制能力不等于本 Listing 启用卖家定制/);
+assert.match(files["platforms/image-set-rules.md"], /两者都是 Temu 独立必备图型/);
+assert.match(files["platforms/image-set-rules.md"], /定制类商品默认 `9 张`/);
+assert.match(files["platforms/image-technical-specs.md"], /尺寸规格图和尺寸对比图均为独立必备图/);
+assert.match(coreAgent, /Temu 定制类商品默认 `应生成图片数=9`/);
+assert.match(coreAgent, /尺寸对比图通过真实比例验收/);
+assert.match(files["agents/visual-production-agent.md"], /`应生成图片数` 默认为 9/);
+assert.match(files["docs/agent-testing.md"], /Temu 定制类默认 9 张图/);
+assert.match(files["docs/agent-testing.md"], /尺寸对比图与尺寸规格图为两个独立文件/);
+assert.match(rules, /Temu 另将“尺寸对比图”作为独立必备图型/);
 
 const productInput = files["templates/product-input.md"];
 for (const field of ["商品具备定制能力", "卖家定制服务", "非卖家定制定位", "默认到手状态"]) {
@@ -397,7 +410,8 @@ assert.match(rules, /先生成并验收主图，再把主图中的最终定制�
 assert.match(rules, /不得逐张独立随机生成新的定制方案/);
 assert.match(rules, /组合内定制关系/);
 assert.match(rules, /同一类型.*只选择其中一个代表商品演示一次/);
-assert.match(rules, /只有商品大小难以直观判断、其他场景图未提供可靠尺度感且存在稳定参照时/);
+assert.match(rules, /Temu 另将“尺寸对比图”作为独立必备图型/);
+assert.match(rules, /两张图不得合并或互相替代/);
 assert.match(rules, /`Dimensions Shown Per Item`/);
 assert.match(rules, /商品“具备定制能力”和“本 Listing 是否启用卖家定制服务”必须分开记录/);
 assert.match(rules, /不得把普通成品和 DIY 空白基底拆成同级选项/);
