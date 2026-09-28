@@ -34,7 +34,7 @@ func TestRevealFolderPath(t *testing.T) {
 }
 
 func TestFileManagerCommand(t *testing.T) {
-	folder := filepath.Join("D:", "wwwroot", "output")
+	folder := filepath.Join(t.TempDir(), "output")
 	cases := []struct {
 		goos string
 		bin  string
