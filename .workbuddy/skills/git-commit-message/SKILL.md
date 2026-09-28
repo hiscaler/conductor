@@ -23,6 +23,7 @@ agent_created: true
 
 1. 用 Read 工具 **全量读取** `<项目根目录>/.cursor/skills/git-commit-message/SKILL.md`。
 2. 严格按刚刚读取的 Cursor 版 SKILL.md 中的**全部规则**撰写提交消息并执行提交流程（消息格式、Sign 取值、仅处理 staged、staged 为空的处理、提交前格式化、确认后再提交等）。本文件不重复罗列这些规则。
+3. **提交前必须再次运行 `git diff --cached` 复核暂存内容**：若暂存区相比拟定消息时已发生变化（例如用户重新 `git add` / `git restore --staged`、切换了待提交文件），必须基于当前 staged 重新撰写消息，**严禁套用旧消息直接提交**。消息与 `git diff --cached` 描述的对象、文件、性质必须一致后才可执行 `git commit`。
 3. 若 `.cursor` 版规则与本文有任何出入，以 `.cursor` 版为准（它才是事实源）。
 
 ## 维护约定
