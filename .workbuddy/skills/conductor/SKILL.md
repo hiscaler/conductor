@@ -47,6 +47,7 @@ agent_created: true
 
 - 文案、研究、竞品、QA、供应链、数据复盘等文本类产出可直接完成。
 - 需要生成 AI 商品图 / 视频时，使用 WorkBuddy 内置的图像 / 视频生成能力（ImageGen / VideoGen），并按 `platforms/image-*.md`、`platforms/video-*.md` 的规格与套图结构产出，同时保留每张图的脚本、提示词、生成路径与图片验收报告。
+- 图像几何校验、像素探针自检、标注必须位于商品轮廓外等强制纪律见 `AGENTS.md` §7A（项目主规则），本技能不重复定义；视觉生产相关 agent 指令见 `agents/visual-production-agent.md`。
 
 ## 入口菜单（用户说 hello 等时输出，原文见 workflows/start-guide.md）
 
