@@ -169,6 +169,11 @@ const indexHTML = `<!doctype html>
     .tree, .tree ul { list-style:none; margin:0; padding-left:14px; }
     .tree { padding-left:0; }
     .collapsed > ul { display:none; }
+    .tree .node-name { min-width:0; flex:1 1 auto; overflow-wrap:anywhere; word-break:break-word; }
+    .tree .node-time {
+      margin-left:4px; font-size:11px; color:rgb(100 116 139);
+      font-variant-numeric:tabular-nums; white-space:nowrap;
+    }
     .markdown { line-height:1.7; min-width:0; overflow-wrap:anywhere; word-break:break-word; }
     .markdown-shell { display:block; min-width:0; }
     /* 宽屏：目录固定在内容区外，不占正文宽度；窄屏：收进内容区内并可折叠 */
@@ -345,6 +350,15 @@ const indexHTML = `<!doctype html>
     .header-link:focus-visible { outline:1px solid rgb(56 189 248 / 0.5); outline-offset:2px; }
     .header-link svg { width:16px; height:16px; stroke-width:1.6; opacity:.9; }
     .header-link:hover svg { opacity:1; }
+    .header-link.is-refreshing svg { animation: refresh-spin .7s linear; }
+    .header-link.is-refreshed {
+      color:rgb(186 230 253); background:rgb(56 189 248 / 0.14);
+    }
+    @keyframes refresh-spin { to { transform:rotate(360deg); } }
+    .layout-aside.is-refreshed {
+      box-shadow:inset 0 0 0 1px rgb(56 189 248 / 0.45);
+      transition:box-shadow .2s ease;
+    }
     .header-sep {
       width:1px; height:18px; margin:0 10px;
       background:rgb(71 85 105 / 0.9);
@@ -621,7 +635,7 @@ const indexHTML = `<!doctype html>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8 4.5h6.2L17.5 7.8V19.5H8z"/><path stroke-linecap="round" d="M10.2 11h3.8M10.2 14.2h3.8"/></svg>
         <span>使用说明</span>
       </button>
-      <button class="header-link" type="button" onclick="loadTree()">
+      <button id="refreshBtn" class="header-link" type="button" onclick="manualRefresh(event)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.8 12a7.2 7.2 0 0 1 12.3-5.1M19.2 12a7.2 7.2 0 0 1-12.3 5.1"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.8 4.2V8h-3.8M7.2 19.8V16h3.8"/></svg>
         <span>刷新</span>
       </button>
@@ -710,6 +724,10 @@ let markdownAssetMode = "output"; // output: /raw ; doc: /doc-asset（README）
 let markdownBasePath = "";
 let rootName = "output";
 let confirmResolver = null;
+let assetNonce = 0;
+let refreshBusy = false;
+
+const FETCH_NO_STORE = { cache: "no-store" };
 
 // openReadme 加载项目 README，作为用户使用说明预览。
 async function openReadme() {
@@ -717,7 +735,7 @@ async function openReadme() {
   markdownAssetMode = "doc";
   markdownBasePath = "";
   markActive();
-  const res = await fetch("/api/readme");
+  const res = await fetch("/api/readme", FETCH_NO_STORE);
   if (!res.ok) {
     document.getElementById("content").innerHTML = "<div class='text-slate-500'>README.md 读取失败</div>";
     return;
@@ -728,13 +746,63 @@ async function openReadme() {
 
 // loadTree 刷新左侧目录树，并保留展开状态和当前选中项。
 async function loadTree() {
-  const res = await fetch("/api/tree");
-  if (!res.ok) return;
-  const data = await res.json();
-  rootName = data.name || "output";
-  rememberExpanded();
-  document.getElementById("tree").innerHTML = renderChildren(data.children || [], 1);
-  if (activePath) markActive();
+  try {
+    const res = await fetch("/api/tree", FETCH_NO_STORE);
+    if (!res.ok) return false;
+    const data = await res.json();
+    rootName = data.name || "output";
+    rememberExpanded();
+    document.getElementById("tree").innerHTML = renderChildren(data.children || [], 1);
+    if (activePath) markActive();
+    return true;
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
+}
+
+// manualRefresh 手动刷新目录树和当前预览，并给出按钮/侧栏反馈。
+async function manualRefresh(event) {
+  if (refreshBusy) return;
+  refreshBusy = true;
+  const btn = (event && event.currentTarget) || document.getElementById("refreshBtn");
+  const aside = document.getElementById("layoutAside");
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add("is-refreshing");
+    btn.classList.remove("is-refreshed");
+  }
+  assetNonce = Date.now();
+  let ok = false;
+  try {
+    ok = await loadTree();
+    if (ok) {
+      if (!activePath || activePath === "__readme__") await openReadme();
+      else await openPath(activePath);
+    }
+  } catch (err) {
+    ok = false;
+    console.error(err);
+  } finally {
+    refreshBusy = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove("is-refreshing");
+    }
+  }
+  if (ok) {
+    if (btn) {
+      btn.classList.add("is-refreshed");
+      flashCopied(btn, "已刷新");
+      setTimeout(() => btn.classList.remove("is-refreshed"), 900);
+    }
+    if (aside) {
+      aside.classList.add("is-refreshed");
+      setTimeout(() => aside.classList.remove("is-refreshed"), 600);
+    }
+  } else if (btn) {
+    flashCopied(btn, "刷新失败");
+  }
 }
 
 // renderChildren 渲染指定层级下的目录节点列表。
@@ -745,13 +813,14 @@ function renderChildren(children, depth) {
 // renderNode 渲染左侧树中的单个文件或目录节点。
 function renderNode(n, depth) {
   const icon = n.type === "dir" ? "📁" : iconFor(n.type);
-  const meta = n.type === "dir" ? "" : "<span class='ml-auto text-xs text-slate-400'>" + formatSize(n.size || 0) + "</span>";
+  const when = n.modTime ? "<span class='node-time'>（" + esc(n.modTime) + "）</span>" : "";
+  const meta = n.type === "dir" ? "" : "<span class='ml-auto shrink-0 text-xs text-slate-400'>" + formatSize(n.size || 0) + "</span>";
   const hasChildren = n.type === "dir" && n.children && n.children.length;
   const shouldCollapse = hasChildren && depth >= 2 && !expandedPaths.has(n.path);
   const liClass = shouldCollapse ? " class='collapsed'" : "";
   const twisty = hasChildren ? "<span class='twisty w-4 text-center text-slate-400'>" + (shouldCollapse ? "▶" : "▼") + "</span>" : "<span class='w-4'></span>";
   const child = hasChildren ? "<ul>" + renderChildren(n.children, depth + 1) + "</ul>" : "";
-  return "<li" + liClass + "><button class='node flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-slate-200 hover:bg-slate-800 hover:text-blue-300' data-path='" + escAttr(n.path) + "' onclick='handleNodeClick(event,\"" + escJS(n.path) + "\"," + (hasChildren ? "true" : "false") + ")'>" + twisty + "<span class='w-5 text-center text-slate-400'>" + icon + "</span><span>" + esc(n.name) + "</span>" + meta + "</button>" + child + "</li>";
+  return "<li" + liClass + "><button class='node flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-slate-200 hover:bg-slate-800 hover:text-blue-300' data-path='" + escAttr(n.path) + "' onclick='handleNodeClick(event,\"" + escJS(n.path) + "\"," + (hasChildren ? "true" : "false") + ")'>" + twisty + "<span class='w-5 shrink-0 text-center text-slate-400'>" + icon + "</span><span class='node-name'>" + esc(n.name) + when + "</span>" + meta + "</button>" + child + "</li>";
 }
 
 // iconFor 根据文件类型选择显示图标。
@@ -816,7 +885,7 @@ async function openPath(path) {
   markdownAssetMode = "output";
   markdownBasePath = parentPath(path);
   markActive();
-  const res = await fetch("/api/file?path=" + encodeURIComponent(path));
+  const res = await fetch("/api/file?path=" + encodeURIComponent(path), FETCH_NO_STORE);
   if (!res.ok) {
     document.getElementById("content").innerHTML = "<div class='text-slate-500'>读取失败</div>";
     return;
@@ -856,7 +925,7 @@ function renderContent(data) {
   }
   let body = "";
   if (data.type === "markdown") body = renderMarkdownPreview(data.content || "");
-  else if (data.type === "video") body = "<div><video class='max-w-full rounded-lg bg-black' src='" + escAttr(data.rawUrl) + "' controls></video></div>";
+  else if (data.type === "video") body = "<div><video class='max-w-full rounded-lg bg-black' src='" + escAttr(rawUrlFor(data.path)) + "' controls></video></div>";
   else if (data.type === "text" || data.type === "json") body = "<pre class='overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-900/60 p-4 text-slate-200'>" + esc(data.content || "") + "</pre>";
   else body = "<p><a href='" + escAttr(data.rawUrl) + "' target='_blank'>下载或打开文件</a></p>";
   const size = formatSize(data.size || 0);
@@ -953,7 +1022,7 @@ async function renderImageContent(data) {
   document.getElementById("content").innerHTML = contentShell(
     contentHeader(data, "<div class='mb-1 flex items-baseline gap-3'><h1 class='m-0 text-xl font-semibold tracking-tight'>" + esc(data.name) + "</h1>" + sizeHint + "</div>"),
     "<div class='relative inline-block max-w-full'>"
-      + "<img id='previewImage' class='max-w-full rounded-lg bg-slate-900' src='" + escAttr(data.rawUrl) + "' alt='" + escAttr(data.name) + "'>"
+      + "<img id='previewImage' class='max-w-full rounded-lg bg-slate-900' src='" + escAttr(rawUrlFor(data.path)) + "' alt='" + escAttr(data.name) + "'>"
       + "<div class='preview-actions'>"
       + "<button type='button' class='preview-action' onclick='copyImage(event)'>复制图片</button>"
       + "<button type='button' class='preview-action danger' onclick='deleteImage(\"" + escJS(data.path) + "\",\"" + escJS(data.name) + "\")'>删除</button>"
@@ -965,7 +1034,7 @@ async function renderImageContent(data) {
 // loadSiblingGallery 拉取当前图片所在目录的全部图片，渲染缩略图并支持灯箱切换。
 async function loadSiblingGallery(imagePath) {
   const parent = parentPath(imagePath);
-  const res = await fetch("/api/file?path=" + encodeURIComponent(parent));
+  const res = await fetch("/api/file?path=" + encodeURIComponent(parent), FETCH_NO_STORE);
   if (!res.ok) return;
   const data = await res.json();
   if (data.type !== "dir") return;
@@ -1000,7 +1069,8 @@ function renderGalleryCard(n, index, active) {
 
 // rawUrlFor 根据相对路径生成原始文件 URL。
 function rawUrlFor(path) {
-  return "/raw?path=" + encodeURIComponent(path || "");
+  const url = "/raw?path=" + encodeURIComponent(path || "");
+  return assetNonce ? url + "&t=" + assetNonce : url;
 }
 
 // parentPath 返回相对路径的父目录，根目录返回空字符串。
@@ -1191,7 +1261,7 @@ async function deleteImage(path, name, options) {
 
 // listSiblingImages 列出目录下全部图片（保持服务端排序）。
 async function listSiblingImages(parent) {
-  const res = await fetch("/api/file?path=" + encodeURIComponent(parent || ""));
+  const res = await fetch("/api/file?path=" + encodeURIComponent(parent || ""), FETCH_NO_STORE);
   if (!res.ok) return [];
   const data = await res.json();
   if (data.type !== "dir") return [];
@@ -1435,7 +1505,8 @@ function resolveMarkdownImageSrc(src) {
   if (/^(https?:|data:|blob:|\/)/i.test(path)) return path;
   path = path.replace(/^\.\//, "");
   if (markdownAssetMode === "doc") {
-    return "/doc-asset?path=" + encodeURIComponent(path);
+    const url = "/doc-asset?path=" + encodeURIComponent(path);
+    return assetNonce ? url + "&t=" + assetNonce : url;
   }
   const parts = [];
   for (const part of (markdownBasePath + "/" + path).split("/")) {
@@ -1443,7 +1514,7 @@ function resolveMarkdownImageSrc(src) {
     if (part === "..") parts.pop();
     else parts.push(part);
   }
-  return "/raw?path=" + encodeURIComponent(parts.join("/"));
+  return rawUrlFor(parts.join("/"));
 }
 
 // headingBlock 渲染标题块，并登记到目录导航。

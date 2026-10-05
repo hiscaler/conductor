@@ -383,33 +383,65 @@ func (s *server) readDir(rel string) ([]node, error) {
 			continue
 		}
 		childRel := filepath.Join(rel, entry.Name())
+		mod := info.ModTime()
 		n := node{
-			Name:    entry.Name(),
-			Path:    filepath.ToSlash(childRel),
-			ModTime: info.ModTime().Format("2006-01-02 15:04"),
+			Name: entry.Name(),
+			Path: filepath.ToSlash(childRel),
 		}
 		if entry.IsDir() {
 			n.Type = "dir"
 			children, err := s.readDir(childRel)
 			if err == nil {
 				n.Children = children
+				if latest := latestChildModTime(children); latest.After(mod) {
+					mod = latest
+				}
 			}
 		} else {
 			n.Type = kindFor(entry.Name())
 			n.Size = info.Size()
 		}
+		n.ModTime = formatTreeModTime(mod)
 		out = append(out, n)
 	}
-	sort.Slice(out, func(i, j int) bool {
-		if out[i].Type == "dir" && out[j].Type != "dir" {
-			return true
-		}
-		if out[i].Type != "dir" && out[j].Type == "dir" {
-			return false
+	sort.SliceStable(out, func(i, j int) bool {
+		ti, tj := parseTreeModTime(out[i].ModTime), parseTreeModTime(out[j].ModTime)
+		if !ti.Equal(tj) {
+			return ti.After(tj)
 		}
 		return strings.ToLower(out[i].Name) < strings.ToLower(out[j].Name)
 	})
 	return out, nil
+}
+
+const treeModTimeLayout = "2006-1-2 15:04"
+
+// formatTreeModTime 将修改时间格式化为左侧列表展示值，例如 2026-10-5 15:19。
+func formatTreeModTime(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	return t.In(time.Local).Format(treeModTimeLayout)
+}
+
+// parseTreeModTime 解析左侧列表使用的修改时间，供排序比较。
+func parseTreeModTime(s string) time.Time {
+	t, err := time.ParseInLocation(treeModTimeLayout, s, time.Local)
+	if err != nil {
+		return time.Time{}
+	}
+	return t
+}
+
+// latestChildModTime 取子树中最新的修改时间，让目录显示并按内容更新时间排序。
+func latestChildModTime(children []node) time.Time {
+	var latest time.Time
+	for _, child := range children {
+		if t := parseTreeModTime(child.ModTime); t.After(latest) {
+			latest = t
+		}
+	}
+	return latest
 }
 
 // skipEntry 判断目录树中应隐藏的系统或无关文件。
@@ -487,6 +519,7 @@ func queryEscapePath(path string) string {
 // writeJSON 输出带 UTF-8 头的 JSON 响应。
 func writeJSON(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	_ = enc.Encode(v)
