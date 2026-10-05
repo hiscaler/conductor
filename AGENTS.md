@@ -47,6 +47,8 @@
 - 同时必须按 `templates/production-output.md` 生成完整生产报告，文件名固定为 `上架/完整生产报告.md`。首次生产保存在 `output/{平台}-{市场}/{Listing标识}/`；再次生产时按目录版本规则改用 `output/{平台}-{市场}/{Listing标识}-v2/`、`-v3/`，不得给报告或其他文件名添加版本后缀，也不得静默覆盖。完整报告必须保留 16 个章节和所有表格；缺失信息写“未提供”或“待确认”，未执行章节写“本轮未执行”，下一步执行清单不能为空。
 - 完整生产报告必须在 16 个编号章节之前生成 `问题速览`：只汇总本轮未解决的 `🔴【阻塞】`、`🟠【高风险】`、`🟡【待确认】`，显示分类数量，并使用显式稳定锚点从速览跳转到对应章节详情。问题 ID 使用 `issue-{两位章节号}-{两位问题序号}`，详情提供返回 `#issue-summary` 的链接；不得依赖中文标题自动锚点，也不得把无关章节的“本轮未执行”计为问题。
 - 保存完整生产报告或独立验收报告后，运行 `node scripts/check-report-anchors.mjs <报告路径>`；锚点重复、速览链接没有对应详情或缺少 `issue-summary` 时不得交付。
+
+- **生成即校验（统一交付闸门，跨工具强制）**：正式产出每完成一个单元即跑对应单项校验，全部产出落盘后必须运行统一闸门 `node scripts/validate-listing.mjs <listing目录> [-p <平台>]`（等价 `npm run validate -- <listing目录> [-p <平台>]`）。该脚本统一跑全部 5 项强制校验——报告锚点（`check-report-anchors.mjs`）、Temu 描述长度（`temu-description-limit.mjs`）、输出结构（`check-output-layout.mjs`）、图像套图（`check-image-set.mjs`：交付目录仅收 PNG/JPG、1:1 且宽高≥800px、逐图须有 `.verify.json` 侧车确认水印已清与图案一致）、下一步动作范围（`next-action-scope.mjs`）——任一项未过即退出非 0，**未通过校验不得交付**。此门是 conductor 工作流内嵌的原子步骤，不依赖任何客户端 save-hook、不等 `git commit`（产出被 `output/.gitignore` 整体忽略、不进 git）；无论 WorkBuddy / Cursor / Codex 驱动本技能，都执行同一动作。本段为跨工具唯一事实源，客户端桥接文件（`.workbuddy/skills/conductor/SKILL.md`、`.cursor/skills/conductor/SKILL.md`）只引用此处、不得另写副本。
 - 用户选择“从选品到上架走完整流程”、要求完整上架包、执行上架前 QA/完整验收，或明确要求“完整报告”“完整 16 章”“按完整模板输出”时，聊天直接展开 `templates/production-output.md` 的 16 个章节。
 - 单项文案、图片、视频、找品、竞品、供应链、利润或合规任务不得在聊天中堆叠无关的“本轮未执行”；但保存的完整报告仍须保留这些章节。
 - 聊天简版缺少完成状态、相关产出、风险、保存路径或下一步动作，或者完整报告缺少 `## 1. 输入摘要` 至 `## 16. 下一步执行清单`，均视为未完成。
