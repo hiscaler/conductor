@@ -154,10 +154,10 @@ output/{平台}-{市场}/{Listing标识}[-vN]/
 | 17 | `regenerate_product_example` | 重新生成商品示例 | 保留商品名称、图片、平台和市场，重新生成包含营销建议与平台必需属性的完整可复制示例 | 条件建议 | 否 | `intake-agent`、`positioning-agent` | 完整商品示例、内部事实记录 | `output/{平台}-{市场}/{Listing版本目录}/商品资料示例.md` |
 | 18 | `research_supply_chain` | 供应链验证 | 从 1688、Alibaba、义乌购等可访问供应链平台查询 3-5 家候选供应商，并记录公开联系方式、店铺年限、销量/成交、评分、MOQ、价格和交期 | 建议 | 否 | `supply-chain-agent` | 供应商候选表、供应链风险、首批测试建议 | `output/{平台}-{市场}/{Listing版本目录}/供应链/供应商候选表.md` |
 | 19 | `view_full_production_report` | 查看完整生产报告 | 查看本 Listing 最新版本目录中的 16 章完整报告 | 可选 | 否 | `listing-strategy-agent` | 完整生产报告 | `output/{平台}-{市场}/{Listing标识}[-vN]/上架/完整生产报告.md` |
-| 20 | `revise_copy_assets` | 修改本轮文案 | 根据用户反馈修改本轮标题、描述或关键词，不扩大到其他内容载体 | 条件建议 | 否 | `copywriting-agent` | 新版本修订文案 | `output/{平台}-{市场}/{Listing标识}-vN/文案/文案资产.md` |
-| 21 | `regenerate_selected_images` | 重生成指定图片 | 只按用户指定编号重生成本轮商品图 | 条件建议 | 否 | `visual-production-agent` | 新版本指定图片、图片验收报告 | `output/{平台}-{市场}/{Listing标识}-vN/图片/` |
+| 20 | `revise_copy_assets` | 修改本轮文案 | 根据用户反馈修改本轮标题、描述或关键词，不扩大到其他内容载体；默认更新当前版本原路径 | 条件建议 | 否 | `copywriting-agent` | 当前版本修订文案 | `output/{平台}-{市场}/{Listing版本目录}/文案/文案资产.md` |
+| 21 | `regenerate_selected_images` | 重生成指定图片 | 用户反馈修订当前批次图片时，默认替换原版本对应图片并更新验收记录；只有开始新批次或用户明确要求新版本时才分配新版本 | 条件建议 | 否 | `visual-production-agent` | 当前版本指定图片、图片验收报告 | `output/{平台}-{市场}/{Listing版本目录}/图片/` |
 | 22 | `regenerate_current_scope` | 重新执行本轮任务 | 保持原启动菜单范围，创建新的 Listing 版本目录并重新生成同类产物 | 可选 | 否 | `Conductor Agent` | 与本轮相同类型的新版本产物 | `output/{平台}-{市场}/{Listing标识}-vN/` |
-| 23 | `revise_video_script` | 修改本轮视频脚本 | 只修改本轮已经请求的视频脚本 | 条件建议 | 否 | `visual-production-agent` | 新版本修订视频脚本 | `output/{平台}-{市场}/{Listing标识}-vN/视频/视频脚本.md` |
+| 23 | `revise_video_script` | 修改本轮视频脚本 | 只修改本轮已经请求的视频脚本；默认更新当前版本原路径 | 条件建议 | 否 | `visual-production-agent` | 当前版本修订视频脚本 | `output/{平台}-{市场}/{Listing版本目录}/视频/视频脚本.md` |
 | 24 | `view_current_assets` | 查看本轮产物 | 查看本轮实际生成并保存的文件，不创建新产物 | 建议 | 否 | `Conductor Agent` | 当前产物清单 | `output/{平台}-{市场}/{Listing版本目录}/` |
 | 25 | `refine_discovery_criteria` | 调整找品条件 | 修改本轮市场、关键词、人群或场景条件并继续候选筛选 | 条件建议 | 否 | `trend-and-video-discovery-agent` | 更新后的候选商品结果 | `output/{平台或待定}-{市场}/{找品标识}-vN/找品/趋势与短视频找品.md` |
 | 26 | `continue_product_evaluation` | 继续产品评估 | 补充本轮产品想法所需证据并更新是否值得做的判断 | 条件建议 | 否 | `product-selection-agent` | 更新后的产品评估 | `output/{平台或待定}-{市场}/{Listing标识}-vN/上架/完整生产报告.md` |
@@ -183,7 +183,7 @@ output/{平台}-{市场}/{Listing标识}[-vN]/
 - `generate_missing_images` 只处理记录为“暂停/未生成”且目标文件尚不存在的图片。动作执行前必须展示图片序号、暂停原因、最低补充资料、恢复目标 Listing 版本目录和预定文件路径；资料仍缺失时先索取最低必要值，不生成占位图。
 - 用户直接回复暂停记录所需资料，等同于选择 `generate_missing_images`，无需再次要求选择动作；系统复用当前商品档案、创意策略和套图脚本。
 - 同一未完成批次的断点续做写入原版本目录，不重新分配版本；动作授权包含新增缺失图片以及更新该版本的套图脚本、图片验收报告和完整生产报告，但不包含覆盖任何已存在图片。
-- 商品身份、外观、SKU/变体、销售数量或核心组件变化时，不执行断点续做，改为新生产批次；目标图片文件已经存在但不可用时使用 `regenerate_selected_images`，默认创建新版本，除非用户明确授权替换准确路径。
+- 商品身份、外观、SKU/变体、销售数量或核心组件等关键事实变化时，不执行断点续做，改为新生产批次。用户对当前批次已有图片提出修改意见时，使用 `regenerate_selected_images` 并默认替换同一 Listing 版本目录内对应固定路径的图片及相关验收记录；目标明确时反馈即视为替换授权，执行前说明准确路径，无需重复要求用户授权。只有用户明确要求新版本/新批次时才创建新版本；目标文件不明确时先澄清。
 - 如果动作执行失败，必须返回失败原因、已完成产物和下一步建议。
 
 ## 常见依赖
