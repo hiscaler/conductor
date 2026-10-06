@@ -117,6 +117,12 @@ for (const c of checks) {
   const code = res.status ?? 1;
   if (code === 0) {
     console.log(`· ${c.name.padEnd(22)} PASS`);
+    if (c.script === "check-image-set.mjs" && res.stdout) {
+      const reviewNotes = res.stdout.trim().split("\n").filter((line) =>
+        line.includes("仍须视觉核验") || line.includes("机器只检查侧车字段和比例算术"),
+      );
+      for (const note of reviewNotes) console.log(`    ${note.trim()}`);
+    }
     pass++;
   } else {
     console.log(`· ${c.name.padEnd(22)} FAIL  (exit ${code})`);

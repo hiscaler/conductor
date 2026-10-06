@@ -59,6 +59,102 @@ function getDimensions(buf, ext) {
   return null;
 }
 
+const SIZE_COMPARISON_RE = /(尺寸对比图|size[-_\s]?(comparison|reference))/i;
+const MAX_SCALE_ERROR_PCT = 3;
+
+function isPositiveNumber(value) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0;
+}
+
+function isHttpUrl(value) {
+  if (typeof value !== "string" || !value.trim()) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+function validateSizeComparisonEvidence(name, data) {
+  const errors = [];
+  const reference = data?.reference_object;
+  const scale = data?.scale_check;
+  const prefix = `尺寸对比证据缺失/无效：${name}`;
+
+  if (!reference || typeof reference !== "object") {
+    errors.push(`${prefix} 缺少 reference_object`);
+  } else {
+    for (const field of ["name", "model", "source_title"]) {
+      if (typeof reference[field] !== "string" || !reference[field].trim()) {
+        errors.push(`${prefix} reference_object.${field} 必须为非空字符串`);
+      }
+    }
+    for (const field of ["source_url", "visual_source_url"]) {
+      if (!isHttpUrl(reference[field])) {
+        errors.push(`${prefix} reference_object.${field} 必须是可打开核验的 HTTP(S) 来源链接`);
+      }
+    }
+    if (typeof reference.source_checked_at !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(reference.source_checked_at)) {
+      errors.push(`${prefix} reference_object.source_checked_at 必须为 YYYY-MM-DD`);
+    }
+    for (const field of ["identity_verified", "dimensions_verified", "appearance_verified"]) {
+      if (reference[field] !== true) {
+        errors.push(`${prefix} reference_object.${field} 必须在人工核验后设为 true`);
+      }
+    }
+    const dims = reference.dimensions_cm;
+    const hasWidth = isPositiveNumber(dims?.width_cm);
+    const hasDiameter = isPositiveNumber(dims?.diameter_cm);
+    if (!isPositiveNumber(dims?.height_cm) || (!hasWidth && !hasDiameter)) {
+      errors.push(`${prefix} reference_object.dimensions_cm 须含正数 height_cm 及 width_cm 或 diameter_cm`);
+    }
+  }
+
+  if (!scale || typeof scale !== "object") {
+    errors.push(`${prefix} 缺少 scale_check`);
+    return errors;
+  }
+
+  if (!["height", "width", "diameter"].includes(scale.axis)) {
+    errors.push(`${prefix} scale_check.axis 仅允许 height、width、diameter`);
+  }
+  for (const field of ["product_cm", "reference_cm", "product_px", "reference_px"]) {
+    if (!isPositiveNumber(scale[field])) errors.push(`${prefix} scale_check.${field} 必须为正数`);
+  }
+  if (scale.measured_in_final_image !== true) errors.push(`${prefix} 必须记录在最终落盘图片中测量像素边界`);
+  if (scale.labels_verified !== true) errors.push(`${prefix} 必须人工核实双方名称、尺寸标签`);
+  if (scale.dual_units_verified !== true) errors.push(`${prefix} 必须人工核实尺寸图中的双单位`);
+  if (!isPositiveNumber(scale.tolerance_pct) || scale.tolerance_pct > MAX_SCALE_ERROR_PCT) {
+    errors.push(`${prefix} scale_check.tolerance_pct 必须大于 0 且不超过 ${MAX_SCALE_ERROR_PCT}%`);
+  }
+
+  if (reference && scale.axis && isPositiveNumber(scale.reference_cm)) {
+    const dims = reference.dimensions_cm || {};
+    const sourceSize = scale.axis === "height"
+      ? dims.height_cm
+      : scale.axis === "diameter"
+        ? (dims.diameter_cm ?? dims.width_cm)
+        : dims.width_cm;
+    if (["height", "width", "diameter"].includes(scale.axis) && !isPositiveNumber(sourceSize)) {
+      errors.push(`${prefix} reference_object.dimensions_cm 缺少与 scale_check.axis=${scale.axis} 对应的真实尺寸`);
+    } else if (isPositiveNumber(sourceSize) && Math.abs(scale.reference_cm - sourceSize) / sourceSize > 0.001) {
+      errors.push(`${prefix} scale_check.reference_cm 与来源记录的 reference_object 尺寸不一致`);
+    }
+  }
+
+  if ([scale.product_cm, scale.reference_cm, scale.product_px, scale.reference_px, scale.tolerance_pct].every(isPositiveNumber)) {
+    const expectedRatio = scale.product_cm / scale.reference_cm;
+    const observedRatio = scale.product_px / scale.reference_px;
+    const errorPct = Math.abs(observedRatio / expectedRatio - 1) * 100;
+    if (errorPct > scale.tolerance_pct) {
+      errors.push(`${prefix} 比例误差 ${errorPct.toFixed(2)}% 超过侧车容差 ${scale.tolerance_pct}%（机器重算；默认最大容差 ${MAX_SCALE_ERROR_PCT}%）`);
+    }
+  }
+
+  return errors;
+}
+
 const checkImageSet = async (dirPath, platform) => {
   const root = resolve(dirPath);
   const entries = await readdir(root, { withFileTypes: true });
@@ -142,6 +238,10 @@ const checkImageSet = async (dirPath, platform) => {
     if (data?.pattern_consistent_with_master !== true) {
       failures.push(`图案不一致：${name} 侧车 pattern_consistent_with_master=${JSON.stringify(data?.pattern_consistent_with_master)}（须为 true，L46 母版一致性）`);
     }
+    if (SIZE_COMPARISON_RE.test(name)) {
+      failures.push(...validateSizeComparisonEvidence(name, data));
+      warnings.push(`尺寸对比图 ${name}：机器只检查侧车字段和比例算术；人工仍须打开 reference_object 来源页、来源图片及最终文件核验实物身份、外观和像素测量真实性`);
+    }
   }
 
   return { root, resolvedPlatform, rasterImages, failures, warnings };
@@ -173,7 +273,7 @@ const runCli = async () => {
       process.exitCode = 1;
       return;
     }
-    process.stdout.write(`图像套图检查通过：${root}（平台=${resolvedPlatform || "未知/跳过结构门"}，${rasterImages.length} 张栅格图，格式/几何/结构/逐图内容侧车均符合）\n`);
+    process.stdout.write(`图像套图检查通过：${root}（平台=${resolvedPlatform || "未知/跳过结构门"}，${rasterImages.length} 张栅格图；格式/几何/结构/侧车字段及尺寸对比比例算术符合。实物身份和人工测量真实性仍须视觉核验）\n`);
   } catch (error) {
     process.stderr.write(`图像套图检查失败：${error.message}\n`);
     process.exitCode = 1;
