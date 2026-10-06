@@ -1,4 +1,4 @@
-import { readdir } from "node:fs/promises";
+import { mkdir, readdir } from "node:fs/promises";
 import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -51,25 +51,43 @@ export async function resolveOutputDirectory(listingPath, options = {}) {
   }
 
   const parent = dirname(absolutePath);
-  const entries = await readDirectory(parent);
+  await mkdir(parent, { recursive: true });
+
   const pattern = new RegExp(`^${escapeRegExp(listingName)}(?:-v([1-9]\\d*))?$`);
 
   let greatestExistingVersion = 0;
-  for (const entry of entries) {
+  for (const entry of await readDirectory(parent)) {
     const match = entry.match(pattern);
     if (!match) continue;
     const version = match[1] ? Number(match[1]) : 1;
     greatestExistingVersion = Math.max(greatestExistingVersion, version);
   }
 
-  const version = greatestExistingVersion === 0 ? 1 : greatestExistingVersion + 1;
-  const directoryName = version === 1 ? listingName : `${listingName}-v${version}`;
+  let version;
+  let directoryPath;
+  while (true) {
+    version = greatestExistingVersion === 0 ? 1 : greatestExistingVersion + 1;
+    const directoryName = version === 1 ? listingName : `${listingName}-v${version}`;
+    directoryPath = resolve(parent, directoryName);
+
+    try {
+      // mkdir without `recursive` is the atomic reservation: concurrent callers
+      // cannot both claim the same Listing version directory.
+      await mkdir(directoryPath);
+      break;
+    } catch (error) {
+      if (error?.code !== "EEXIST") throw error;
+      // Another process claimed this candidate after our directory scan.
+      // Move forward and retry while preserving the established `-vN` format.
+      greatestExistingVersion = version;
+    }
+  }
 
   return {
     version,
     root,
     requested: listingPath,
-    path: resolve(parent, directoryName),
+    path: directoryPath,
   };
 }
 
