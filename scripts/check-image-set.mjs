@@ -3,8 +3,8 @@ import { readFileSync } from "node:fs";
 import { resolve, extname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-// 平台必备图集：单一事实来源在 scripts/image-sets.json（与 output/{平台}-{市场} 路径首段一致）。
-// 新增平台只改 json，脚本逻辑不动。未知平台跳过结构门，仅跑格式/几何/内容三门。
+// 平台图集预设：单一事实来源在 scripts/image-sets.json（与 output/{平台}-{市场} 路径首段一致）。
+// Temu 的所选预设和类目额外必传图记录在 图片/套图配置.json。未知平台跳过结构门。
 const IMAGE_SETS = (() => {
   try {
     return JSON.parse(readFileSync(new URL("./image-sets.json", import.meta.url), "utf8"));
@@ -207,8 +207,68 @@ const checkImageSet = async (dirPath, platform) => {
     }
   }
 
-  // 3) 结构门：按平台必备图集校验（平台未知或无 required 定义则跳过，不误报）
-  if (resolvedPlatform && platformCfg?.required) {
+  // 3) 结构门：按平台预设及本 Listing 的显式套图配置校验。
+  if (resolvedPlatform && platformCfg?.presets) {
+    const configName = "套图配置.json";
+    const configPath = join(root, configName);
+    if (!files.includes(configName)) {
+      failures.push(`结构配置缺失：平台 ${resolvedPlatform} 必须提供 图片/${configName}，记录 standard_5 / extended_9 选择及类目额外必传图`);
+    } else {
+      let config;
+      try {
+        config = JSON.parse(await readFile(configPath, "utf8"));
+      } catch {
+        failures.push(`结构配置损坏：${configName} 不是合法 JSON`);
+      }
+      if (config) {
+        const preset = platformCfg.presets[config.preset];
+        if (config.platform !== resolvedPlatform) {
+          failures.push(`结构配置错误：${configName} platform=${JSON.stringify(config.platform)}，应为 ${resolvedPlatform}`);
+        }
+        if (!preset) {
+          failures.push(`结构配置错误：${configName} preset=${JSON.stringify(config.preset)} 不存在`);
+        } else if (config.selected_count !== preset.count) {
+          failures.push(`结构配置错误：${configName} selected_count 必须等于 ${config.preset} 的 ${preset.count}`);
+        }
+        if (!["default", "user"].includes(config.selection_source)) {
+          failures.push(`结构配置错误：${configName} selection_source 仅允许 default 或 user`);
+        }
+        if (config.preset === "extended_9" && config.selection_source !== "user") {
+          failures.push(`结构配置错误：extended_9 必须是用户明确选择，不能作为默认预设`);
+        }
+        const supplements = config.supplemental_images;
+        const extras = config.additional_required;
+        const isFileNameList = (list) => Array.isArray(list)
+          && list.every((name) => typeof name === "string" && name.trim() && name === name.split(/[\\/]/).pop());
+        if (!isFileNameList(supplements)) {
+          failures.push(`结构配置错误：${configName} supplemental_images 必须是仅含文件名的数组`);
+        }
+        if (!isFileNameList(extras)) {
+          failures.push(`结构配置错误：${configName} additional_required 必须是仅含文件名的数组`);
+        } else if (preset && isFileNameList(supplements)) {
+          const requiredSupplementCount = preset.supplemental_count ?? 0;
+          if (supplements.length !== requiredSupplementCount) {
+            failures.push(`结构配置错误：${configName} 的 ${config.preset} 需要登记 ${requiredSupplementCount} 张 supplemental_images，当前 ${supplements.length} 张`);
+          }
+          const expectedUnfiltered = [...preset.required, ...supplements, ...extras];
+          if (new Set(expectedUnfiltered).size !== expectedUnfiltered.length) {
+            failures.push(`结构配置错误：${configName} 的预设图、扩展图和额外必传图不能重复登记`);
+          }
+          const expected = [...new Set(expectedUnfiltered)];
+          const missing = expected.filter((name) => !files.includes(name));
+          const unexpected = rasterImages.filter((name) => !expected.includes(name));
+          if (missing.length > 0) failures.push(`结构缺失：${config.preset} 缺少图型 ${missing.join("、")}`);
+          if (unexpected.length > 0) failures.push(`结构超出所选套图：${config.preset} 含未登记图片 ${unexpected.join("、")}；新增必传图须列入 additional_required`);
+          if (rasterImages.length !== expected.length) {
+            failures.push(`数量不符：所选 ${config.preset} 与类目额外必传图应为 ${expected.length} 张，实际 ${rasterImages.length} 张`);
+          }
+          if (expected.length < (platformCfg.minimum_count ?? 0) || expected.length > (platformCfg.maximum_count ?? Infinity)) {
+            failures.push(`数量超出平台范围：配置应为 ${expected.length} 张，Temu 允许 ${platformCfg.minimum_count}-${platformCfg.maximum_count} 张`);
+          }
+        }
+      }
+    }
+  } else if (resolvedPlatform && platformCfg?.required) {
     const missing = platformCfg.required.filter((n) => !files.includes(n));
     if (missing.length > 0) {
       failures.push(`结构缺失：平台 ${resolvedPlatform} 缺少必备图型 ${missing.join("、")}`);
