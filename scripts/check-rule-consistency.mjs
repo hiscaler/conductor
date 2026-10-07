@@ -92,10 +92,9 @@ for (const trigger of ["你好", "hello", "开始", "菜单", "帮助"]) {
   assert.match(start, new RegExp(`- ${trigger}`), `缺少启动词：${trigger}`);
 }
 assert.match(start, /英文字母不区分大小写/);
-assert.match(start, /多个 SKU 始终组成一个 listing/);
-assert.match(start, /未写数量默认 1/);
-assert.match(start, /相同 SKU 自动合并数量/);
-assert.doesNotMatch(start, /分别生成.{0,12}组合销售/);
+assert.match(start, /多个 SKU 匹配后/);
+assert.match(start, /销售关系/);
+assert.match(start, /相同 SKU 是否合并数量取决于关系/);
 assert.match(start, /创意方向选择/);
 assert.match(start, /输入 `0` 表示系统自动选择/);
 assert.match(start, /创意确定后，我会生成与该方向一致的完整商品资料示例/);
@@ -250,7 +249,8 @@ assert.doesNotMatch(actions, /output\/\{目标平台\}\/\{产品类目\}\/\{产�
 
 const outputStructure = files["workflows/output-structure.md"];
 assert.match(outputStructure, /单个已匹配 SKU 且销售数量为 1/);
-assert.match(outputStructure, /销售数量大于 1 或包含多个 SKU/);
+assert.match(outputStructure, /多个 SKU 是买家可选的互斥变体/);
+assert.match(outputStructure, /变体-\{SKU\}/);
 assert.match(outputStructure, /未建档-\{简短商品名\}/);
 assert.match(outputStructure, /找品-\{简短方向\}/);
 assert.match(outputStructure, /商品名称、类目.*不再作为目录层级/);

@@ -1,5 +1,5 @@
 {
-  "_doc": "各平台图集结构与预设（结构门单一事实来源）。key=平台标识（与 output/{平台}-{市场} 路径首段一致）。支持 default_preset/presets；图片目录内的套图配置.json记录用户选择和类目额外必传图。格式门为统一规则：所有平台输出必须为 PNG/JPG（见 check-image-set.mjs 的 ALLOWED_FORMATS）。新增平台只改本文件，脚本逻辑不动。未知平台跳过结构门。",
+  "_doc": "各平台图集结构与预设（结构门单一事实来源）。key=平台标识（与 output/{平台}-{市场} 路径首段一致）。支持 default_preset/presets；图片目录内的套图配置.json记录用户选择和类目额外必传图。多 SKU 可选变体使用 variants 数组按 SKU 分组，平台预设张数按每个 SKU 校验；文件放在同一图片目录，文件名需加标准 SKU 前缀。格式门为统一规则：所有平台输出必须为 PNG/JPG（见 check-image-set.mjs 的 ALLOWED_FORMATS）。新增平台只改本文件，脚本逻辑不动。未知平台跳过结构门。",
   "Temu": {
     "minimum_count": 5,
     "maximum_count": 10,

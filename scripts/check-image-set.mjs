@@ -162,6 +162,9 @@ const checkImageSet = async (dirPath, platform) => {
 
   const failures = [];
   const warnings = [];
+  const skuByImage = new Map();
+  let sharedCustomizationMasterId;
+  let customizationEnabled = false;
 
   const resolvedPlatform = detectPlatform(root, platform);
   const platformCfg = resolvedPlatform ? IMAGE_SETS[resolvedPlatform] : undefined;
@@ -225,6 +228,9 @@ const checkImageSet = async (dirPath, platform) => {
         if (config.platform !== resolvedPlatform) {
           failures.push(`结构配置错误：${configName} platform=${JSON.stringify(config.platform)}，应为 ${resolvedPlatform}`);
         }
+        if (Object.hasOwn(config, "variants") && !Array.isArray(config.variants)) {
+          failures.push(`结构配置错误：${configName} variants 必须是数组`);
+        }
         if (!preset) {
           failures.push(`结构配置错误：${configName} preset=${JSON.stringify(config.preset)} 不存在`);
         } else if (config.selected_count !== preset.count) {
@@ -236,34 +242,122 @@ const checkImageSet = async (dirPath, platform) => {
         if (config.preset === "extended_9" && config.selection_source !== "user") {
           failures.push(`结构配置错误：extended_9 必须是用户明确选择，不能作为默认预设`);
         }
-        const supplements = config.supplemental_images;
-        const extras = config.additional_required;
         const isFileNameList = (list) => Array.isArray(list)
           && list.every((name) => typeof name === "string" && name.trim() && name === name.split(/[\\/]/).pop());
-        if (!isFileNameList(supplements)) {
-          failures.push(`结构配置错误：${configName} supplemental_images 必须是仅含文件名的数组`);
-        }
-        if (!isFileNameList(extras)) {
-          failures.push(`结构配置错误：${configName} additional_required 必须是仅含文件名的数组`);
-        } else if (preset && isFileNameList(supplements)) {
-          const requiredSupplementCount = preset.supplemental_count ?? 0;
-          if (supplements.length !== requiredSupplementCount) {
-            failures.push(`结构配置错误：${configName} 的 ${config.preset} 需要登记 ${requiredSupplementCount} 张 supplemental_images，当前 ${supplements.length} 张`);
-          }
-          const expectedUnfiltered = [...preset.required, ...supplements, ...extras];
+        const validateExpectedFiles = (expectedUnfiltered, label) => {
           if (new Set(expectedUnfiltered).size !== expectedUnfiltered.length) {
-            failures.push(`结构配置错误：${configName} 的预设图、扩展图和额外必传图不能重复登记`);
+            failures.push(`结构配置错误：${configName} ${label}中的预设图、扩展图和额外必传图不能重复登记`);
           }
           const expected = [...new Set(expectedUnfiltered)];
           const missing = expected.filter((name) => !files.includes(name));
-          const unexpected = rasterImages.filter((name) => !expected.includes(name));
-          if (missing.length > 0) failures.push(`结构缺失：${config.preset} 缺少图型 ${missing.join("、")}`);
-          if (unexpected.length > 0) failures.push(`结构超出所选套图：${config.preset} 含未登记图片 ${unexpected.join("、")}；新增必传图须列入 additional_required`);
-          if (rasterImages.length !== expected.length) {
-            failures.push(`数量不符：所选 ${config.preset} 与类目额外必传图应为 ${expected.length} 张，实际 ${rasterImages.length} 张`);
+          if (missing.length > 0) failures.push(`结构缺失：${label}缺少图型 ${missing.join("、")}`);
+          return expected;
+        };
+
+        if (!preset) {
+          // The invalid preset was reported above; avoid dereferencing it below.
+        } else if (Array.isArray(config.variants)) {
+          if (config.variants.length < 2) {
+            failures.push(`结构配置错误：${configName} variants 至少需要两个 SKU；单 SKU Listing 不使用变体分组`);
           }
-          if (expected.length < (platformCfg.minimum_count ?? 0) || expected.length > (platformCfg.maximum_count ?? Infinity)) {
-            failures.push(`数量超出平台范围：配置应为 ${expected.length} 张，Temu 允许 ${platformCfg.minimum_count}-${platformCfg.maximum_count} 张`);
+          sharedCustomizationMasterId = config.shared_customization_master_id;
+          customizationEnabled = config.customization_enabled === true;
+          if (typeof config.customization_enabled !== "boolean") {
+            failures.push(`结构配置错误：多 SKU 变体必须用 customization_enabled 明确记录是否启用定制`);
+          }
+          if (config.customization_enabled === true
+            && (typeof sharedCustomizationMasterId !== "string" || !sharedCustomizationMasterId.trim())) {
+            failures.push(`结构配置错误：启用定制的多 SKU 变体必须提供非空 shared_customization_master_id`);
+          }
+
+          const allExpected = [];
+          const seenSkus = new Set();
+          const seenNames = new Set();
+          const variantNames = [];
+          for (const variant of config.variants) {
+            const sku = typeof variant?.sku === "string" ? variant.sku.trim() : "";
+            if (!sku) {
+              failures.push(`结构配置错误：${configName} 每个 variants 项都必须有非空 sku`);
+              continue;
+            }
+            const skuKey = sku.toUpperCase();
+            if (seenSkus.has(skuKey)) failures.push(`结构配置错误：variants 中 SKU 重复：${sku}`);
+            seenSkus.add(skuKey);
+            variantNames.push(sku);
+
+            const supplements = variant.supplemental_images;
+            const extras = variant.additional_required;
+            if (!isFileNameList(supplements)) {
+              failures.push(`结构配置错误：SKU ${sku} 的 supplemental_images 必须是仅含文件名的数组`);
+              continue;
+            }
+            if (!isFileNameList(extras)) {
+              failures.push(`结构配置错误：SKU ${sku} 的 additional_required 必须是仅含文件名的数组`);
+              continue;
+            }
+            const requiredSupplementCount = preset.supplemental_count ?? 0;
+            if (supplements.length !== requiredSupplementCount) {
+              failures.push(`结构配置错误：SKU ${sku} 的 ${config.preset} 需要登记 ${requiredSupplementCount} 张 supplemental_images，当前 ${supplements.length} 张`);
+            }
+            const prefix = `${sku}_`;
+            const names = [...supplements, ...extras];
+            for (const name of names) {
+              if (!name.startsWith(prefix)) {
+                failures.push(`结构配置错误：SKU ${sku} 的图片名必须以 ${prefix} 开头：${name}`);
+              }
+            }
+            const required = preset.required.map((name) => `${prefix}${name}`);
+            const expected = validateExpectedFiles([...required, ...supplements, ...extras], `SKU ${sku} `);
+            for (const name of expected) {
+              if (seenNames.has(name)) failures.push(`结构配置错误：多个变体重复登记图片 ${name}`);
+              seenNames.add(name);
+              skuByImage.set(name, sku);
+            }
+            allExpected.push(...expected);
+            if (expected.length < (platformCfg.minimum_count ?? 0) || expected.length > (platformCfg.maximum_count ?? Infinity)) {
+              failures.push(`数量超出平台范围：SKU ${sku} 配置 ${expected.length} 张，${resolvedPlatform} 允许 ${platformCfg.minimum_count}-${platformCfg.maximum_count} 张/变体`);
+            }
+          }
+
+          const compareSku = (a, b) => {
+            const left = a.toUpperCase();
+            const right = b.toUpperCase();
+            return left < right ? -1 : left > right ? 1 : 0;
+          };
+          const sortedNames = [...variantNames].sort(compareSku);
+          if (variantNames.some((sku, index) => sku !== sortedNames[index])) {
+            failures.push(`结构配置错误：${configName} variants 必须按标准 SKU 排序`);
+          }
+          const unexpected = rasterImages.filter((name) => !allExpected.includes(name));
+          if (unexpected.length > 0) failures.push(`结构超出已登记变体套图：含未登记图片 ${unexpected.join("、")}`);
+          if (rasterImages.length !== allExpected.length) {
+            failures.push(`数量不符：各 SKU 变体套图应为 ${allExpected.length} 张，实际 ${rasterImages.length} 张`);
+          }
+          if (allExpected.length > (platformCfg.maximum_count ?? Infinity)) {
+            failures.push(`平台总图数冲突：${config.variants.length} 个变体共需 ${allExpected.length} 张，${resolvedPlatform} 单 Listing 上限为 ${platformCfg.maximum_count} 张；暂停生成，请卖家调整变体范围或确认改为独立 Listing`);
+          }
+        } else {
+          const supplements = config.supplemental_images;
+          const extras = config.additional_required;
+          if (!isFileNameList(supplements)) {
+            failures.push(`结构配置错误：${configName} supplemental_images 必须是仅含文件名的数组`);
+          }
+          if (!isFileNameList(extras)) {
+            failures.push(`结构配置错误：${configName} additional_required 必须是仅含文件名的数组`);
+          } else if (preset && isFileNameList(supplements)) {
+            const requiredSupplementCount = preset.supplemental_count ?? 0;
+            if (supplements.length !== requiredSupplementCount) {
+              failures.push(`结构配置错误：${configName} 的 ${config.preset} 需要登记 ${requiredSupplementCount} 张 supplemental_images，当前 ${supplements.length} 张`);
+            }
+            const expected = validateExpectedFiles([...preset.required, ...supplements, ...extras], "");
+            const unexpected = rasterImages.filter((name) => !expected.includes(name));
+            if (unexpected.length > 0) failures.push(`结构超出所选套图：${config.preset} 含未登记图片 ${unexpected.join("、")}；新增必传图须列入 additional_required`);
+            if (rasterImages.length !== expected.length) {
+              failures.push(`数量不符：所选 ${config.preset} 与类目额外必传图应为 ${expected.length} 张，实际 ${rasterImages.length} 张`);
+            }
+            if (expected.length < (platformCfg.minimum_count ?? 0) || expected.length > (platformCfg.maximum_count ?? Infinity)) {
+              failures.push(`数量超出平台范围：配置应为 ${expected.length} 张，Temu 允许 ${platformCfg.minimum_count}-${platformCfg.maximum_count} 张`);
+            }
           }
         }
       }
@@ -290,6 +384,13 @@ const checkImageSet = async (dirPath, platform) => {
     } catch {
       failures.push(`侧车损坏：${sidecar} 不是合法 JSON`);
       continue;
+    }
+    const expectedSku = skuByImage.get(name);
+    if (expectedSku && data?.sku !== expectedSku) {
+      failures.push(`SKU 对应关系未确认：${name} 侧车 sku=${JSON.stringify(data?.sku)}，应为 ${expectedSku}`);
+    }
+    if (expectedSku && customizationEnabled && data?.customization_master_id !== sharedCustomizationMasterId) {
+      failures.push(`定制母版不一致：${name} 侧车 customization_master_id=${JSON.stringify(data?.customization_master_id)}，应与同 Listing 变体共享母版 ${JSON.stringify(sharedCustomizationMasterId)}`);
     }
     const wm = data?.watermark;
     if (wm !== "clear" && wm !== "none") {
