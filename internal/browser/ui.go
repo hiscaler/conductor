@@ -969,10 +969,18 @@ function renderBreadcrumb(data) {
   return "<nav class='breadcrumb' aria-label='面包屑'>" + html + "</nav>";
 }
 
+// sortedImages 按文件名称自然升序排列，让缩略图和灯箱使用同一顺序。
+function sortedImages(children) {
+  return children.filter(n => n.type === "image").sort((a, b) =>
+    a.name.localeCompare(b.name, "zh-CN", { numeric: true, sensitivity: "variant" })
+    || a.path.localeCompare(b.path, "zh-CN")
+  );
+}
+
 // renderDirContent 渲染目录内容；含图片时优先展示缩略图网格。
 function renderDirContent(data) {
   const children = data.children || [];
-  const images = children.filter(n => n.type === "image");
+  const images = sortedImages(children);
   const others = children.filter(n => n.type !== "image");
   galleryImages = images.map(n => ({
     name: n.name,
@@ -1038,7 +1046,7 @@ async function loadSiblingGallery(imagePath) {
   if (!res.ok) return;
   const data = await res.json();
   if (data.type !== "dir") return;
-  const images = (data.children || []).filter(n => n.type === "image");
+  const images = sortedImages(data.children || []);
   galleryImages = images.map(n => ({
     name: n.name,
     path: n.path,
