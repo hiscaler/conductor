@@ -2,6 +2,8 @@
 
 ## 使用原则
 
+[自动批次](../workflows/automatic-batch.md) 每个 SKU 独立 Listing，分别应用本平台预设与验收，禁止把多个任务合成 variants 套图。其套图配置和侧车增加批次、SKU、来源图案哈希及报告关联，定制母版只在各自 Listing 内共用；不同 Listing 分配不同图案。
+
 套图不能用一套固定模板适配所有平台。`visual-production-agent` 必须先读取目标平台，再按平台规则输出图片脚本。
 
 如果同时输出多个平台，必须分别生成套图方案，不能把 Amazon 的白底主图逻辑、Shopify 的品牌场景图逻辑、TikTok Shop 的短视频封面逻辑混在一起。
