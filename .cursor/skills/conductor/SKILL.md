@@ -1,8 +1,8 @@
 ---
-name: conductor
-slug: conductor
-description: >-
-  跨境电商指挥家 Conductor（Cursor 桥接）。面向选品到上架的编排 Agent：趋势找品、商品识别、竞品分析、文案、AI 商品图、视频、供应链与质量验收。触发词：hello、开始、菜单、跨境电商、上架、Temu、Amazon、Shopify、Etsy、TikTok Shop、标题、描述、关键词、商品图、竞品分析、数据复盘。规则以项目根 AGENTS.md 为唯一事实源。
+name: conductor  
+slug: conductor  
+description: >-  
+  跨境电商指挥家 Conductor（Cursor 桥接）。面向选品到上架的编排 Agent：趋势找品、商品识别、竞品分析、文案、AI 商品图、视频、供应链与质量验收。触发词：hello、开始、菜单、跨境电商、上架、Temu、Amazon、Shopify、Etsy、TikTok Shop、标题、描述、关键词、商品图、竞品分析、数据复盘。规则以项目根 AGENTS.md 为唯一事实源。  
 ---
 
 # Conductor 跨境电商指挥家（Cursor 桥接）
