@@ -19,7 +19,8 @@ const md = (value) => String(value ?? "").replace(/[\r\n]+/g, " ").replace(/\|/g
 const url = (path) => slash(path).split("/").map(encodeURIComponent).join("/");
 const link = (from, target, label) => {
   const rel = relative(dirname(from), target);
-  return isAbsolute(rel) ? `[${label}](<${slash(target)}>)` : `[${label}](${url(rel)})`;
+  const safeLabel = String(label).replace(/[\r\n]/g, " ").replace(/[\[\]|]/g, "\\$&");
+  return isAbsolute(rel) ? `[${safeLabel}](<${slash(target)}>)` : `[${safeLabel}](${url(rel)})`;
 };
 const inside = (root, target) => {
   const rel = relative(root, target);
@@ -156,9 +157,12 @@ export async function createBatch(input, { projectRoot = ROOT, outputRoot = reso
       ...products.slice(count).map((product) => ({ sku: product.data.SKU.trim(), reason: "SKU 数量多于有效图案，未参与本批次" })),
     ], jobs,
   };
-  try { await handle.writeFile(JSON.stringify(state, null, 2) + "\n"); }
-  finally { await handle.close(); }
-  await renderBatchReport(state);
+  const creationLock = await open(`${statePath}.lock`, "wx");
+  try {
+    await creationLock.writeFile(JSON.stringify({ pid: process.pid, started_at: new Date().toISOString() }));
+    await handle.writeFile(JSON.stringify(state, null, 2) + "\n");
+    await renderBatchReport(state);
+  } finally { await handle.close(); await creationLock.close(); await unlink(`${statePath}.lock`); }
   return state;
 }
 
@@ -203,7 +207,12 @@ export async function claimJob(statePath, sku) {
     const job = sku ? state.jobs.find((item) => normalizeKey(item.sku) === normalizeKey(sku)) : state.jobs.find((item) => item.status === "pending");
     if (!job) throw new Error("没有可领取的任务，请查看批次总报告");
     if (job.status !== "pending") throw new Error(`SKU ${job.sku} 状态为 ${job.status}，不能重复领取；续做使用已保存 lease_token`);
-    await checkInputs(state, job);
+    try { await checkInputs(state, job); }
+    catch (error) {
+      job.status = "blocked"; job.blockers = [error.message];
+      job.events.push({ at: new Date().toISOString(), stage: "input", message: error.message });
+      return { batch_id: state.batch_id, config: state.config, job };
+    }
     job.lease_token = randomUUID();
     if (!job.output_dir) {
       // Journal before reserving: an interrupted allocation is never silently repeated.
@@ -265,7 +274,7 @@ export async function recordJob(statePath, sku, token, update) {
     if (status === "completed") {
       try { await validateBatchListing(job.output_dir, { runListingGate: true }); }
       catch (error) {
-        job.status = "failed"; job.validation = { passed: false, checked_at: new Date().toISOString() };
+        job.status = "failed"; job.stage = "validation"; job.validation = { passed: false, checked_at: new Date().toISOString() };
         job.blockers = [error.message];
         job.events.push({ at: new Date().toISOString(), stage: "validation", message: `交付校验失败：${error.message}` });
         return job;
@@ -374,6 +383,7 @@ async function runCli() {
     else if (command === "check-listing" && target) result = await validateBatchListing(target);
     else throw new Error("用法：batch-production.mjs create <配置.json> | status <状态.json> | claim <状态.json> [SKU] | record <状态.json> <SKU> <令牌> <步骤.json> | retry <状态.json> <SKU> | check-listing <Listing目录>");
     process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+    if (command === "record" && result.status === "failed" || command === "claim" && result.job?.status === "blocked") process.exitCode = 1;
   } catch (error) { process.stderr.write(`批次处理失败：${error.message}\n`); process.exitCode = 1; }
 }
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) await runCli();

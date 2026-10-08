@@ -19,7 +19,7 @@ export function parseCsv(text, fileName) {
   let values = [], field = "", quoted = false, closed = false, line = 1, rowLine = 1;
   const finish = () => {
     values.push(field);
-    if (values.some((value) => value !== "")) rows.push({ line: rowLine, values });
+    if (values.length > 1 || values[0] !== "" || closed) rows.push({ line: rowLine, values });
     values = []; field = ""; closed = false;
   };
   for (let i = 0; i < text.length; i++) {

@@ -150,3 +150,35 @@ test("CSV 拒绝孤立属性、重复 SKU 和非法引号，并保留合法多�
   await put(resolve(f2.project, "data/product-attributes.csv"), ATTRIBUTE_HEADERS.join(",") + "\nUNKNOWN,规格,容量,1,ml,数字,是,Temu,,2026-10-07,\n");
   await assert.rejects(loadProductCatalog(f2.project), /不存在于商品主表/);
 });
+
+test("套图完成闸门检查实际数量、SKU、图案来源和同 Listing 母版", async (t) => {
+  const f = await fixture(t);
+  const state = await f.create({ ...f.config, auto_task: 4, customization_type: "仅图片" });
+  const { job } = await claimJob(state.state_path);
+  const directory = job.output_dir;
+  const writeDoc = async (file, body) => {
+    const path = resolve(directory, file);
+    await put(path, `批次：${state.batch_id}\n\n${docLink(path, state.report_path)}\n\n${body}`);
+  };
+  await writeDoc("商品资料.md", "测试商品资料");
+  await writeDoc("图片/套图脚本.md", "测试图型及独立图案");
+  await writeDoc("图片/图片验收报告.md", "测试技术验收");
+  await writeDoc("上架/完整生产报告.md", '<a id="issue-summary"></a>\n\n## 问题速览\n\n无\n\n' + Array.from({ length: 16 }, (_, i) => `## ${i + 1}. 测试章节\n\n测试事实`).join("\n\n"));
+  await put(resolve(directory, "上架/next-action.json"), JSON.stringify({ menu: 8, actions: ["view_current_assets"], batch_id: state.batch_id, batch_report: relative(resolve(directory, "上架"), state.report_path) }));
+  const names = JSON.parse(await readFile(resolve(root, "scripts/image-sets.json"), "utf8")).Temu.presets.standard_5.required;
+  const metadata = { batch_id: state.batch_id, sku: job.sku, source_pattern_sha256: job.sample.sha256, source_pattern_usage: "customization_image", batch_report: relative(resolve(directory, "图片"), state.report_path), customization_master_id: `${state.batch_id}-${job.sku}-master` };
+  await put(resolve(directory, "图片/套图配置.json"), JSON.stringify({ ...metadata, platform: "Temu", preset: "standard_5", selected_count: 5, selection_source: "default", supplemental_images: [], additional_required: [] }));
+  for (const name of names.slice(0, 4)) {
+    await sharp({ create: { width: 800, height: 800, channels: 3, background: "red" } }).png().toFile(resolve(directory, "图片", name));
+    await put(resolve(directory, "图片", name.replace(/\.png$/, ".verify.json")), JSON.stringify({ ...metadata, watermark: "none", pattern_consistent_with_master: true }));
+  }
+  await assert.rejects(validateBatchListing(directory), /图片数量/);
+  await sharp({ create: { width: 800, height: 800, channels: 3, background: "red" } }).png().toFile(resolve(directory, "图片", names[4]));
+  const sidecar = resolve(directory, "图片", names[4].replace(/\.png$/, ".verify.json"));
+  await put(sidecar, JSON.stringify({ ...metadata, watermark: "none", pattern_consistent_with_master: true }));
+  assert.equal((await validateBatchListing(directory, { runListingGate: true })).checked, true);
+  await put(sidecar, JSON.stringify({ ...metadata, customization_master_id: "another-master" }));
+  await assert.rejects(validateBatchListing(directory), /母版不一致/);
+  await put(sidecar, JSON.stringify({ ...metadata, sku: "SKU-B" }));
+  await assert.rejects(validateBatchListing(directory), /来源不一致/);
+});
