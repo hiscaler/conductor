@@ -189,6 +189,9 @@ const checkImageSet = async (dirPath, platform) => {
     }
     rasterImages.push(name);
   }
+  if (rasterImages.length > 0) {
+    warnings.push("必须人工逐张打开最终图，对照本 Listing 的分配图案、主图母版、样例短句和 SKU 颜色；本脚本只检查侧车字段，不读取图像像素，机器 PASS 不能证明图案一致。");
+  }
 
   // 2) 几何门：1:1、宽高均 ≥ 800px、单张 < 2MB
   for (const name of rasterImages) {
