@@ -58,14 +58,23 @@ if (existsSync(reportPath)) {
   checks.push({ name: "报告锚点", script: null, skip: `缺 ${reportPath}` });
 }
 
-for (const f of copyMds) {
+// Keyword lists and seller-side batch references have no buyer description.
+// Only check documents that actually contain the description field.
+const descriptionMds = copyMds.filter((f) => /^#{2,4}\s+长描述\s*$/mu.test(readFileSync(f, "utf8")));
+for (const f of descriptionMds) {
   checks.push({ name: `Temu 描述长度 (${copyDir.split(/[\\/]/).pop()}/${f.split(/[\\/]/).pop()})`, script: "temu-description-limit.mjs", args: [f] });
 }
-if (copyMds.length === 0) {
+if (descriptionMds.length === 0) {
   checks.push({ name: "Temu 描述长度", script: null, skip: `缺 ${copyDir}/*.md` });
 }
 
 checks.push({ name: "输出结构", script: "check-output-layout.mjs", args: [listingDir] });
+
+// Automatic batches keep their own identity and required delivery scope.
+// The association checker is read-only, so calling it from this gate cannot recurse.
+if (existsSync(join(listingDir, "批次关联.json")) || /^批\d{12}(?:-\d+)?-/.test(listingDir.split(/[\\/]/).pop())) {
+  checks.push({ name: "批次关联与任务范围", script: "batch-production.mjs", args: ["check-listing", listingDir] });
+}
 
 if (existsSync(imgDir)) {
   const imgArgs = [imgDir];

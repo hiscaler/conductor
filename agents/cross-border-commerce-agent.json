@@ -10,6 +10,10 @@
   "inputs": {
     "required": [],
     "optional": [
+      "execution_mode",
+      "spu",
+      "sample_pattern_directory",
+      "batch_state_path",
       "task_intent_or_menu_selection",
       "product_name_or_sku",
       "sku_combination",
@@ -163,6 +167,17 @@
     "attributes": "../data/product-attributes.csv"
   },
   "start_guide": "../workflows/start-guide.md",
+  "automatic_batch_workflow": "../workflows/automatic-batch.md",
+  "automatic_batch": {
+    "script": "../scripts/batch-production.mjs",
+    "auto_task_to_single_menu": { "1": 1, "2": 2, "3": 3, "4": 8 },
+    "listing_relationship": "independent",
+    "profile_confirmation": "system_validates_facts",
+    "creative_selection": "automatic_per_listing",
+    "shared_choices": ["platform", "market", "task", "seller_service", "customization_type", "image_preset"],
+    "report": "output/{批次号}-批次总报告.md",
+    "state": "output/{批次号}-批次状态.json"
+  },
   "action_menu": "../workflows/action-menu.md",
   "output_structure": "../workflows/output-structure.md",
   "platform_profiles": "../platforms/platform-profiles.md",
