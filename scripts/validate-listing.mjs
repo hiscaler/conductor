@@ -68,6 +68,15 @@ if (descriptionMds.length === 0) {
   checks.push({ name: "Temu 描述长度", script: null, skip: `缺 ${copyDir}/*.md` });
 }
 
+const market = listingDir.split(/[\\/]/).slice(0, -1).reverse()
+  .map((part) => part.match(/^[^-]+-([A-Z]{2})$/)?.[1])
+  .find(Boolean);
+if (market === "US" && copyMds.length > 0) {
+  checks.push({ name: "美国站文案语言", script: "check-copy-language.mjs", args: [listingDir, "--market", market] });
+} else if (market === "US") {
+  checks.push({ name: "美国站文案语言", script: null, skip: `缺 ${copyDir}/*.md` });
+}
+
 checks.push({ name: "输出结构", script: "check-output-layout.mjs", args: [listingDir] });
 
 // Automatic batches keep their own identity and required delivery scope.
