@@ -34,21 +34,38 @@ const segment = (value, label) => {
   return value.trim();
 };
 const SERVICE = { "不提供": "not_offered", "必选": "required", "可选": "optional", not_offered: "not_offered", required: "required", optional: "optional" };
-const TYPE = { "图文": "image_text", "仅图片": "image", "仅文字": "text", image_text: "image_text", image: "image", text: "text" };
+const TYPE = { "图文": "image_text", "图": "image", "文": "text", "仅图片": "image", "仅文字": "text", image_text: "image_text", image: "image", text: "text" };
+const allSkus = (state) => state.config.mapping_mode === "one_to_all_skus";
+export const MAPPING_LABELS = Object.freeze({ one_to_one: "一张图案分配给一个 SKU 变体", one_to_all_skus: "一张图案应用到全部 SKU 变体" });
+const groupFor = (state, job) => state.pattern_groups?.find((group) => group.id === job.pattern_group_id);
+function selectJob(state, selector) {
+  if (!selector) return state.jobs.find((job) => job.status === "pending");
+  const byId = state.jobs.find((job) => job.id === selector);
+  if (byId) return byId;
+  const matches = state.jobs.filter((job) => normalizeKey(job.sku) === normalizeKey(selector));
+  if (matches.length > 1) throw new Error(`SKU ${selector} 对应多个图案任务，请使用任务 ID：${matches.map((job) => job.id).join("、")}`);
+  return matches[0];
+}
 
 export function normalizeBatchConfig(input) {
+  const mappingMode = input.mapping_mode ?? "one_to_one";
+  if (!["one_to_one", "one_to_all_skus"].includes(mappingMode)) throw new Error("mapping_mode 只允许 one_to_one / one_to_all_skus");
   const task = AUTO_TASKS[input.auto_task];
-  if (!task) throw new Error("auto_task 只允许自动菜单 1、2、3、4（4 映射单个菜单 8）");
+  if (!task) throw new Error("auto_task 只允许批量菜单 1、2、3、4（4 映射单个菜单 8）");
   const spu = segment(input.spu, "SPU");
   const platformInput = segment(input.platform, "目标平台");
   const platform = ["Temu", "Amazon", "Shopify", "Etsy", "TikTok-Shop", "eBay", "Walmart"].find((name) => name.toLowerCase() === platformInput.toLowerCase()) ?? platformInput;
   const market = segment(input.market, "市场代码").toUpperCase();
-  if (!/^[A-Z]{2}$/.test(market) || platform === "待定") throw new Error("自动模式需要确定的平台和两位市场代码，例如 Temu / US");
+  if (!/^[A-Z]{2}$/.test(market) || platform === "待定") throw new Error("批量模式需要确定的平台和两位市场代码，例如 Temu / US");
   if (typeof input.sample_directory !== "string" || !input.sample_directory.trim()) throw new Error("必须提供 sample_directory 示例图案目录");
   const sellerService = SERVICE[input.seller_service];
   if (!sellerService) throw new Error("整批 seller_service 尚未确认，请选择 不提供 / 必选 / 可选");
   const customizationType = sellerService === "not_offered" ? null : TYPE[input.customization_type];
-  if (sellerService !== "not_offered" && !customizationType) throw new Error("整批 customization_type 尚未确认，请选择 图文 / 仅图片 / 仅文字");
+  if (sellerService !== "not_offered" && !customizationType) throw new Error("整批 customization_type 尚未确认，请选择 图文 / 图 / 文");
+  const sampleUsage = input.sample_usage ?? (customizationType === "image_text" || customizationType === "image" ? "customization_image" : "creative_reference_only");
+  if (!["customization_image", "fixed_product_artwork", "creative_reference_only"].includes(sampleUsage)) throw new Error("sample_usage 只允许 customization_image / fixed_product_artwork / creative_reference_only");
+  if (task.images && customizationType === "text" && input.sample_usage == null) throw new Error("文定制且提供图案目录时，必须先确认图案是固定印花还是仅供创意参考，并填写 sample_usage");
+  if (customizationType === "text" && sampleUsage === "customization_image") throw new Error("文定制不能把图案标记为买家上传图片字段样例");
   const preset = input.image_preset ?? (platform === "Temu" ? "standard_5" : "platform_default");
   if (platform === "Temu" && !["standard_5", "extended_9"].includes(preset)) throw new Error("Temu image_preset 只允许 standard_5 或 extended_9");
   if (platform !== "Temu" && preset !== "platform_default") throw new Error("其他平台请按其既有规则设置 platform_default 和 image_count，不套用 Temu 预设");
@@ -58,8 +75,8 @@ export function normalizeBatchConfig(input) {
   const timeZone = input.time_zone ?? "Asia/Shanghai";
   new Intl.DateTimeFormat("en", { timeZone }).format(new Date());
   return {
-    spu, platform, market, auto_task: Number(input.auto_task), task, seller_service: sellerService,
-    customization_type: customizationType, image_preset: task.images ? preset : null, image_count: task.images ? imageCount : null,
+    spu, platform, market, mapping_mode: mappingMode, auto_task: Number(input.auto_task), task, seller_service: sellerService,
+    customization_type: customizationType, sample_usage: sampleUsage, image_preset: task.images ? preset : null, image_count: task.images ? imageCount : null,
     preset_selection_source: input.image_preset ? "user" : "default", time_zone: timeZone,
     sample_directory: resolve(input.sample_directory), sample_text: input.sample_text ?? null,
   };
@@ -116,22 +133,27 @@ export async function createBatch(input, { projectRoot = ROOT, outputRoot = reso
   if (inside(config.sample_directory, outputRoot) || config.sample_directory === outputRoot || inside(outputRoot, config.sample_directory)) throw new Error("示例图案目录必须与 output 分离，避免把生成产物重新当作输入");
   const catalog = await loadProductCatalog(projectRoot);
   const products = catalog.products.filter((product) => normalizeKey(product.data.SPU) === normalizeKey(config.spu));
-  if (!products.length) throw new Error(`CSV 中没有 SPU=${config.spu}，自动模式只处理已建档商品`);
+  if (!products.length) throw new Error(`CSV 中没有 SPU=${config.spu}，批量模式只处理已建档商品`);
   products.sort((a, b) => normalizeKey(a.data.SKU) < normalizeKey(b.data.SKU) ? -1 : 1);
   for (const product of products) segment(product.data.SKU.trim(), "标准 SKU");
   const inventory = await inventoryImages(config.sample_directory);
   if (!inventory.images.length) throw new Error("示例目录中没有可解码且去重后的有效图片，请补充图案");
-  const count = Math.min(products.length, inventory.images.length);
+  const shared = config.mapping_mode === "one_to_all_skus";
+  const count = shared ? products.length * inventory.images.length : Math.min(products.length, inventory.images.length);
+  const galleries = new Map();
   const jobs = [];
   for (let i = 0; i < count; i++) {
-    const product = products[i];
-    const gallery = await loadGallery(projectRoot, product);
+    const product = products[shared ? i % products.length : i];
+    const patternIndex = shared ? Math.floor(i / products.length) : i;
+    const gallery = galleries.get(product) ?? await loadGallery(projectRoot, product);
+    galleries.set(product, gallery);
     const blockers = config.task.images ? [...gallery.issues] : [];
     if (config.seller_service !== "not_offered" && product.data.产品类型 !== "定制类") blockers.push("商品资料未确认定制能力，不能套用整批定制服务，请确认该 SKU");
     jobs.push({
       id: `job-${String(i + 1).padStart(3, "0")}`, sku: product.data.SKU.trim(), catalog_line: product.line,
-      product: product.data, attributes: product.attributes, gallery, sample: inventory.images[i],
-      sample_usage: config.customization_type === "image_text" || config.customization_type === "image" ? "customization_image" : "creative_reference_only",
+      product: product.data, attributes: product.attributes, gallery, sample: inventory.images[patternIndex],
+      ...(shared ? { pattern_group_id: `pattern-${String(patternIndex + 1).padStart(3, "0")}` } : {}),
+      sample_usage: config.sample_usage,
       status: blockers.length ? "blocked" : "pending", stage: "input", blockers,
       output_dir: null, version: null, lease_token: null, events: [], validation: null,
     });
@@ -150,11 +172,15 @@ export async function createBatch(input, { projectRoot = ROOT, outputRoot = reso
     schema_version: 1, batch_id: batchId, project_root: projectRoot, output_root: outputRoot,
     state_path: statePath, report_path: resolve(outputRoot, `${batchId}-批次总报告.md`),
     created_at: now.toISOString(), updated_at: now.toISOString(), config, sources: catalog.sources,
-    mapping_policy: "标准 SKU 排序；有效图案按相对路径排序、解码像素去重；按位置一对一分配并固定保存，不按文件名推断 SKU",
+    mapping_policy: shared ? "有效图案稳定排序、像素去重；每张图案 × 全部标准 SKU，组内共用设计与文案，逐 SKU 使用自己的图库" : "标准 SKU 排序；有效图案按相对路径排序、解码像素去重；按位置一对一分配并固定保存，不按文件名推断 SKU",
+    ...(shared ? { pattern_groups: inventory.images.map((sample, index) => {
+      const id = `pattern-${String(index + 1).padStart(3, "0")}`;
+      return { id, sample, skus: products.map((product) => product.data.SKU.trim()), job_ids: jobs.filter((job) => job.pattern_group_id === id).map((job) => job.id), customization_master_id: `${batchId}-${id}-master` };
+    }) } : {}),
     inventory: { sku_count: products.length, valid_image_count: inventory.images.length, paired_count: count },
     exclusions: [...inventory.excluded,
-      ...inventory.images.slice(count).map((image) => ({ path: image.path, reason: "图片数量多于 SKU，未分配" })),
-      ...products.slice(count).map((product) => ({ sku: product.data.SKU.trim(), reason: "SKU 数量多于有效图案，未参与本批次" })),
+      ...(!shared ? inventory.images.slice(count).map((image) => ({ path: image.path, reason: "图片数量多于 SKU，未分配" })) : []),
+      ...(!shared ? products.slice(count).map((product) => ({ sku: product.data.SKU.trim(), reason: "SKU 数量多于有效图案，未参与本批次" })) : []),
     ], jobs,
   };
   const creationLock = await open(`${statePath}.lock`, "wx");
@@ -170,11 +196,31 @@ export async function loadBatch(path) {
   const state = JSON.parse(await readFile(resolve(path), "utf8"));
   if (state.schema_version !== 1 || state.state_path !== resolve(path) || !Array.isArray(state.jobs)) throw new Error("批次状态格式错误或已被移动，请使用原批次状态文件");
   if (!inside(state.output_root, state.report_path) || !inside(state.output_root, state.state_path)) throw new Error("批次文件必须位于输出根目录");
-  const skus = new Set(), samples = new Set(), pixels = new Set();
+  if (![undefined, "one_to_one", "one_to_all_skus"].includes(state.config.mapping_mode)) throw new Error("批次分配模式损坏");
+  const skus = new Set(), samples = new Set(), pixels = new Set(), ids = new Set(), pairs = new Set(), directories = new Set();
   for (const job of state.jobs) {
-    if (skus.has(normalizeKey(job.sku)) || samples.has(job.sample.path) || pixels.has(job.sample.visual_sha256)) throw new Error("批次映射损坏：SKU 或图案被重复使用");
+    const pair = JSON.stringify([normalizeKey(job.sku), job.sample.visual_sha256]);
+    if (ids.has(job.id) || pairs.has(pair)) throw new Error("批次映射损坏：任务 ID 或 SKU 与图案配对重复");
+    ids.add(job.id); pairs.add(pair);
+    if (!allSkus(state) && (skus.has(normalizeKey(job.sku)) || samples.has(job.sample.path) || pixels.has(job.sample.visual_sha256))) throw new Error("批次映射损坏：SKU 或图案被重复使用");
     skus.add(normalizeKey(job.sku)); samples.add(job.sample.path); pixels.add(job.sample.visual_sha256);
     if (job.output_dir && (!inside(state.output_root, job.output_dir) || relative(state.output_root, job.output_dir).split(sep).length !== 2)) throw new Error("Listing 目录不符合输出层级");
+    if (job.output_dir && directories.has(job.output_dir)) throw new Error("批次映射损坏：多个任务共用输出目录");
+    if (job.output_dir) directories.add(job.output_dir);
+  }
+  if (allSkus(state)) {
+    const groups = state.pattern_groups;
+    if (!Array.isArray(groups) || groups.length !== state.inventory.valid_image_count || new Set(groups.map((group) => group.id)).size !== groups.length
+      || new Set(groups.map((group) => group.sample.visual_sha256)).size !== groups.length
+      || state.jobs.length !== state.inventory.sku_count * groups.length || state.inventory.paired_count !== state.jobs.length) throw new Error("一张图案应用到全部 SKU 变体的图案组或任务矩阵损坏");
+    for (const group of groups) {
+      const members = state.jobs.filter((job) => job.pattern_group_id === group.id);
+      if (group.customization_master_id !== `${state.batch_id}-${group.id}-master` || group.skus.length !== state.inventory.sku_count
+        || new Set(group.skus).size !== group.skus.length || members.length !== group.skus.length
+        || JSON.stringify(group.skus.map(normalizeKey).sort()) !== JSON.stringify([...skus].sort())
+        || JSON.stringify(group.job_ids) !== JSON.stringify(members.map((job) => job.id))
+        || members.some((job) => !group.skus.includes(job.sku) || JSON.stringify(job.sample) !== JSON.stringify(group.sample))) throw new Error("一张图案应用到全部 SKU 变体的图案组关联不一致");
+    }
   }
   return state;
 }
@@ -204,7 +250,7 @@ export async function checkInputs(state, job) {
 
 export async function claimJob(statePath, sku) {
   return withBatchLock(statePath, async (state) => {
-    const job = sku ? state.jobs.find((item) => normalizeKey(item.sku) === normalizeKey(sku)) : state.jobs.find((item) => item.status === "pending");
+    const job = selectJob(state, sku);
     if (!job) throw new Error("没有可领取的任务，请查看批次总报告");
     if (job.status !== "pending") throw new Error(`SKU ${job.sku} 状态为 ${job.status}，不能重复领取；续做使用已保存 lease_token`);
     try { await checkInputs(state, job); }
@@ -218,14 +264,14 @@ export async function claimJob(statePath, sku) {
       // Journal before reserving: an interrupted allocation is never silently repeated.
       job.status = "allocating";
       await atomicJson(state.state_path, state);
-      const allocation = await resolveOutputDirectory(resolve(state.output_root, `${state.config.platform}-${state.config.market}`, `${state.batch_id}-${job.sku}`), { root: state.output_root });
+      const allocation = await resolveOutputDirectory(resolve(state.output_root, `${state.config.platform}-${state.config.market}`, `${state.batch_id}-${job.pattern_group_id ? `${job.pattern_group_id}-` : ""}${job.sku}`), { root: state.output_root });
       job.output_dir = allocation.path; job.version = allocation.version;
       await atomicJson(state.state_path, state);
     }
     await writeListingAssociation(state, job);
     job.status = "running";
     job.events.push({ at: new Date().toISOString(), stage: job.stage, message: "已领取，后续步骤复用本目录和配对" });
-    return { batch_id: state.batch_id, config: state.config, job };
+    return { batch_id: state.batch_id, config: state.config, job, ...(allSkus(state) ? { pattern_group: groupFor(state, job) } : {}) };
   });
 }
 
@@ -234,7 +280,8 @@ async function writeListingAssociation(state, job) {
     batch_id: state.batch_id, job_id: job.id, spu: state.config.spu, sku: job.sku,
     batch_report: slash(relative(job.output_dir, state.report_path)), batch_state: slash(relative(job.output_dir, state.state_path)),
     source_pattern: job.sample.path, source_pattern_sha256: job.sample.sha256, sample_usage: job.sample_usage,
-    listing_relationship: "independent", version: job.version,
+    listing_relationship: allSkus(state) ? "shared_pattern_variants" : "independent", version: job.version,
+    ...(allSkus(state) ? { mapping_mode: state.config.mapping_mode, pattern_group_id: job.pattern_group_id, variant_skus: groupFor(state, job).skus, customization_master_id: groupFor(state, job).customization_master_id } : {}),
   };
   await atomicJson(resolve(job.output_dir, "批次关联.json"), metadata);
 }
@@ -252,9 +299,10 @@ export async function renderBatchReport(state) {
   for (const { job, directory, files } of rows) {
     const saved = [];
     for (const file of files) if (await stat(resolve(job.output_dir, file)).then((value) => value.isFile(), () => false)) saved.push(link(report, resolve(job.output_dir, file), file));
-    table.push(`| ${md(job.sku)} | ${link(report, job.sample.path, basename(job.sample.path))} | ${job.sample_usage === "customization_image" ? "定制图片样例" : "仅供创意参考，未用作图片定制"} | ${labels[job.status] ?? job.status} / ${job.stage} | ${directory} | ${saved.join("、") || "尚无产物"} | ${md(job.blockers.join("；")) || "无"} |`);
+    const usageLabel = { customization_image: "买家上传图片字段的展示样例", fixed_product_artwork: "固定印花图案，买家无需上传", creative_reference_only: "仅供创意参考，未作为固定印花或买家输入" }[job.sample_usage] ?? "待确认";
+    table.push(`| ${md(job.id)} / ${md(job.pattern_group_id ?? "独立配对")} / ${md(job.sku)} | ${link(report, job.sample.path, basename(job.sample.path))} | ${usageLabel} | ${labels[job.status] ?? job.status} / ${job.stage} | ${directory} | ${saved.join("、") || "尚无产物"} | ${md(job.blockers.join("；")) || "无"} |`);
   }
-  const text = `# ${state.batch_id} 批次总报告\n\n- SPU：${md(state.config.spu)}\n- 平台市场：${state.config.platform}-${state.config.market}\n- 自动任务：${state.config.auto_task}. ${state.config.task.label}（单个菜单 ${state.config.task.menu}）\n- 创建时间：${state.created_at}（批次号时区：${state.config.time_zone}）\n- 更新时间：${state.updated_at}\n- 批次状态：${link(report, state.state_path, "批次状态 JSON")}\n- 处理规则：${state.mapping_policy}\n- 整批选择：服务 ${state.config.seller_service}；类型 ${state.config.customization_type ?? "不适用"}；图片预设 ${state.config.image_preset ?? "本轮未执行"}\n- 数量：SKU ${state.inventory.sku_count}；有效去重图案 ${state.inventory.valid_image_count}；配对 ${state.inventory.paired_count}\n- 完成 ${counts.completed}｜待执行 ${counts.pending}｜执行中 ${counts.running}｜阻塞 ${counts.blocked}｜失败 ${counts.failed}｜目录待核对 ${counts.allocating}\n\n## SKU 与图案分配及产物\n\n| SKU | 分配图案 | 使用方式 | 状态 / 阶段 | Listing 目录 | 已保存产物 | 阻塞原因 |\n| --- | --- | --- | --- | --- | --- | --- |\n${table.join("\n")}\n\n## 数量差异和排除项\n\n| SKU / 文件 | 原因 |\n| --- | --- |\n${state.exclusions.length ? state.exclusions.map((item) => `| ${md(item.sku ?? item.path)} | ${md(item.reason)} |`).join("\n") : "| 无 | 无 |"}\n\n## 执行记录\n\n${state.jobs.map((job) => `### ${job.sku}\n\n${job.events.length ? job.events.map((event) => `- ${event.at} / ${event.stage}：${md(event.message)}`).join("\n") : "- 尚未执行"}`).join("\n\n")}\n\n## 下一步\n\n${counts.pending ? "继续领取待执行 SKU，依次完成所选范围。" : "查看产物，或根据阻塞项补充资料后在原目录续做。"} ${counts.allocating ? "目录分配曾中断，须核对已预留目录与批次关联后恢复，禁止再次分配目录。" : ""}\n`;
+  const text = `# ${state.batch_id} 批次总报告\n\n- SPU：${md(state.config.spu)}\n- 平台市场：${state.config.platform}-${state.config.market}\n- 批量任务：${state.config.auto_task}. ${state.config.task.label}（单个菜单 ${state.config.task.menu}）\n- 创建时间：${state.created_at}（批次号时区：${state.config.time_zone}）\n- 更新时间：${state.updated_at}\n- 批次状态：${link(report, state.state_path, "批次状态 JSON")}\n- 图案分配方式：${MAPPING_LABELS[state.config.mapping_mode ?? "one_to_one"]}（${state.config.mapping_mode ?? "one_to_one"}）\n- 语义：对目录中每张有效去重图案分别执行；任务数为${allSkus(state) ? "图案数 × SKU 数" : "图案数和 SKU 数较小的一方"}\n- 处理规则：${state.mapping_policy}\n- 整批选择：服务 ${state.config.seller_service}；类型 ${state.config.customization_type ?? "不适用"}；图片预设 ${state.config.image_preset ?? "本轮未执行"}\n- 数量：SKU ${state.inventory.sku_count}；有效去重图案 ${state.inventory.valid_image_count}；配对 ${state.inventory.paired_count}\n- 完成 ${counts.completed}｜待执行 ${counts.pending}｜执行中 ${counts.running}｜阻塞 ${counts.blocked}｜失败 ${counts.failed}｜目录待核对 ${counts.allocating}\n\n${allSkus(state) ? `## 共享图案组\n\n| 图案组 | 全部 SKU 变体 | 展开任务数 | 共享母版 |\n| --- | --- | --- | --- |\n${state.pattern_groups.map((group) => `| ${md(group.id)} | ${md(group.skus.join("、"))} | ${group.job_ids.length} | ${md(group.customization_master_id)} |`).join("\n")}\n\n同组图案和文案一致，只替换各 SKU 对应的商品外观与颜色。\n\n` : ""}## SKU 与图案分配及产物\n\n| 任务 ID / 图案组 / SKU | 分配图案 | 使用方式 | 状态 / 阶段 | Listing 目录 | 已保存产物 | 阻塞原因 |\n| --- | --- | --- | --- | --- | --- | --- |\n${table.join("\n")}\n\n## 数量差异和排除项\n\n| SKU / 文件 | 原因 |\n| --- | --- |\n${state.exclusions.length ? state.exclusions.map((item) => `| ${md(item.sku ?? item.path)} | ${md(item.reason)} |`).join("\n") : "| 无 | 无 |"}\n\n## 执行记录\n\n${state.jobs.map((job) => `### ${job.id} / ${job.sku}\n\n${job.events.length ? job.events.map((event) => `- ${event.at} / ${event.stage}：${md(event.message)}`).join("\n") : "- 尚未执行"}`).join("\n\n")}\n\n## 下一步\n\n${counts.pending ? "继续按任务 ID 领取待执行任务，依次完成所选范围。" : "查看产物，或根据阻塞项补充资料后在原目录续做。"} ${counts.allocating ? "目录分配曾中断，须核对已预留目录与批次关联后恢复，禁止再次分配目录。" : ""}\n`;
   const temp = `${report}.${randomUUID()}.tmp`;
   try { await writeFile(temp, text, { flag: "wx" }); await rename(temp, report); }
   finally { await unlink(temp).catch((error) => { if (error.code !== "ENOENT") throw error; }); }
@@ -262,7 +310,7 @@ export async function renderBatchReport(state) {
 
 export async function recordJob(statePath, sku, token, update) {
   return withBatchLock(statePath, async (state) => {
-    const job = state.jobs.find((item) => normalizeKey(item.sku) === normalizeKey(sku));
+    const job = selectJob(state, sku);
     if (!job || !token || job.lease_token !== token) throw new Error("任务令牌不匹配，不能更新其他执行者的任务");
     if (!["running", "completed"].includes(job.status)) throw new Error(`任务当前为 ${job.status}，请先恢复任务`);
     const stage = update.stage ?? job.stage;
@@ -290,7 +338,7 @@ export async function recordJob(statePath, sku, token, update) {
 
 export async function retryJob(statePath, sku) {
   return withBatchLock(statePath, async (state) => {
-    const job = state.jobs.find((item) => normalizeKey(item.sku) === normalizeKey(sku));
+    const job = selectJob(state, sku);
     if (!job || !["blocked", "failed", "allocating"].includes(job.status)) throw new Error("只能恢复阻塞、失败或目录分配中断的任务；执行中的任务用原令牌续做");
     if (job.status === "allocating" && !job.output_dir) throw new Error("分配记录缺少目录，请先核对磁盘预留目录并人工恢复记录，禁止再次调用版本分配器");
     const gallery = await loadGallery(state.project_root, { data: job.product, line: job.catalog_line });
@@ -313,6 +361,12 @@ export async function validateBatchListing(listingDirectory, { runListingGate = 
     || association.source_pattern_sha256 !== job.sample.sha256 || association.source_pattern !== job.sample.path
     || resolve(directory, association.batch_report) !== state.report_path) throw new Error("Listing 批次关联与原始分配记录不一致");
   await checkInputs(state, job);
+  if (allSkus(state)) {
+    const group = groupFor(state, job);
+    if (association.mapping_mode !== state.config.mapping_mode || association.pattern_group_id !== group.id
+      || association.listing_relationship !== "shared_pattern_variants" || association.customization_master_id !== group.customization_master_id
+      || JSON.stringify(association.variant_skus) !== JSON.stringify(group.skus)) throw new Error("Listing 共享图案组关联不一致");
+  }
   await stat(state.report_path);
   const required = ["商品资料.md", "上架/完整生产报告.md", "上架/next-action.json"];
   if (state.config.task.copy) required.push("文案/文案资产.md", "文案/关键词清单.md");
@@ -327,7 +381,7 @@ export async function validateBatchListing(listingDirectory, { runListingGate = 
   if (state.config.task.copy && state.config.platform === "Temu"
     && !/^#{2,4}\s+长描述\s*$/mu.test(await readFile(resolve(directory, "文案/文案资产.md"), "utf8"))) throw new Error("Temu 文案资产缺少长描述栏目");
   const next = JSON.parse(await readFile(resolve(directory, "上架/next-action.json"), "utf8"));
-  if (String(next.menu) !== String(state.config.task.menu)) throw new Error("自动菜单必须映射到单个菜单编号后校验下一步范围");
+  if (String(next.menu) !== String(state.config.task.menu)) throw new Error("批量菜单必须映射到单个菜单编号后校验下一步范围");
   if (next.batch_id !== state.batch_id || resolve(directory, "上架", next.batch_report ?? "") !== state.report_path) throw new Error("下一步动作记录缺少正确批次引用");
   if (state.config.task.images) {
     const imageDirectory = resolve(directory, "图片");
@@ -356,10 +410,12 @@ export async function validateBatchListing(listingDirectory, { runListingGate = 
       if (entry.name === "套图配置.json" || entry.name.endsWith(".verify.json")) {
         const meta = JSON.parse(await readFile(path, "utf8"));
         if (meta.batch_id !== state.batch_id || meta.sku !== job.sku || meta.source_pattern_sha256 !== job.sample.sha256) throw new Error(`图片记录的批次 / SKU / 图案来源不一致：${path}`);
+        if (allSkus(state) && (meta.job_id !== job.id || meta.pattern_group_id !== job.pattern_group_id
+          || meta.customization_master_id !== groupFor(state, job).customization_master_id)) throw new Error(`图片记录的共享图案组 / 母版不一致：${path}`);
         if (resolve(dirname(path), meta.batch_report ?? "") !== state.report_path) throw new Error(`图片记录缺少正确批次报告引用：${path}`);
         if (meta.source_pattern_usage !== job.sample_usage) throw new Error(`图片记录未区分定制图案与创意参考：${path}`);
         if (entry.name === "套图配置.json" && meta.preset !== state.config.image_preset) throw new Error("套图预设与整批确认不一致");
-        if (entry.name === "套图配置.json" && meta.variants) throw new Error("自动模式每 SKU 独立 Listing，禁止混入多变体套图配置");
+        if (entry.name === "套图配置.json" && meta.variants) throw new Error("批次子任务仅验收当前 SKU 的套图，禁止混入其他 SKU 的套图配置");
       }
     }
   };
@@ -381,7 +437,7 @@ async function runCli() {
     else if (command === "record" && target && sku && token && updatePath) result = await recordJob(target, sku, token, JSON.parse(await readFile(resolve(updatePath), "utf8")));
     else if (command === "retry" && target && sku) result = await retryJob(target, sku);
     else if (command === "check-listing" && target) result = await validateBatchListing(target);
-    else throw new Error("用法：batch-production.mjs create <配置.json> | status <状态.json> | claim <状态.json> [SKU] | record <状态.json> <SKU> <令牌> <步骤.json> | retry <状态.json> <SKU> | check-listing <Listing目录>");
+    else throw new Error("用法：batch-production.mjs create <配置.json> | status <状态.json> | claim <状态.json> [任务ID或唯一SKU] | record <状态.json> <任务ID或唯一SKU> <令牌> <步骤.json> | retry <状态.json> <任务ID或唯一SKU> | check-listing <Listing目录>");
     process.stdout.write(JSON.stringify(result, null, 2) + "\n");
     if (command === "record" && result.status === "failed" || command === "claim" && result.job?.status === "blocked") process.exitCode = 1;
   } catch (error) { process.stderr.write(`批次处理失败：${error.message}\n`); process.exitCode = 1; }

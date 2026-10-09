@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile, readdir, stat } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { MAPPING_LABELS } from "./batch-production.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 
@@ -16,6 +17,7 @@ const files = Object.fromEntries(
       "agents/visual-production-agent.md",
       "workflows/product-to-listing.md",
       "workflows/start-guide.md",
+      "workflows/automatic-batch.md",
       "workflows/creative-direction-selection.md",
       "workflows/action-menu.md",
       "workflows/output-structure.md",
@@ -114,6 +116,20 @@ assert.match(start, /商品链接：请替换为实际商品详情页链接（�
 assert.match(start, /复盘时间范围：2026-07-01 至 2026-07-24/);
 
 const rules = files["AGENTS.md"];
+const batchWorkflow = files["workflows/automatic-batch.md"];
+for (const [mode, label] of Object.entries(MAPPING_LABELS)) {
+  for (const path of ["AGENTS.md", "README.md", "workflows/start-guide.md", "workflows/automatic-batch.md", "workflows/output-structure.md", "templates/production-output.md"]) {
+    assert.ok(files[path].includes(label), `${path} 缺少统一的图案分配方式名称：${label}`);
+    assert.ok(files[path].includes(mode), `${path} 缺少图案分配机器枚举：${mode}`);
+  }
+}
+assert.match(batchWorkflow, /一张图案.*每张有效去重图案分别执行该规则/);
+assert.match(batchWorkflow, /任务数取图案数和 SKU 数量较小的一方/);
+assert.match(batchWorkflow, /任务数为图案数 × SKU 数，不按数量截断/);
+assert.match(batchWorkflow, /同组保持图案、展示文字、创意和文案一致，只替换各 SKU 的真实商品外观与颜色/);
+assert.match(batchWorkflow, /同一 SKU 对应多个图案时会明确拒绝并列出可选任务 ID/);
+assert.match(batchWorkflow, /pattern_group_id/);
+assert.match(batchWorkflow, /共享 customization_master_id/);
 assert.match(rules, /去除整个输入及每个组合项首尾空格/);
 assert.match(rules, /英文字母不区分大小写/);
 assert.match(rules, /两个 SKU 去除首尾空格并忽略大小写后相同时/);
@@ -125,7 +141,7 @@ assert.match(rules, /`重新选择创意` 表示原样重新展示上一轮候�
 assert.match(rules, /`重新生成创意` 表示废弃上一轮候选/);
 assert.match(rules, /不支持 `改选创意 3` 等额外语法/);
 assert.match(rules, /node scripts\/output-versioning\.mjs/);
-assert.match(rules, /本批次全部产物统一写入脚本返回的下一个 `\{Listing标识\}-vN\/` 目录/);
+assert.match(rules, /新批次全部产物统一写入脚本返回的下一个 `\{Listing标识\}-vN\/` 目录/);
 assert.match(rules, /禁止给文案、图片、视频、脚本、验收报告或完整报告文件名添加 `-vN`/);
 assert.match(rules, /同一批次后续.*必须复用已分配目录/);
 assert.match(rules, /不得创建对应空目录/);
@@ -137,15 +153,17 @@ assert.match(rules, /图片生产前执行资料充足性门禁/);
 assert.match(rules, /只影响单张图片的事实不足时，仅暂停对应图片/);
 assert.match(rules, /不得作为买家可见文字、徽章或图标进入商品图/);
 assert.match(rules, /暂停图片必须记录图片序号、图片类型、暂停原因、最低补充资料/);
-assert.match(rules, /目标图片文件尚不存在时继续写入原 Listing 版本目录/);
+assert.match(rules, /暂停图片的目标文件尚不存在时补写原路径/);
+assert.match(rules, /同一批次的断点续做和用户反馈修订都复用原 Listing 版本目录/);
+assert.match(rules, /已存在图片被用户指出有问题时，视为对该目标的修改授权，在原路径重生成/);
 assert.match(rules, /16 个编号章节之前生成 `问题速览`/);
 assert.match(rules, /issue-\{两位章节号\}-\{两位问题序号\}/);
 assert.match(rules, /node scripts\/check-report-anchors\.mjs <报告路径>/);
-assert.match(rules, /卖家定制服务确认是创意方向和自动商品资料示例的共同前置门禁/);
-assert.match(rules, /当前回复只能显示上述三项数字菜单/);
-assert.match(rules, /不得同时生成或展示商品资料示例/);
-assert.match(rules, /必须直接归一化并跳过三项菜单/);
-assert.match(rules, /只说明商品能力，不能据此推断卖家服务为必选或可选/);
+assert.match(rules, /卖家定制服务与定制类型均确认后，才通过创意方向和自动商品资料示例的共同前置门禁/);
+assert.match(rules, /当前回复只提出当前缺少的那一个数字选择/);
+assert.match(rules, /不同时生成或展示商品资料示例、创意方向或正式产物/);
+assert.match(rules, /必须直接归一化并跳过已明确的菜单/);
+assert.match(rules, /商品支持文字\/图片定制.*不能替代本 Listing 的定制类型选择/);
 assert.match(rules, /已上架数据复盘必须先取得实际商品详情链接、复盘时间范围和运营数据/);
 assert.match(rules, /商品名称只能辅助识别，不能替代链接/);
 assert.match(rules, /未通过门禁时只索取缺失资料，不得进入复盘、生成报告或分配输出目录/);
@@ -181,7 +199,7 @@ assert.match(creative, /## 候选评分模型/);
 assert.match(creative, /商品事实匹配度 \| 25%/);
 assert.match(creative, /市场热度与内容信号 \| 15%/);
 assert.match(creative, /已获得加权分 ÷ 已获得维度权重 × 100/);
-assert.match(creative, /不得把“未获取”解释为“没有热度”/);
+assert.match(creative, /不得把任一种缺失解释为“没有热度”/);
 assert.match(creative, /用户回复 `重新选择创意` 时，原样重新展示最近一轮候选菜单/);
 assert.match(creative, /用户回复 `重新生成创意` 时，废弃最近一轮候选及当前选择/);
 assert.match(creative, /与上一轮方向做跨批次语义去重/);
@@ -226,7 +244,7 @@ assert.match(marketSources, /Google Trends.*不能单独证明目标平台流量
 assert.match(marketSources, /每个进入最终标题的主要关键词必须记录/);
 assert.match(marketSources, /## 创意方向热度证据/);
 assert.match(marketSources, /目标平台直接信号、搜索趋势信号、内容热度信号或其他平台补充信号/);
-assert.match(marketSources, /不把未获取解释为没有需求/);
+assert.match(marketSources, /不把未获取 \/ 未调用解释为没有需求/);
 
 const actions = files["workflows/action-menu.md"];
 assert.match(actions, /用户选择启动菜单或下一步动作即视为同意执行该动作/);
@@ -291,7 +309,7 @@ for (let i = 1; i <= 16; i += 1) {
 assert.match(output, /菜单 2“文案 \+ AI 商品图”完成后/);
 assert.match(output, /只有 1 个合理动作时只提供 1 个/);
 for (const imageType of [
-  "最终定制主图",
+  "最终商品主图",
   "到手内容/包装图",
   "定制操作示意图",
   "尺寸规格图",
@@ -329,7 +347,8 @@ assert.match(output, /按“商品结构 \+ 定制位置 \+ 输入类型 \+ 定�
 assert.match(output, /只选择一个视觉清晰的代表商品演示一次/);
 assert.match(output, /不得把 `Text`、`Image` 等输入类型分别指向两个同类型组件/);
 assert.match(output, /尺寸规格图和尺寸对比图必须分开处理/);
-assert.match(output, /Temu 标准 5 张必须包含主图、日常使用场景图、礼赠场景图、卖点集合图和尺寸规格图/);
+assert.match(output, /不得合并两张图或用参考物替代精确尺寸/);
+assert.match(output, /标准 5 张须包含主图、日常使用场景图、礼赠场景图、卖点集合图和尺寸规格图/);
 assert.match(output, /`Size Reference`/);
 assert.match(output, /`Per Item` 与实际套装数量/);
 assert.match(output, /图片生产前执行资料充足性门禁/);
@@ -344,23 +363,23 @@ assert.match(output, /\[查看详情\]\(#issue-02-01\)/);
 assert.match(output, /\[返回问题速览\]\(#issue-summary\)/);
 assert.match(output, /只有 `必选` 和 `可选` 才进入定制母版/);
 assert.match(output, /服务为 `不提供` 时不得登记定制母版或生成定制操作示意图/);
-assert.match(coreAgent, /不得固定套用某一组示例词/);
+assert.match(rules, /不得固定套用某一组示例词/);
 assert.match(coreAgent, /示例只能在建立本套“定制母版”时选择一次/);
 assert.match(coreAgent, /定制类组合商品还必须记录组合内定制关系/);
 assert.match(coreAgent, /商品是否具备定制能力，以及本 Listing 是否由卖家提供定制服务/);
 assert.match(coreAgent, /只询问 `1\. 不提供定制`、`2\. 提供定制，买家必须提交定制内容`、`3\. 提供定制，买家可以选择是否定制`/);
-assert.match(coreAgent, /定制服务选择是创意方向和自动商品资料示例的共同前置门禁/);
+assert.match(coreAgent, /定制服务与定制类型是创意方向和自动商品资料示例的共同前置门禁/);
 assert.match(coreAgent, /不得在同一回复中附带自动商品资料示例/);
-assert.match(coreAgent, /直接归一化并跳过菜单/);
-assert.match(files["agents/visual-production-agent.md"], /支持任意文字时用 `Add Your Text`/);
-assert.match(files["agents/visual-production-agent.md"], /接受照片、插画或图案等广义图片时用 `Upload Your Image`/);
+assert.match(coreAgent, /直接归一化并跳过已确认项的菜单/);
+assert.match(files["platforms/image-set-rules.md"], /标签可按字段使用 `Add Your Name`、`Add Your Text`/);
+assert.match(files["platforms/image-set-rules.md"], /`Upload Your Photo` 或 `Upload Your Image`，但只能保留实际输入类型对应的标签/);
 assert.match(files["agents/visual-production-agent.md"], /必须先生成并验收最终定制主图/);
 assert.match(files["agents/visual-production-agent.md"], /默认一套图只展示一个定制母版/);
 assert.match(files["agents/visual-production-agent.md"], /同组组件只选择一个视觉清晰的代表商品演示一次/);
-assert.match(files["agents/visual-production-agent.md"], /不得使用 `Upload Your Image` 指向没有图片内容的空白区域/);
-assert.match(files["agents/visual-production-agent.md"], /尺寸规格图和尺寸对比图是两个独立图型/);
+assert.match(files["agents/visual-production-agent.md"], /不得用箭头指向空白表面暗示该类型效果/);
+assert.match(files["agents/visual-production-agent.md"], /目标平台要求独立输出尺寸规格图和尺寸对比图时，是否分别保存/);
 assert.match(files["agents/visual-production-agent.md"], /Temu 默认选 `standard_5`/);
-assert.match(files["agents/visual-production-agent.md"], /比例失真或可能被误认作到手内容时判定为不可用/);
+assert.match(files["agents/visual-production-agent.md"], /无尺寸来源物件或比例失真判为不可用/);
 assert.match(files["agents/visual-production-agent.md"], /资料充足性门禁/);
 assert.match(files["agents/visual-production-agent.md"], /暂停该图，继续生成其他事实充分的图片/);
 assert.match(files["agents/visual-production-agent.md"], /包装形式未确认但实际到手内容已确认时/);
@@ -369,7 +388,8 @@ assert.match(files["agents/visual-production-agent.md"], /复用当前商品档�
 assert.match(files["agents/visual-production-agent.md"], /issue-image-\{两位图片序号\}/);
 assert.match(files["agents/visual-production-agent.md"], /商品具备定制能力只描述物理或生产能力/);
 assert.match(files["agents/visual-production-agent.md"], /卖家定制服务为 `待确认`：暂停定制资产生产/);
-assert.match(files["platforms/image-set-rules.md"], /姓名专用字段可写 `Add Your Name`，自由文字字段写 `Add Your Text`/);
+assert.match(files["platforms/image-set-rules.md"], /每种实际输入类型只保留一个标签/);
+assert.match(files["platforms/image-set-rules.md"], /固定内容不得误标为可上传或可编辑/);
 assert.match(files["platforms/image-set-rules.md"], /商品具备定制能力不等于本 Listing 启用卖家定制/);
 assert.match(files["platforms/image-set-rules.md"], /Temu 图片生产预设：默认生成 `标准 5 张`/);
 assert.match(files["platforms/image-set-rules.md"], /用户可在正式生产前选择 `扩展 9 张`/);
@@ -379,30 +399,31 @@ assert.match(files["platforms/image-set-rules.md"], /不得替换主图、到手
 assert.match(files["platforms/image-technical-specs.md"], /Temu 标准 5 张预设必须含尺寸规格图；扩展 9 张预设另含独立尺寸对比图/);
 assert.match(files["platforms/image-technical-specs.md"], /场景对比图为选填增强图，不计入必备图型/);
 assert.match(coreAgent, /Temu 图片数量使用非阻塞预设节点/);
-assert.match(coreAgent, /尺寸对比图通过真实比例验收/);
-assert.match(coreAgent, /场景对比图按选填增强图处理/);
-assert.match(coreAgent, /未启用场景对比图不影响完成状态/);
+assert.match(files["platforms/image-technical-specs.md"], /在最终落盘图片中测量双方同一物理轴的像素长度/);
+assert.match(files["platforms/image-set-rules.md"], /场景对比图（选填）/);
+assert.match(files["platforms/image-set-rules.md"], /未启用场景对比图不影响套图完成状态/);
 assert.match(files["agents/visual-production-agent.md"], /未明确选择时直接用默认 5 张继续/);
-assert.match(files["agents/visual-production-agent.md"], /Temu 场景对比图是选填的使用效果增强图/);
-assert.match(files["agents/visual-production-agent.md"], /不增加固定完成数量/);
+assert.match(files["agents/visual-production-agent.md"], /场景对比图与尺寸对比图表达不同信息/);
+assert.match(output, /不改变默认完成数量/);
 assert.match(files["docs/agent-testing.md"], /Temu 默认使用标准 5 张/);
 assert.match(files["docs/agent-testing.md"], /尺寸对比图与尺寸规格图为两个独立文件/);
 assert.match(files["docs/agent-testing.md"], /场景对比图为条件式选填/);
 assert.match(output, /#### Temu 场景对比图决策/);
-assert.match(output, /未启用场景对比图不得列为缺失图片/);
-assert.match(rules, /Temu 扩展 9 张预设包含独立尺寸对比图/);
-assert.match(rules, /Temu 后台标注的“场景对比图”按选填增强图处理/);
+assert.match(output, /场景对比图为选填增强图，不启用不算缺失/);
+assert.match(rules, /平台特定图型及其必选\/选填状态按 `platforms\/image-set-rules\.md` 执行/);
+assert.match(files["platforms/image-set-rules.md"], /扩展 9 张另含独立尺寸对比图/);
+assert.match(rules, /场景对比图不得与尺寸对比图混用/);
 
 const productInput = files["templates/product-input.md"];
 for (const field of ["商品具备定制能力", "卖家定制服务", "非卖家定制定位", "默认到手状态"]) {
   assert.match(productInput, new RegExp(field), `产品输入模板缺少定制流程字段：${field}`);
 }
 assert.match(files["workflows/start-guide.md"], /不得把普通成品和 DIY 空白基底拆成同级选项|不再放入同级菜单/);
-assert.match(files["workflows/start-guide.md"], /当前回复只能显示一次纯数字选择/);
-assert.match(files["workflows/start-guide.md"], /不得要求用户把定制选项数字和商品资料一起回传/);
-assert.match(files["workflows/start-guide.md"], /收到数字选择并写入当前 Listing 后才继续/);
-assert.match(files["workflows/start-guide.md"], /直接归一化并跳过菜单/);
-assert.match(files["workflows/start-guide.md"], /只表示商品能力，不能代替 Listing 服务选择/);
+assert.match(files["workflows/start-guide.md"], /当前回复只能显示一次纯数字服务选择/);
+assert.match(files["workflows/start-guide.md"], /不得要求用户把选项数字和商品资料一起回传/);
+assert.match(files["workflows/start-guide.md"], /收到所有缺失的数字选择并写入当前 Listing 后才继续/);
+assert.match(files["workflows/start-guide.md"], /直接归一化并跳过已明确项目的菜单/);
+assert.match(files["workflows/start-guide.md"], /只表示商品能力，不能代替 Listing 服务或定制类型选择/);
 assert.match(productInput, /## 已上架数据复盘的最小输入/);
 assert.match(productInput, /商品名称不能替代链接/);
 assert.match(productInput, /只提供商品名称、SKU 或运营数据时/);
@@ -422,15 +443,17 @@ assert.match(rules, /先生成并验收主图，再把主图中的最终定制�
 assert.match(rules, /不得逐张独立随机生成新的定制方案/);
 assert.match(rules, /组合内定制关系/);
 assert.match(rules, /同一类型.*只选择其中一个代表商品演示一次/);
-assert.match(rules, /Temu 扩展 9 张预设包含独立尺寸对比图/);
-assert.match(rules, /两张图不得合并或互相替代/);
+assert.match(rules, /平台特定图型及其必选\/选填状态按 `platforms\/image-set-rules\.md` 执行/);
+assert.match(files["platforms/image-set-rules.md"], /扩展 9 张另含独立尺寸对比图/);
+assert.match(rules, /场景对比图不得与尺寸对比图混用/);
 assert.match(rules, /`Dimensions Shown Per Item`/);
 assert.match(rules, /商品“具备定制能力”和“本 Listing 是否启用卖家定制服务”必须分开记录/);
 assert.match(rules, /不得把普通成品和 DIY 空白基底拆成同级选项/);
 assert.match(rules, /生成标题前必须.*建立标题关键词数据链/);
-assert.match(coreAgent, /每个段落最多 `500` 个字符/);
+assert.match(platformProfiles, /每个段落最多 `500` 个字符/);
+assert.match(coreAgent, /“要点描述”按 `platforms\/platform-profiles\.md`/);
 assert.match(coreAgent, /先建立关键词候选池，再确定词序/);
-assert.match(coreAgent, /所有平台都必须执行标题关键词数据链/);
+assert.match(coreAgent, /生成标题前必须读取 `platforms\/market-data-sources\.md` 的“标题关键词数据链”/);
 assert.match(coreAgent, /多平台任务分别研究、分别组词并分别输出/);
 assert.match(readme, /商品定制能力与本 Listing 的卖家定制服务分开判断/);
 
@@ -593,4 +616,4 @@ for (const markdownPath of markdownFiles) {
   }
 }
 
-console.log("规则一致性检查通过：入口、动态输入、已上架复盘门禁、SKU、CSV 商品资料、创意方向、跨平台标题数据链、双层输出、16 章完整报告、动作确认、Temu 描述与套图、本地文档链接均一致。");
+console.log("规则一致性检查通过：入口、批量图案分配、动态输入、已上架复盘门禁、SKU、CSV 商品资料、创意方向、跨平台标题数据链、双层输出、16 章完整报告、动作确认、Temu 描述与套图、本地文档链接均一致。");
