@@ -1,0 +1,11 @@
+{
+  "layout": "top_steps_bottom_arrow",
+  "approval_status": "available_reference",
+  "image": "ref-custom-text-2.png",
+  "customization_type": "文",
+  "id": "text-only-mug-top-steps",
+  "asset_type": "customization_template",
+  "scope": "operation_guide_only",
+  "spu": "MUG",
+  "sha256": "67998c76fc416284e414db961261dba1642a91a50a63d3828c44931b5cd05bc7"
+}

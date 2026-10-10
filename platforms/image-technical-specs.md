@@ -136,4 +136,4 @@
 
 规则未确认前，默认按 `2000 x 2000 px` 正方形生成商品图，并标注“需上传前确认平台图片技术规格”。
 
-尺寸实物参照与仅文字操作辅图生产前，必须读取 [参考资产规则](./reference-assets.md) 和 `data/reference-assets/index.json`，加载登记源图并检查核验状态。
+尺寸实物参照与定制操作辅图生产前，必须读取 [参考资产规则](./reference-assets.md) 和 `data/products/{标准SPU}/ref-object-*.json、ref-custom-*.json`，加载登记源图并检查核验状态。

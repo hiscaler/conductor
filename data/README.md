@@ -21,6 +21,14 @@ data/
 
 ## 使用方法
 
+## SPU 共用参考图
+
+`data/products/{标准SPU}/` 根层保存该 SPU 全部 SKU 共用的参考资产；SKU 子目录继续保存各自实物图。实物参考使用 `ref-object-N.png/jpg` 和同名 JSON；定制模板分别使用 `ref-custom-text-N.png`、`ref-custom-image-N.png`、`ref-custom-image-text-N.png` 和同名 JSON。辅助证据、原始附件与历史记录不参加随机选择。
+
+当前马克杯资料见 [MUG 参考资产](products/MUG/reference-assets.md)。按 [参考资产规则](../platforms/reference-assets.md) 从适用候选中选择一次，保存到生产目录的 `参考资产选择.json`；同套图和同共享图案组保持相同实物与模板，补图和续做沿用记录。参考 JSON 只记录资产资料，不改变 CSV 商品事实。
+
+## 商品资料使用方法
+
 批量模式以已存在的 SPU 为范围，读取并校验主表和扩展属性后，将其 SKU 与外部示例图案目录中的有效去重图片按已确认的分配规则配对。示例图片是定制/创意素材，商品外观仍来自对应 SKU 的图库；数量差异写入总报告。每 SKU 独立 Listing，详情见 [批量生产流程](../workflows/automatic-batch.md)。CSV 表头及事实结构继续使用下述约定。
 
 1. 在 `product-catalog.csv` 中增加或维护通用商品记录，每行一个 SKU。

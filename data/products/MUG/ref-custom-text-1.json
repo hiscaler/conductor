@@ -1,0 +1,16 @@
+{
+  "id": "text-only-mug",
+  "image": "ref-custom-text-1.png",
+  "original": "ref-custom-text-original.png",
+  "customization_type": "文",
+  "text_region": "main_mug_blank_preview_thumbnail_placeholder",
+  "requested_height_multiplier": 1.5,
+  "approval_status": "user_approved",
+  "scope": "operation_guide_only",
+  "sha256": "29dc83ad7bd2a0d01098638fc7b868b01d00de3b662a8de03c8b2c546724a30f",
+  "layout": "left_steps_right_mug",
+  "approved_at": "2026-10-10",
+  "approved_source": "user_uploaded_a492c423-f33a-4702-80d9-13b616bed5be",
+  "asset_type": "customization_template",
+  "spu": "MUG"
+}

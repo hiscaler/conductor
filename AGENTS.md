@@ -25,7 +25,7 @@
 - `platforms/market-data-sources.md`
 - `platforms/image-set-rules.md`
 - `platforms/image-technical-specs.md`
-- `platforms/reference-assets.md`（尺寸实物参照与仅文字定制操作图还须加载 `data/reference-assets/index.json` 及对应源图）
+- `platforms/reference-assets.md`（尺寸实物参照与仅文字定制操作图还须加载 `data/products/{标准SPU}/ref-object-*.json、ref-custom-*.json` 及对应源图）
 - `workflows/product-to-listing.md`
 - `workflows/start-guide.md`
 - `workflows/creative-direction-selection.md`
@@ -85,6 +85,8 @@
 - 节日建议必须属于目标市场、晚于当前日期，并扣除生产、定制、物流和营销准备时间；过期、来不及或关联牵强的节日不得推荐。
 
 ## 3A. 商品资料库与白底图库
+
+- SPU 共用实物参考与定制示意模板保存在 `data/products/{标准SPU}/` 根层，SKU 实物图仍在各自子目录。生产前按 `platforms/reference-assets.md` 加载对应 `ref-object-N.json`、`ref-custom-{text|image|image-text}-N.json` 和源图，用户指定优先，否则从适用候选随机选一次；调用 `scripts/select-reference-assets.mjs` 保存当前生产目录的 `参考资产选择.json`。同套图、同共享图案组全部 SKU 固定沿用选择，修改、补图和续做不重新随机；缺少适用资产只暂停依赖图片。参考资料不替代 CSV 商品事实。
 
 - 读取 `data/product-catalog.csv` 和 `data/product-attributes.csv`：主表提供跨品类通用数据，扩展属性表提供品类参数；按 `data/products/{SPU}/{SKU}/` 加载原始商品图片。
 - CSV 是商品资料库的唯一事实源。Agent 必须按固定表头读取，不得自行增删字段或改变结构。

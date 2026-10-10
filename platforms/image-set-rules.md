@@ -180,4 +180,4 @@
 
 Temu 批量 `one_to_all_skus` 执行前必须读取 [Temu 批量共享图案规则](./temu-batch-rules.md)。专用目录、图片命名、共享图集、强制定制示意图、数量与配置由该文件统一维护，优先于本文件通用变体套图规则；单个、one_to_one 及其他平台不适用。
 
-尺寸实物参照与仅文字操作辅图生产前，必须读取 [参考资产规则](./reference-assets.md) 和 `data/reference-assets/index.json`，加载登记源图并检查核验状态。
+尺寸实物参照与定制操作辅图生产前，必须读取 [参考资产规则](./reference-assets.md) 和 `data/products/{标准SPU}/ref-object-*.json、ref-custom-*.json`，加载登记源图并检查核验状态。

@@ -476,4 +476,4 @@ output/{平台}-{市场}/{Listing版本目录}/视频/
 {{COPY_AND_POSITIONING}}
 ```
 
-尺寸实物参照与仅文字操作辅图生产前，必须读取 [参考资产规则](../platforms/reference-assets.md) 和 `data/reference-assets/index.json`，加载登记源图并检查核验状态。
+尺寸实物参照与定制操作辅图生产前，必须读取 [参考资产规则](../platforms/reference-assets.md) 和 `data/products/{标准SPU}/ref-object-*.json、ref-custom-*.json`，加载登记源图并检查核验状态。

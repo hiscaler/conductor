@@ -1,0 +1,14 @@
+{
+  "id": "pepsi-us-12oz",
+  "name": "Pepsi US 12 fl oz can",
+  "image": "ref-object-3.png",
+  "source_url": "https://www.pepsicoproductfacts.com/Home/product?PPF=&form=RTD&formula=35005*26*01-01&size=12",
+  "image_url": "https://www.pepsicoproductfacts.com/content/image/products/4c04ef698005f44a_00012000000133_C1N1.png?r=20250808",
+  "dimensions_verified": false,
+  "dimensions_cm": null,
+  "public_reuse_rights": "unconfirmed",
+  "sha256": "6169ebdd60718b2a56dde8cc6c964a01431968996dfbfb6a1300759fa3bf2432",
+  "downloaded_at": "2026-10-10",
+  "asset_type": "reference_object",
+  "spu": "MUG"
+}
