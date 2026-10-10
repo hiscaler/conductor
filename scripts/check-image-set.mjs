@@ -2,6 +2,7 @@ import { readdir, readFile, stat } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import { resolve, extname, join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { patternGroupImages } from "./pattern-group-images.mjs";
 
 // 平台图集预设：单一事实来源在 scripts/image-sets.json（与 output/{平台}-{市场} 路径首段一致）。
 // Temu 的所选预设和类目额外必传图记录在 图片/套图配置.json。未知平台跳过结构门。
@@ -165,6 +166,8 @@ const checkImageSet = async (dirPath, platform) => {
   const skuByImage = new Map();
   let sharedCustomizationMasterId;
   let customizationEnabled = false;
+  let patternGroupConfig;
+  let sharedGroupImages = [];
 
   const resolvedPlatform = detectPlatform(root, platform);
   const platformCfg = resolvedPlatform ? IMAGE_SETS[resolvedPlatform] : undefined;
@@ -259,6 +262,18 @@ const checkImageSet = async (dirPath, platform) => {
 
         if (!preset) {
           // The invalid preset was reported above; avoid dereferencing it below.
+        } else if (config.output_layout === "pattern_group") {
+          patternGroupConfig = config;
+          const contract = patternGroupImages(config);
+          failures.push(...contract.errors);
+          sharedCustomizationMasterId = config.customization_master_id;
+          customizationEnabled = config.customization_enabled === true;
+          sharedGroupImages = contract.shared;
+          for (const [name, sku] of contract.owners) skuByImage.set(name, sku);
+          const expected = validateExpectedFiles(contract.expected, "图案组 ");
+          const unexpected = rasterImages.filter((name) => !expected.includes(name));
+          if (unexpected.length) failures.push(`结构超出图案组套图：${unexpected.join("、")}`);
+          if (rasterImages.length !== expected.length) failures.push(`图案组数量不符：应为 ${expected.length} 张，实际 ${rasterImages.length} 张`);
         } else if (Array.isArray(config.variants)) {
           if (config.variants.length < 2) {
             failures.push(`结构配置错误：${configName} variants 至少需要两个 SKU；单 SKU Listing 不使用变体分组`);
@@ -389,6 +404,12 @@ const checkImageSet = async (dirPath, platform) => {
       continue;
     }
     const expectedSku = skuByImage.get(name);
+    if (patternGroupConfig && (data?.pattern_group_id !== patternGroupConfig.pattern_group_id
+      || data?.customization_master_id !== patternGroupConfig.customization_master_id)) failures.push(`图案组或母版不一致：${name}`);
+    if (patternGroupConfig && sharedGroupImages.includes(name)
+      && (JSON.stringify(data?.variant_skus) !== JSON.stringify(patternGroupConfig.variant_skus) || data?.sku != null || data?.job_id != null)) failures.push(`共享副图须记录全部 variant_skus：${name}`);
+    if (patternGroupConfig && expectedSku
+      && data?.job_id !== patternGroupConfig.variants.find((variant) => variant.sku === expectedSku)?.job_id) failures.push(`SKU 专属图片 job_id 不一致：${name}`);
     if (expectedSku && data?.sku !== expectedSku) {
       failures.push(`SKU 对应关系未确认：${name} 侧车 sku=${JSON.stringify(data?.sku)}，应为 ${expectedSku}`);
     }

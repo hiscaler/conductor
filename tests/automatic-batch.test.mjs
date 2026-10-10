@@ -42,7 +42,7 @@ async function fixture(t, { skus = ["SKU-B", "SKU-A"], patterns = ["red", "blue"
   const samples = resolve(project, "samples");
   await mkdir(samples);
   for (let i = 0; i < patterns.length; i++) await image(resolve(samples, `pattern-${i}.png`), patterns[i]);
-  const scripts = ["batch-production.mjs", "product-catalog.mjs", "output-versioning.mjs", "validate-listing.mjs", "check-report-anchors.mjs", "check-output-layout.mjs", "check-copy-language.mjs", "check-image-set.mjs", "next-action-scope.mjs", "temu-description-limit.mjs", "image-sets.json"];
+  const scripts = ["batch-production.mjs", "product-catalog.mjs", "output-versioning.mjs", "validate-listing.mjs", "check-report-anchors.mjs", "check-output-layout.mjs", "check-copy-language.mjs", "check-image-set.mjs", "next-action-scope.mjs", "temu-description-limit.mjs", "image-sets.json", "pattern-group-images.mjs"];
   await mkdir(resolve(project, "scripts"));
   for (const file of scripts) await copyFile(resolve(root, "scripts", file), resolve(project, "scripts", file));
   const config = { spu: "spu", sample_directory: samples, platform: "Temu", market: "US", auto_task: 2, seller_service: "必选", customization_type: "图文" };
@@ -224,6 +224,9 @@ test("CSV 拒绝孤立属性、重复 SKU 和非法引号，并保留合法多�
 for (const mapping_mode of ["one_to_one", "one_to_all_skus"]) test(`套图完成闸门检查实际数量、SKU、图案来源和母版：${mapping_mode}`, async (t) => {
   const f = await fixture(t);
   const state = await f.create({ ...f.config, auto_task: 4, customization_type: "仅图片", mapping_mode });
+  // 此既有闸门用例保留历史逐 SKU 布局，检查旧批次兼容性。
+  delete state.config.output_layout;
+  await put(state.state_path, JSON.stringify(state));
   const { job, pattern_group } = await claimJob(state.state_path);
   const directory = job.output_dir;
   const writeDoc = async (file, body) => {

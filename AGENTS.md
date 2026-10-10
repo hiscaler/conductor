@@ -3,14 +3,14 @@
 > **入口引导（适用于 Codex / Cursor / WorkBuddy 等所有运行环境）**
 > 本项目指令在本工作区会被当作项目指南注入，但可能被平台截断。无论运行环境是哪一种，遇到以下入口短句或任何跨境电商任务时，**必须先使用 Read 工具全量加载以下文件，再按规则执行**，避免规则缺失：
 > - 角色与完整流程：`agents/cross-border-commerce-agent.md`（给模型使用的角色提示词，必须全量读取并作为本会话角色设定）
-> - 入口菜单：`workflows/start-guide.md`（用户输入 你好 / hello / 开始 / 菜单 / 帮助 / 使用说明 / 我要用指挥家 / 我该怎么用 / 可以做什么 等时，读取并只输出数字菜单，不输出 16 章报告）
+> - 入口菜单：`workflows/start-guide.md`（用户输入 你好 / hello / 开始 / 菜单 / 帮助 / 使用说明 / 我要用指挥家 / 我该怎么用 / 可以做什么 等时，读取并只输出带简短用途说明的数字菜单，不输出 16 章报告）
 > - 主约束：本文件 `AGENTS.md`
 > - 任务明确涉及文案、图片、视频、竞品、复盘等时，再按下方 §1 列表读取对应文件。
 > 正式产出保存后，必须按 §2 运行 `node scripts/*.mjs` 完成校验（报告锚点、Temu 描述长度、输出布局、下一步动作范围等）。产物保存到 `output/{平台}-{市场}/{Listing标识}[-vN]/`。
 
 执行跨境电商任务时，按本文件加载规则、检查输入、完成研究与生产，并输出合规检查和下一步动作。
 
-**运行模式**：hello 等入口先只显示 `1. 单个`、`2. 批量`。单个进入既有 13 项任务菜单；批量加载 `workflows/automatic-batch.md`，只显示文案、文案加图、文案加图加视频脚本、只生成图片四项（内部菜单映射 1/2/3/8）。批量模式由系统自动逐项处理。明确的自然语言任务继续使用现有单个模式。所有数字按最近显示的菜单上下文解释。
+**运行模式**：hello 等入口先显示两个带用途说明的数字选项：`1. 单个`（适合单个 Listing 或希望控制每一步的任务）和 `2. 批量`（适合同一 SPU 下多个 SKU/图案，按批次规则展开任务并逐项生产）。单个进入既有 13 项任务菜单；批量加载 `workflows/automatic-batch.md`，显示文案、文案加图、文案加图加视频脚本、只生成图片四项，并为每项说明产物范围（内部菜单映射 1/2/3/8）。批量模式由系统自动逐项处理。明确的自然语言任务继续使用现有单个流程。所有数字按最近显示的菜单上下文解释。
 
 ## 1. 规则加载
 
@@ -25,11 +25,14 @@
 - `platforms/market-data-sources.md`
 - `platforms/image-set-rules.md`
 - `platforms/image-technical-specs.md`
+- `platforms/reference-assets.md`（尺寸实物参照与仅文字定制操作图还须加载 `data/reference-assets/index.json` 及对应源图）
 - `workflows/product-to-listing.md`
 - `workflows/start-guide.md`
 - `workflows/creative-direction-selection.md`
 - `workflows/action-menu.md`
 - `workflows/output-structure.md`
+
+目标平台为 Temu、运行模式为批量且 mapping_mode 为 `one_to_all_skus` 时，还必须全量读取 `platforms/temu-batch-rules.md`；其专用目录、命名、数量与配置规则只在该文件维护。
 
 当用户只有方向、品类、人群、关键词，或要求“找品”“趋势筛选”“从视频里分析商品”“参考 YouTube/TikTok/Instagram 内容找机会”时，还必须读取：
 
@@ -129,9 +132,11 @@
 - 标准 SKU 排序，目录图片递归加载、实际解码并按像素去重后稳定排序。批次开始前必须确认图案分配模式：一张图案分配给一个 SKU 变体（`one_to_one`，默认）或一张图案应用到全部 SKU 变体（`one_to_all_skus`）。“一张图案”表示对图案目录中的每张有效去重图案分别执行该规则。`one_to_one` 生成任务数为图案和 SKU 数量的较小值，多余图案或 SKU 不参加本批次并逐项写入总报告；`one_to_all_skus` 将每张图案应用到该 SPU 的全部 SKU 变体，任务数为图案数 × SKU 数，不按数量截断，并在批次状态中保留同一图案与全部 SKU 的关联；两种模式都不删除原始资料。不适用/有风险图案阻塞对应图案组，不自动重新配对。
 - 批量模式默认 `one_to_one`，每个 `SKU + 分配图案` 独立一个 Listing。选择 `one_to_all_skus` 时视为同一变体商品的共享图案批次：每张图案都必须为全部 SKU 生成同一设计内容和文案，只替换各 SKU 的真实杯体颜色/外观；每个 SKU 仍需独立使用自己的商品图库并逐 SKU 验收。批次开始前必须确认分配图案的角色：`customization_image`（买家需上传的图片字段展示样例）、`fixed_product_artwork`（SKU 固定印花）或 `creative_reference_only`（仅供创意参考）。仅文字且角色为 `fixed_product_artwork` 时，图案固定印在商品上，买家只提交文字；仅文字且角色为 `creative_reference_only` 时，图案仅作参考，不印到商品上。图文/图/文类型按已确认字段处理，不能把固定印花记为买家上传素材。不提供定制时图案默认仅供创意参考。若图案角色或分配模式尚未确认且会改变买家下单字段、商品印花内容或任务数量，只询问缺少的那一项并暂停批次创建。
 - 本模式明确授权系统逐 Listing 完成市场研究、自动选择创意、整理并核对商品档案后进入实际生产；跳过单个模式的样例上传、创意数字选择和示例修改回传步骤。选择批量不是确认新商品事实，未确认事实不能进入买家文案，系统选择不能记为用户回传确认。所有研究、图片视觉检查和强制交付闸门继续适用。
-- 用 `node scripts/batch-production.mjs create <配置.json>` 固定配对和源资料哈希；每个任务 claim 后只预留一次目录：`one_to_one` 使用 `output/{平台}-{市场}/{批次号}-{SKU}[-vN]/`；`one_to_all_skus` 使用 `output/{平台}-{市场}/{批次号}-{pattern_group_id}-{SKU}[-vN]/`，以图案组区分同 SKU 的不同图案。claim/record/retry 按 job_id 选择任务，仅 SKU 对应唯一任务时允许用 SKU 代替；状态保存图案组完整矩阵和共享母版 ID。续做和普通修改复用记录目录。批次号 `批yyyyMMddHHmm` 通过原子创建状态文件预留，重名加序号，支持多聊天并发。批次脚本不自动生成文案/图片，Agent 必须实际执行现有生产步骤并用 record 更新状态。
+- 用 `node scripts/batch-production.mjs create <配置.json>` 固定配对和源资料哈希；每个任务 claim 后只预留一次目录：`one_to_one` 使用 `output/{平台}-{市场}/{批次号}-{SKU}[-vN]/`；其他平台的 `one_to_all_skus` 使用 `{批次号}-{pattern_group_id}-{SKU}[-vN]`；Temu 批量 `one_to_all_skus` 的交付单元、目录分配和恢复按 `platforms/temu-batch-rules.md` 执行，创建或生产前必须加载。claim/record/retry 按 job_id 选择任务，仅 SKU 对应唯一任务时允许用 SKU 代替；状态保存图案组完整矩阵和共享母版 ID。续做和普通修改复用记录目录。批次号 `批yyyyMMddHHmm` 通过原子创建状态文件预留，重名加序号，支持多聊天并发。批次脚本不自动生成文案/图片，Agent 必须实际执行现有生产步骤并用 record 更新状态。
 - 总报告和状态位于 `output/{批次号}-批次总报告.md`、`output/{批次号}-批次状态.json`。每个 Listing 写 `批次关联.json`；内部所有卖家侧 Markdown 引用批次号和正确的总报告相对链接，套图配置/图片侧车及 next-action.json 保存对应批次和来源关联字段。自动任务 4 的 next-action 菜单必须为 8。自动批次产物增加批次关联与所选范围检查，不能让缺失文件以 SKIP 冒充完成。
 - 一项阻塞时继续就绪 SKU，最后集中呈现缺失项和受影响 SKU。恢复核对源资料哈希、固定配对和目录，禁止重复分配或覆盖无关产物；缺少恢复信息时先核对。完成状态必须通过实际文件检查和原统一闸门，由脚本记录；最后提供可点击批次总报告链接。
+
+- 批量自动逐项处理，无需用户逐项确认；共享模式先确定组设计与共用文案，再逐 SKU 生成专属图，共用副图只生成一次。不同图案组可并行，同组共用资产由一个负责人维护，逐 SKU 验收，整组交付闸门通过才标记完成。专属问题暂停对应 SKU，共用问题暂停对应组，其他就绪任务继续；用户明确要求遇到问题停止整批时遵从。详细目录、配置、恢复合同见 workflows/automatic-batch.md。
 
 ## 3C. 创意方向选择
 

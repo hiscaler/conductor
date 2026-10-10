@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-10",
+  "rule": "../../platforms/reference-assets.md",
+  "objects": [
+    {
+      "id": "ipad-air-11-m4",
+      "name": "Apple iPad Air (M4) 11\"",
+      "image": "objects/ipad-air-11-m4/user-selected.png",
+      "selection_source": "user",
+      "image_url": "https://crdms.images.consumerreports.org/f_auto,w_600/prod/products/cr/models/420860-9-inch-screen-and-larger-tablets-apple-ipad-air-m4-11-10053423.png",
+      "dimensions_source": "https://support.apple.com/en-us/126471",
+      "dimensions_cm": {
+        "height": 24.76,
+        "width": 17.85,
+        "depth": 0.61
+      },
+      "dimensions_verified": true,
+      "dimensional_drawing": "objects/ipad-air-11-m4/dimensional-drawing.pdf",
+      "public_reuse_rights": "unconfirmed",
+      "sha256": "adb53ed60a315d6e01d2f3895ae85b87d13335894c54906f24a689975b0338f6",
+      "downloaded_at": "2026-10-10"
+    },
+    {
+      "id": "coca-cola-original-us-12oz",
+      "name": "Coca-Cola Original Taste US 12 fl oz standard can",
+      "image": "objects/coca-cola-original-us-12oz/front.jpg",
+      "source_url": "https://business.walmart.com/ip/Coca-Cola-Soda-Pop-12-fl-oz-Can/10535208",
+      "image_url": "https://i5.walmartimages.com/asr/14a1f5dc-f8bf-4071-9aea-0f753c3eecf4.08041b7f0a409ee67d80e489be3c1c55.jpeg",
+      "dimensions_verified": false,
+      "dimensions_cm": null,
+      "public_reuse_rights": "unconfirmed",
+      "sha256": "19997f50761d1fcb18619a9fe5c6b7c32fca22cb667909173ab3b29e264abd42",
+      "downloaded_at": "2026-10-10"
+    },
+    {
+      "id": "pepsi-us-12oz",
+      "name": "Pepsi US 12 fl oz can",
+      "image": "objects/pepsi-us-12oz/front.png",
+      "source_url": "https://www.pepsicoproductfacts.com/Home/product?PPF=&form=RTD&formula=35005*26*01-01&size=12",
+      "image_url": "https://www.pepsicoproductfacts.com/content/image/products/4c04ef698005f44a_00012000000133_C1N1.png?r=20250808",
+      "dimensions_verified": false,
+      "dimensions_cm": null,
+      "public_reuse_rights": "unconfirmed",
+      "sha256": "6169ebdd60718b2a56dde8cc6c964a01431968996dfbfb6a1300759fa3bf2432",
+      "downloaded_at": "2026-10-10"
+    }
+  ],
+  "templates": [
+    {
+      "id": "text-only-mug",
+      "image": "customization/text-only-mug/master.png",
+      "original": "customization/text-only-mug/user-original.png",
+      "customization_type": "文",
+      "text_region": "blank",
+      "requested_height_multiplier": 1.5,
+      "approximate_measured_height_multiplier": 1.7,
+      "approval_status": "user_requested_adjustment",
+      "scope": "operation_guide_only",
+      "sha256": "67998c76fc416284e414db961261dba1642a91a50a63d3828c44931b5cd05bc7",
+      "rim_clearance_px_approx": 50
+    }
+  ]
+}
