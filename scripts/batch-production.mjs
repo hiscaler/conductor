@@ -70,8 +70,13 @@ export function normalizeBatchConfig(input) {
   if (!sellerService) throw new Error("整批 seller_service 尚未确认，请选择 不提供 / 必选 / 可选");
   const customizationType = sellerService === "not_offered" ? null : TYPE[input.customization_type];
   if (sellerService !== "not_offered" && !customizationType) throw new Error("整批 customization_type 尚未确认，请选择 图文 / 图 / 文");
-  const sampleUsage = input.sample_usage ?? (customizationType === "image_text" || customizationType === "image" ? "customization_image" : "creative_reference_only");
+  const sampleUsage = input.sample_usage ?? (
+    sellerService === "not_offered" ? "fixed_product_artwork"
+      : customizationType === "image_text" || customizationType === "image" ? "customization_image"
+        : "creative_reference_only"
+  );
   if (!["customization_image", "fixed_product_artwork", "creative_reference_only"].includes(sampleUsage)) throw new Error("sample_usage 只允许 customization_image / fixed_product_artwork / creative_reference_only");
+  if (sellerService === "not_offered" && sampleUsage === "customization_image") throw new Error("不提供卖家定制时不能把图案标记为买家上传字段；请使用 fixed_product_artwork 或明确仅供创意参考");
   if (task.images && customizationType === "text" && input.sample_usage == null) throw new Error("文定制且提供图案目录时，必须先确认图案是固定印花还是仅供创意参考，并填写 sample_usage");
   if (customizationType === "text" && sampleUsage === "customization_image") throw new Error("文定制不能把图案标记为买家上传图片字段样例");
   const preset = input.image_preset ?? (platform === "Temu" ? "standard_5" : "platform_default");
