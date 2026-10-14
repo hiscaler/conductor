@@ -54,6 +54,7 @@ const checks = [];
 
 if (existsSync(reportPath)) {
   checks.push({ name: "报告锚点", script: "check-report-anchors.mjs", args: [reportPath] });
+  if (copyMds.length > 0) checks.push({ name: "文案研究声明", script: "check-copy-research.mjs", args: [reportPath] });
 } else {
   checks.push({ name: "报告锚点", script: null, skip: `缺 ${reportPath}` });
 }
