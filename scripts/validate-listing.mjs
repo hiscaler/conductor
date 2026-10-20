@@ -5,21 +5,54 @@
 //   node scripts/validate-listing.mjs <listing目录> [-p <平台>]
 //   （或 npm run validate -- <listing目录> [-p <平台>]）
 //
-// 该脚本统一跑全部 5 项强制校验，任一项未过即退出非 0。
+// 该脚本统一运行当前 Listing 适用的全部强制校验项，任一项未过即退出非 0。
 // 退出码：0 = 全部通过（可交付）；非 0 = 有未通过项（不得交付）。
 //
 // 设计原则：
 // - 脚本位于 conductor/scripts/，纯 Node 标准库、接收路径参数，不绑定任何客户端。
-// - 用 process.execPath 调用子脚本，保证与运行本脚本的 Node 一致，不硬编码路径。
+// - 用 Node Worker 线程运行各检查器的 CLI 入口：不创建子进程，保留各检查器
+//   原有参数解析、输出和退出码语义，同时隔离检查器对 process.exit() 的调用。
 
 import { resolve, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { readdirSync, readFileSync, existsSync } from "node:fs";
-import { spawnSync } from "node:child_process";
+import { Worker } from "node:worker_threads";
 
 const SCRIPT = fileURLToPath(import.meta.url);
 const ROOT = resolve(SCRIPT, "../.."); // conductor 项目根
-const NODE = process.execPath;
+
+function runCheckInWorker(scriptPath, args) {
+  const moduleUrl = pathToFileURL(scriptPath).href;
+  const source = `
+    const { workerData } = require("node:worker_threads");
+    process.argv = [process.execPath, workerData.scriptPath, ...workerData.args];
+    (async () => {
+      try {
+        await import(workerData.moduleUrl);
+      } catch (error) {
+        process.stderr.write((error?.stack || error?.message || String(error)) + "\\n");
+        process.exitCode = 1;
+      }
+    })();
+  `;
+
+  return new Promise((resolve) => {
+    const worker = new Worker(source, {
+      eval: true,
+      workerData: { scriptPath, args, moduleUrl },
+      stdout: true,
+      stderr: true,
+    });
+    let stdout = "";
+    let stderr = "";
+    let error = null;
+
+    worker.stdout.setEncoding("utf8").on("data", (chunk) => { stdout += chunk; });
+    worker.stderr.setEncoding("utf8").on("data", (chunk) => { stderr += chunk; });
+    worker.on("error", (cause) => { error = cause; });
+    worker.on("exit", (status) => resolve({ status, stdout, stderr, error }));
+  });
+}
 
 function usage() {
   console.error("用法: node scripts/validate-listing.mjs <listing目录> [-p <平台>]");
@@ -132,8 +165,8 @@ for (const c of checks) {
     console.log(`· ${c.name.padEnd(22)} WOULD-RUN: node ${c.script} ${c.args.join(" ")}`);
     continue;
   }
-  const res = spawnSync(NODE, [scriptPath, ...c.args], { cwd: ROOT, encoding: "utf8" });
-  const code = res.status ?? 1;
+  const res = await runCheckInWorker(scriptPath, c.args);
+  const code = res.error ? 1 : res.status;
   if (code === 0) {
     console.log(`· ${c.name.padEnd(22)} PASS`);
     if (c.script === "check-image-set.mjs" && res.stdout) {
@@ -145,7 +178,7 @@ for (const c of checks) {
     pass++;
   } else {
     console.log(`· ${c.name.padEnd(22)} FAIL  (exit ${code})`);
-    if (res.error) console.log(`    ! spawn 错误：${res.error.message}（若报 EBUSY 多为沙箱禁止嵌套 spawn，真实终端环境正常）`);
+    if (res.error) console.log(`    ! 检查线程错误：${res.error.message}`);
     if (res.stdout) console.log(res.stdout.trim().split("\n").map((l) => "    " + l).join("\n"));
     if (res.stderr) console.log(res.stderr.trim().split("\n").map((l) => "    ! " + l).join("\n"));
     fail++;
