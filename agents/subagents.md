@@ -32,6 +32,7 @@
 - 只有可直接复制到平台前台、搜索字段或广告投放字段的最终文案值使用目标市场语言；给卖家看的解释、提醒和判断不得整段使用英文。
 - 禁止使用 `Product Title`、`Five Bullet Points`、`Long Description`、`Search Keywords`、`Backend Keywords` 等英文栏目名。
 - `copywriting-agent` 生成标题前必须先输出内部关键词候选池，并把最终采用的主要关键词写入完整报告“标题关键词证据”表。目标平台数据优先于 Google Search、Google Trends、内容平台和其他电商平台；无法访问时如实降低证据等级，不得假装已经获取。
+- `copywriting-agent` 在生成 Temu 文案前必须完成通用规则中的 15 类标准意图关系检查，并预判 3-6 个会影响购买决策的买家问题；关系和问题只作为内部规划，最终写入标题、要点、长描述或图片文字的内容必须有对应事实和证据。
 - Temu 文案由 `copywriting-agent` 按段落生成商品描述，每段最多 `500` 个字符并记录字符数；`listing-qa-agent` 必须逐段复核。字符统计包含字母、数字、空格和标点符号，任一段超过 `500` 时不得判定为可上架。
 
 ## 核心 Agent 调度规则
