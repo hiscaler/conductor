@@ -33,3 +33,6 @@ tmp_*
 
 # ChatGPT
 .tmp
+
+# Local temporary production scripts
+scripts/.tmp-*.mjs
