@@ -2,7 +2,7 @@ import { open, readFile, writeFile, rename, unlink, readdir, mkdir, stat } from 
 import { resolve, relative, dirname, basename, extname, isAbsolute, sep } from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
-import { spawnSync } from "node:child_process";
+import { Worker } from "node:worker_threads";
 import sharp from "sharp";
 import { loadProductCatalog, loadGallery, IMAGE_EXTENSIONS, normalizeKey, sha256 } from "./product-catalog.mjs";
 import { resolveOutputDirectory } from "./output-versioning.mjs";
@@ -37,6 +37,37 @@ const segment = (value, label) => {
 const SERVICE = { "不提供": "not_offered", "必选": "required", "可选": "optional", not_offered: "not_offered", required: "required", optional: "optional" };
 const TYPE = { "图文": "image_text", "图": "image", "文": "text", "仅图片": "image", "仅文字": "text", image_text: "image_text", image: "image", text: "text" };
 const allSkus = (state) => state.config.mapping_mode === "one_to_all_skus";
+
+function runListingValidator(scriptPath, args) {
+  const moduleUrl = pathToFileURL(scriptPath).href;
+  const source = `
+    (async () => {
+      const { workerData } = await import("node:worker_threads");
+      process.argv = [process.execPath, workerData.scriptPath, ...workerData.args];
+      try {
+        await import(workerData.moduleUrl);
+      } catch (error) {
+        process.stderr.write((error?.stack || error?.message || String(error)) + "\\n");
+        process.exitCode = 1;
+      }
+    })();
+  `;
+  return new Promise((resolveResult) => {
+    const worker = new Worker(source, {
+      eval: true,
+      workerData: { scriptPath, args, moduleUrl },
+      stdout: true,
+      stderr: true,
+    });
+    let stdout = "";
+    let stderr = "";
+    let error = null;
+    worker.stdout.setEncoding("utf8").on("data", (chunk) => { stdout += chunk; });
+    worker.stderr.setEncoding("utf8").on("data", (chunk) => { stderr += chunk; });
+    worker.on("error", (cause) => { error = cause; });
+    worker.on("exit", (status) => resolveResult({ status, stdout, stderr, error }));
+  });
+}
 export const MAPPING_LABELS = Object.freeze({ one_to_one: "一张图案分配给一个 SKU 变体", one_to_all_skus: "一张图案应用到全部 SKU 变体" });
 const groupFor = (state, job) => state.pattern_groups?.find((group) => group.id === job.pattern_group_id);
 const groupedOutput = (state) => state.config.output_layout === "pattern_group";
@@ -483,8 +514,8 @@ export async function validateBatchListing(listingDirectory, { runListingGate = 
     }
   };
   await walk(directory);
-  if (runListingGate) {
-    const result = spawnSync(process.execPath, [resolve(state.project_root, "scripts/validate-listing.mjs"), directory, "-p", state.config.platform], { cwd: state.project_root, encoding: "utf8" });
+    if (runListingGate) {
+    const result = await runListingValidator(resolve(state.project_root, "scripts/validate-listing.mjs"), [directory, "-p", state.config.platform]);
     if (result.error || result.status !== 0) throw new Error(`Listing 交付闸门未通过：${result.error?.message ?? ""}\n${result.stdout ?? ""}\n${result.stderr ?? ""}`);
   }
   return { batch_id: state.batch_id, sku: job.sku, checked: true };

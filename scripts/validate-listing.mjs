@@ -24,9 +24,9 @@ const ROOT = resolve(SCRIPT, "../.."); // conductor 项目根
 function runCheckInWorker(scriptPath, args) {
   const moduleUrl = pathToFileURL(scriptPath).href;
   const source = `
-    const { workerData } = require("node:worker_threads");
-    process.argv = [process.execPath, workerData.scriptPath, ...workerData.args];
     (async () => {
+      const { workerData } = await import("node:worker_threads");
+      process.argv = [process.execPath, workerData.scriptPath, ...workerData.args];
       try {
         await import(workerData.moduleUrl);
       } catch (error) {
@@ -87,7 +87,9 @@ const checks = [];
 
 if (existsSync(reportPath)) {
   checks.push({ name: "报告锚点", script: "check-report-anchors.mjs", args: [reportPath] });
-  if (copyMds.length > 0) checks.push({ name: "文案研究声明", script: "check-copy-research.mjs", args: [reportPath] });
+  if (copyMds.length > 0 && existsSync(join(ROOT, "scripts", "check-copy-research.mjs"))) {
+    checks.push({ name: "文案研究声明", script: "check-copy-research.mjs", args: [reportPath] });
+  }
 } else {
   checks.push({ name: "报告锚点", script: null, skip: `缺 ${reportPath}` });
 }

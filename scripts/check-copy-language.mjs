@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Checks buyer-facing copy for Chinese characters in US-market Listings.
-// Seller-side headings and research notes are intentionally excluded.
+// Checks buyer-facing copy for Chinese characters and seller-internal caveats
+// in US-market Listings. Seller-side headings and research notes are excluded.
 
 import { existsSync, readFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
@@ -52,6 +52,14 @@ const errors = [];
 const checkedFields = [];
 let assetExceptions = [];
 
+const internalCopyPatterns = [
+  { pattern: /\bcheck\s+(?:the\s+)?(?:actual\s+)?(?:seller\s+)?sample\b/iu, label: "seller sample check instruction" },
+  { pattern: /\b(?:verify|confirm|check)\s+(?:the\s+)?(?:seller\s+)?(?:final\s+)?(?:sample|care instructions?|package configuration|final package)\b/iu, label: "seller verification instruction" },
+  { pattern: /\b(?:before|prior to)\s+(?:publishing|listing|fulfillment|shipping)\b/iu, label: "publishing or fulfillment instruction" },
+  { pattern: /(?:待确认|未确认|未验证|内部使用|仅供内部|卖家确认|发布前核验|交付前确认)/u, label: "seller-side status or instruction" },
+  { pattern: /\b(?:to be confirmed|not verified|unconfirmed|for internal use|internal note|subject to confirmation)\b/iu, label: "seller-side status or instruction" },
+];
+
 function getExceptions(markdown) {
   const exceptions = [];
   for (const line of markdown.split(/\r?\n/u)) {
@@ -69,6 +77,9 @@ function checkValue(value, label, exceptions, lineNumber) {
   const matches = [...checked.matchAll(/\p{Script=Han}+/gu)];
   for (const match of matches) {
     errors.push(`${label}:${lineNumber} 含中文「${match[0]}」`);
+  }
+  for (const { pattern, label: patternLabel } of internalCopyPatterns) {
+    if (pattern.test(checked)) errors.push(`${label}:${lineNumber} 含卖家内部话术（${patternLabel}）`);
   }
 }
 
@@ -115,10 +126,10 @@ if (checkedFields.length === 0) {
 }
 
 if (errors.length) {
-  console.error(`FAIL：美国站买家文案发现中文字符（检查字段：${[...new Set(checkedFields)].join("、")}）`);
+  console.error(`FAIL：美国站买家文案发现中文字符或卖家内部话术（检查字段：${[...new Set(checkedFields)].join("、")}）`);
   for (const error of errors) console.error(`- ${error}`);
-  console.error("请改为自然英文表达；只有用户明确提供且必须原样展示的定制原文，才可按文案资产顶部的“文案语言例外”精确豁免。");
+  console.error("请将商品事实直接写成买家可读信息；卖家核验、资料状态和生产操作提示应移到卖家侧报告。只有用户明确提供且必须原样展示的定制原文，才可按文案资产顶部的“文案语言例外”精确豁免。");
   process.exit(1);
 }
 
-console.log(`PASS：美国站买家文案未发现中文字符（检查字段：${[...new Set(checkedFields)].join("、")}）。`);
+console.log(`PASS：美国站买家文案未发现中文字符或卖家内部话术（检查字段：${[...new Set(checkedFields)].join("、")}）。`);
